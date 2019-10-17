@@ -326,9 +326,9 @@ confint(model1)
 exp(coef(model1))
 
 
-vif(model1) # multicollinearity (https://rpubs.com/ranvirkumarsah/LR)
-1/vif(model1)
-mean(vif(model1))
+vif(model3) # multicollinearity (https://rpubs.com/ranvirkumarsah/LR), https://rpubs.com/andreasme/mlwr 
+1/vif(model3)
+mean(vif(model3))
 
 # stepwise regression (forward / backward selection)
 

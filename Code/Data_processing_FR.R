@@ -41,7 +41,7 @@ plot(tasmax_FR[,1,1], type ="l")
 ## Adjust growing season #####
 gs_start <- 304 # Julian date of start of season
 gs_length <- 310 # growing season length
-# gs_end <- gs_length-(365-gs_start) # Julian date of end of season
+# gs_end <- gs_start+gs_length-365-1 # Julian date of end of season
 num_years <- 4
 
 cube_FR_2d <- array(NA,c(1826,400,6))  # 365*4+366: 5 years

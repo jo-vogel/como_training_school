@@ -16,6 +16,7 @@ library(glinternet)
 library(dplyr)
 library(InformationValue)
 library(ROCR)
+library(tictoc)
 
 Data[,1] <- cy # Replace actual crop yield by binary info on fail/success
 
@@ -47,8 +48,10 @@ Xy_test <- data.frame(AllTesting_Data[,c(vec2+1,1)])
 
 # GLM using cross-validation for goodness-of-fit ####
 #####################################################
-the_best_glm <- bestglm(Xy = Xy, IC = "CV", CVArgs = list(Method = "HTF", K = 10, REP = 1), 
+tic()
+the_best_glm <- bestglm(Xy = Xy, IC = "CV", CVArgs = list(Method = "HTF", K = 10, REP = 100), 
         family=binomial) # you cannot use more than 15 variables
+toc()
 # Normally K= 10 or K= 5 are used
 # Which measure of fit is used here in the cross-validation? https://en.wikipedia.org/wiki/Cross-validation_(statistics)#Measures_of_fit
 ('message: use larger number of Rep: 100 or 1000')
@@ -57,11 +60,17 @@ the_best_glm_AIC <- bestglm(Xy = Xy, IC = "AIC",
                         family=binomial)
 # the_best_glm
 print.bestglm(the_best_glm)
+print.bestglm(the_best_glm_AIC)
 # summary(the_best_glm)
 summary.bestglm(the_best_glm)
+summary.bestglm(the_best_glm_AIC)
+the_best_glm$BestModel$aic # AIC value
+the_best_glm_AIC$BestModel$aic # AIC value
+
 
 #The best models for each subset size
 the_best_glm$Subsets
+the_best_glm_AIC$Subsets
 
 # mypred <- predict(the_best_glm,Xy_test,type="response")
 # fitted.results_bestglm <- ifelse(mypred > 0.5,1,0)
@@ -90,6 +99,7 @@ print.bestglm(the_best_glm_intact)
 
 # does not work
 # vif(the_best_glm_intact) # multicollinearity (https://rpubs.com/ranvirkumarsah/LR)
+vifx(the_best_glm_intact)					 
 # 1/vif(the_best_glm_intact)
 # mean(vif(the_best_glm_intact))
 
@@ -124,6 +134,7 @@ names(numLevels)[coefs$mainEffects$cont] # Main effect variables (without intera
 coefs$interactions # model part with interactions pairs
 names(numLevels)[coefs$interactions$contcont] # Main effect variables (with interactions)
 
+# Assessing performance ####
 sqrt(cv_fit$cvErr[[i_1Std]]) # root mean squared error (RMSE) on validation data
 
 
@@ -136,6 +147,7 @@ fitted.results_bestglm <- ifelse(mypred > 0.5,1,0)
 
 misClassError(y1_test,fitted.results_bestglm)
 
+# AIC(cv_fit$) # does not work, needs log-likelihood
 
 
 # ROC ####
@@ -162,5 +174,5 @@ sqrt(min(cv_glmnet$cvm))
 
 save.image('./Code/Workspaces/GLM_Lasso.RData')
 
-# Assessing performance ####
+							
 
