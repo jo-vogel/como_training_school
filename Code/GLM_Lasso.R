@@ -19,6 +19,11 @@ library(ROCR)
 library(tictoc)
 
 # Season_month_variables_stand <- apply(Data,2,scale) # z-score standardisation
+
+# Determine low yield based on percentile threshold
+thresholds <- c(0.025,0.05,0.1)
+low_yield <- quantile(cy_gsl_FR[,1],thresholds[3])
+cy <- ifelse(cy_gsl_FR[,1]<low_yield,0,1)
 Data[,1] <- cy # Replace actual crop yield by binary info on fail/success
 
 # Split data into training and testing data set
@@ -104,12 +109,13 @@ vifx(the_best_glm_intact)
 # 1/vif(the_best_glm_intact)
 # mean(vif(the_best_glm_intact))
 
+
+
 # Lasso regression with interactions terms: glinternet-package:  ####
 #####################################################################
 
 
-
-mynum <- 79 # 10 min for about 29 variables
+# mynum <- 79 # 10 min for about 29 variables
 # X1 <- AllTraining_Data[,vec+1]
 X1_train <- AllTraining_Data[,2:79]
 y1_train <- AllTraining_Data[,1]
@@ -156,6 +162,7 @@ misClassError(y1_test,fitted.results_bestglm)
 pr <- prediction(mypred, y1_test)
 prf <- performance(pr, measure = "tpr", x.measure = "fpr")
 plot(prf)
+plotROC(actuals=y1_test,predictedScores=fitted.results_bestglm)
 
 auc <- performance(pr, measure = "auc")
 auc@y.values[[1]]

@@ -101,13 +101,15 @@ dps_annual_mean <- apply(cube_FR[,,2],1,mean)
 dpd_annual_mean <- apply(dpd,1,mean)
 
 # transform yield data to binary data: severe loss, no severe loss
-low_yield <- quantile(cy_gsl_FR[,1],0.05)
-# ind <- cy_gsl_FR[which(cy_gsl_FR[,1]<low_yield),1]
-ind <- which(cy_gsl_FR[,1]<low_yield)
-cy <- cy_gsl_FR[,1]
-cy[ind] <- 0
-cy[-ind] <- 1
-low_yield_FR <- cy_gsl_FR[ind,1]
+threshold <- 0.05
+low_yield <- quantile(cy_gsl_FR[,1],threshold)
+# # ind <- cy_gsl_FR[which(cy_gsl_FR[,1]<low_yield),1]
+# ind <- which(cy_gsl_FR[,1]<low_yield)
+# cy <- cy_gsl_FR[,1]
+# cy[ind] <- 0
+# cy[-ind] <- 1
+cy <- ifelse(cy_gsl_FR[,1]<low_yield,0,1)
+# low_yield_FR <- cy_gsl_FR[ind,1]
 
 
 
@@ -117,8 +119,8 @@ low_yield_FR <- cy_gsl_FR[ind,1]
 annual_tmax_min_pr_cy <- cbind(tmax_annual_mean,tmin_annual_mean,prec_annual_sum,cy)
 annual_tmax_min_pr_cy_df <- as.data.frame(annual_tmax_min_pr_cy) 
 
-training <- annual_tmax_min_pr_cy_df [1:1000,1:4]
-testing <- annual_tmax_min_pr_cy_df [1001:1600,1:4]
+training <- annual_tmax_min_pr_cy_df [1:960,1:4]
+testing <- annual_tmax_min_pr_cy_df [961:1600,1:4]
 
 
 model1<- glm(cy ~.,family=binomial(link='logit'),data=training)
@@ -174,8 +176,8 @@ monthly_dpd_jul_aug_cy <- cbind(dpd_mean[[7]],dpd_mean[[8]],cy)
 monthly_dpd_jul_aug_cy_df <- as.data.frame(monthly_dpd_jul_aug_cy) 
 
 
-training <- monthly_dpd_jul_aug_cy_df [1:1000,1:3]
-testing <- monthly_dpd_jul_aug_cy_df [1001:1600,1:3]
+training <- monthly_dpd_jul_aug_cy_df [1:960,1:3]
+testing <- monthly_dpd_jul_aug_cy_df [961:1600,1:3]
 
 
 model1<- glm(cy ~.,family=binomial(link='logit'),data=training)
@@ -190,8 +192,8 @@ monthly_tmax_prec_dpd_aug_sp.su_aug_cy <- cbind(tmax_mean[[8]],dpd_mean[[8]],pre
 monthly_tmax_prec_dpd_aug_sp.su_aug_cy_df <- as.data.frame(monthly_tmax_prec_dpd_aug_sp.su_aug_cy) 
 colnames(monthly_tmax_prec_dpd_aug_sp.su_aug_cy_df) <- c('T_Max_Aug','Dpd_Aug','P_Spr_Sum','Crop_yield')
 
-training <- monthly_tmax_prec_dpd_aug_sp.su_aug_cy_df [1:1000,1:4]
-testing <- monthly_tmax_prec_dpd_aug_sp.su_aug_cy_df [1001:1600,1:4]
+training <- monthly_tmax_prec_dpd_aug_sp.su_aug_cy_df [1:960,1:4]
+testing <- monthly_tmax_prec_dpd_aug_sp.su_aug_cy_df [961:1600,1:4]
 
 model1<- glm(Crop_yield ~.,family=binomial(link='logit'),data=training)
 summary(model1)
@@ -218,11 +220,11 @@ monthly_tmax_prec_dpd_juag_sp.su_juag_cy_df <- as.data.frame(monthly_tmax_prec_d
 colnames(monthly_tmax_prec_dpd_juag_sp.su_juag_cy_df) <- c('T_Max_Jul','T_Max_Aug','Dpd_Jul','Dpd_Aug','P_Spr_Sum','Crop_yield')
 
 
-# training <- monthly_tmax_prec_dpd_juag_sp.su_juag_cy_df [1:1000,1:4]
-# testing <- monthly_tmax_prec_dpd_juag_sp.su_juag_cy [1001:1600,1:4]
-training <- monthly_tmax_prec_dpd_juag_sp.su_juag_cy_df [1:1000,1:6]
-# testing <- as.data.frame(monthly_tmax_prec_dpd_juag_sp.su_juag_cy [1001:1600,1:6])
-testing <- monthly_tmax_prec_dpd_juag_sp.su_juag_cy_df [1001:1600,1:6]
+# training <- monthly_tmax_prec_dpd_juag_sp.su_juag_cy_df [1:960,1:4]
+# testing <- monthly_tmax_prec_dpd_juag_sp.su_juag_cy [961:1600,1:4]
+training <- monthly_tmax_prec_dpd_juag_sp.su_juag_cy_df [1:960,1:6]
+# testing <- as.data.frame(monthly_tmax_prec_dpd_juag_sp.su_juag_cy [961:1600,1:6])
+testing <- monthly_tmax_prec_dpd_juag_sp.su_juag_cy_df [961:1600,1:6]
 
 model2<- glm(Crop_yield ~.,family=binomial(link='logit'),data=training)
 summary(model2)
@@ -248,8 +250,8 @@ monthly_tmax_prec_dpd_JJA_sp.su_JJA_cy <- cbind(tmax_mean[[6]],tmax_mean[[7]],tm
 monthly_tmax_prec_dpd_JJA_sp.su_JJA_cy_df <- as.data.frame(monthly_tmax_prec_dpd_JJA_sp.su_JJA_cy) 
 colnames(monthly_tmax_prec_dpd_JJA_sp.su_JJA_cy_df) <- c('T_Max_Jun','T_Max_Jul','T_Max_Aug','Dpd_Jun','Dpd_Jul','Dpd_Aug','P_Spr_Sum','Crop_yield')
 
-training <- monthly_tmax_prec_dpd_JJA_sp.su_JJA_cy_df [1:1000,1:8]
-testing <- monthly_tmax_prec_dpd_JJA_sp.su_JJA_cy_df [1001:1600,1:8]
+training <- monthly_tmax_prec_dpd_JJA_sp.su_JJA_cy_df [1:960,1:8]
+testing <- monthly_tmax_prec_dpd_JJA_sp.su_JJA_cy_df [961:1600,1:8]
 
 model3<- glm(Crop_yield ~.,family=binomial(link='logit'),data=training)
 summary(model3)
@@ -274,8 +276,8 @@ monthly_tmax_prec_dpd_aug_sp.su_aug_cy_int <- cbind(tmax_mean[[8]],dpd_mean[[8]]
 monthly_tmax_prec_dpd_aug_sp.su_aug_cy_df_int <- as.data.frame(monthly_tmax_prec_dpd_aug_sp.su_aug_cy_int ) 
 colnames(monthly_tmax_prec_dpd_aug_sp.su_aug_cy_df_int) <- c('T_Max_Aug','Dpd_Aug','P_Spr_Sum','Crop_yield')
 
-training <- monthly_tmax_prec_dpd_aug_sp.su_aug_cy_df_int  [1:1000,1:4]
-testing <- monthly_tmax_prec_dpd_aug_sp.su_aug_cy_df_int  [1001:1600,1:4]
+training <- monthly_tmax_prec_dpd_aug_sp.su_aug_cy_df_int  [1:960,1:4]
+testing <- monthly_tmax_prec_dpd_aug_sp.su_aug_cy_df_int  [961:1600,1:4]
 
 model4<- glm(Crop_yield ~T_Max_Aug*Dpd_Aug*P_Spr_Sum,family=binomial(link='logit'),data=training)
 summary(model4)
