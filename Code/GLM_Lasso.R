@@ -18,6 +18,7 @@ library(InformationValue)
 library(ROCR)
 library(tictoc)
 
+# Season_month_variables_stand <- apply(Data,2,scale) # z-score standardisation
 Data[,1] <- cy # Replace actual crop yield by binary info on fail/success
 
 # Split data into training and testing data set
