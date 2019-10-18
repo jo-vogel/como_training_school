@@ -16,6 +16,7 @@ load('C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/Data/
 
 ##### Unstandardised data #####
 
+
 Yields <- Data[,1]
 
 #Percentile wanted
