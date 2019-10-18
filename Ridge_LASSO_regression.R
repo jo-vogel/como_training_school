@@ -14,7 +14,7 @@ load('C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/Data/
 
 
 
-##### Unstandardizsd data #####
+##### Unstandardised data #####
 
 Yields <- Data[,1]
 
