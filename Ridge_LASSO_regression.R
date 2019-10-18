@@ -1,5 +1,15 @@
-# Ridge and LASSO regression
-# Author: Pauline Rivoire
+##########################################################################################
+###########               Ridge and LASSO regression                           ###########
+###########   on unstandardised and standardised crop model data               ###########
+###########                                                                    ###########
+########### Author: Pauline Rivoire                                            ###########
+##########################################################################################
+
+
+
+###############################
+##### Unstandardised data #####
+###############################
 
 ##### Initialisation, librairies, data #####
 
@@ -11,10 +21,6 @@ library(glmnet);library(InformationValue)
 
 # Seasonal & monthly variables
 load('C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/Data/Seasonal_monthly_variables.RData')
-
-
-
-##### Unstandardised data #####
 
 
 Yields <- Data[,1]
@@ -55,9 +61,13 @@ cbind(coeff_ridge@Dimnames[[1]][sorted_indices], round(coeff_ridge[sorted_indice
 predCV <- predict(CV.Ridge_regression, newx = Testing_Data[,-1], 
                   s = lambda_val,
                   type = "response")
-CV.Ridge_regression$lambda.1se
+#Misclassification error
 misClassError(Testing_Data[,1]>bad_yield_threshold, predCV)
 
+#Lambda kept
+CV.Ridge_regression$lambda.1se
+
+#ROC Curve
 plotROC(Testing_Data[,1]>bad_yield_threshold, predCV)
 
 
@@ -71,17 +81,17 @@ nb_important_indices <- 5 + 1
 important_indices <- sorted_indices[1:nb_important_indices]
 important_indices <- important_indices[-which(important_indices==1)]
 
-# coeff_ridge@Dimnames[[1]][important_indices]
-# coeff_ridge[important_indices]
-
-
+#print them
 cbind(coeff_ridge@Dimnames[[1]][important_indices], round(coeff_ridge[important_indices], digits = 5))
+
 # scatterplot with yield for these variables
 
 par(mar=c(4,4,1,1))
 for (index in 1:(nb_important_indices-1)) {
-  plot(Yields, Data[,important_indices[index]], ylab = coeff_ridge@Dimnames[[1]][important_indices[index]])
-  points(Yields[Yields<bad_yield_threshold], Data[,important_indices[index]][Yields<bad_yield_threshold],col="#d95f02")
+  plot(Yields, Data[,coeff_ridge@Dimnames[[1]][important_indices[index]]],
+       ylab = coeff_ridge@Dimnames[[1]][important_indices[index]])
+  points(Yields[Yields<bad_yield_threshold],
+         Data[,coeff_ridge@Dimnames[[1]][important_indices[index]]][Yields<bad_yield_threshold],col="#d95f02")
 }
 
 
@@ -123,8 +133,13 @@ predCV_lasso <- predict(CV.Lasso_regression, newx = Testing_Data[,-1],
                         s = lambda_val,
                         type = "response")
 
+#Misclassification error
 misClassError(Testing_Data[,1]>bad_yield_threshold, predCV_lasso)
+
+#Lambda kept
 CV.Lasso_regression$lambda.1se
+
+#ROC Curve
 plotROC(Testing_Data[,1]>bad_yield_threshold, predCV_lasso)
 
 
@@ -133,21 +148,23 @@ plotROC(Testing_Data[,1]>bad_yield_threshold, predCV_lasso)
 ##### Plot proba of bad yield against 1 meteo variable
 
 
-#extract the largest coefficient
+# extract the largest coefficient
 nb_important_indices <- 5 + 1
 
 important_indices <- indices_sorted[1:nb_important_indices]
 important_indices <- important_indices[-which(important_indices==1)]
 
-
-
+# print them
 cbind(coeff_lasso@Dimnames[[1]][important_indices], round(coeff_lasso[important_indices], digits = 5))
+
 # scatterplot with yield for these variables
 
 par(mar=c(4,4,1,1))
 for (index in 1:(nb_important_indices-1)) {
-  plot(Yields, Data[,important_indices[index]], ylab = coeff_lasso@Dimnames[[1]][important_indices[index]])
-  points(Yields[Yields<bad_yield_threshold], Data[,important_indices[index]][Yields<bad_yield_threshold],col="#d95f02")
+  plot(Yields, Data[,coeff_lasso@Dimnames[[1]][important_indices[index]]],
+       ylab = coeff_lasso@Dimnames[[1]][important_indices[index]])
+  points(Yields[Yields<bad_yield_threshold],
+         Data[,coeff_lasso@Dimnames[[1]][important_indices[index]]][Yields<bad_yield_threshold],col="#d95f02")
 }
 
 
@@ -156,13 +173,27 @@ for (index in 1:(nb_important_indices-1)) {
 
 
 
-
+#############################
 ##### Standardised data #####
+#############################
 
+##### Initialisation, librairies, data #####
+
+# Clean everything
+print("Are you sure you want to run the next line? ;) everything in the environment will be removed")
+rm(list=ls(all=TRUE))
+
+library(glmnet);library(InformationValue)
+
+# Seasonal & monthly variables
+load('C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/Data/Seasonal_monthly_variables.RData')
 Season_month_variables_stand <- apply(Data, MARGIN = 2, FUN = scale) # standardisation
 
 Yields_stand <- Season_month_variables_stand[,1]
 
+
+#Percentile wanted
+percentile <- 0.025
 bad_yield_stand_threshold <- quantile(Yields_stand, percentile)
 
 
@@ -182,6 +213,7 @@ CV.Ridge_regression <- cv.glmnet(x = Training_Data[,-1],
                                  family = "binomial", alpha = 0)
 T2 <- Sys.time()
 difftime(T2,T1)
+
 plot(CV.Ridge_regression, xvar = "lambda", label = TRUE, main="Ridge regression")
 
 lambda_VALS <- c("lambda.min", "lambda.1se")
@@ -197,9 +229,14 @@ cbind(coeff_ridge@Dimnames[[1]][sorted_indices], round(coeff_ridge[sorted_indice
 predCV <- predict(CV.Ridge_regression, newx = Testing_Data[,-1], 
                   s = lambda_val,
                   type = "response")
-CV.Ridge_regression$lambda.1se
+
+#Misclassification error
 misClassError(Testing_Data[,1]>bad_yield_stand_threshold, predCV)
 
+#Lambda kept
+CV.Ridge_regression$lambda.1se
+
+#ROC Curve
 plotROC(Testing_Data[,1]>bad_yield_stand_threshold, predCV)
 
 
@@ -207,23 +244,25 @@ plotROC(Testing_Data[,1]>bad_yield_stand_threshold, predCV)
 ##### Plot proba of bad yield against 1 meteo variable
 
 
-#extract the largest coefficient
+#extract the variables with largest coefficient
 nb_important_indices <- 5 + 1
 
 important_indices <- sorted_indices[1:nb_important_indices]
 important_indices <- important_indices[-which(important_indices==1)]
 
-# coeff_ridge@Dimnames[[1]][important_indices]
-# coeff_ridge[important_indices]
-
-
+# print these coefficients
 cbind(coeff_ridge@Dimnames[[1]][important_indices], round(coeff_ridge[important_indices], digits = 5))
+
+
 # scatterplot with yield for these variables
 
 par(mar=c(4,4,1,1))
 for (index in 1:(nb_important_indices-1)) {
-  plot(Yields_stand, Season_month_variables_stand[,important_indices[index]], ylab = coeff_ridge@Dimnames[[1]][important_indices[index]])
-  points(Yields_stand[Yields_stand<bad_yield_stand_threshold], Season_month_variables_stand[,important_indices[index]][Yields_stand<bad_yield_stand_threshold],col="#d95f02")
+  plot(Yields_stand, Season_month_variables_stand[,coeff_ridge@Dimnames[[1]][important_indices[index]]],
+       ylab = coeff_ridge@Dimnames[[1]][important_indices[index]])
+  points(Yields_stand[Yields_stand<bad_yield_stand_threshold],
+         Season_month_variables_stand[,coeff_ridge@Dimnames[[1]][important_indices[index]]][Yields_stand<bad_yield_stand_threshold],
+         col="#d95f02")
 }
 
 
@@ -265,8 +304,13 @@ predCV_lasso <- predict(CV.Lasso_regression, newx = Testing_Data[,-1],
                         s = lambda_val,
                         type = "response")
 
+#Misclassification error
 misClassError(Testing_Data[,1]>bad_yield_stand_threshold, predCV_lasso)
+
+#Lambda kept
 CV.Lasso_regression$lambda.1se
+
+#ROC Curve
 plotROC(Testing_Data[,1]>bad_yield_stand_threshold, predCV_lasso)
 
 
@@ -288,8 +332,9 @@ cbind(coeff_lasso@Dimnames[[1]][important_indices], round(coeff_lasso[important_
 
 par(mar=c(4,4,1,1))
 for (index in 1:(nb_important_indices-1)) {
-  plot(Yields_stand, Season_month_variables_stand[,important_indices[index]], ylab = coeff_lasso@Dimnames[[1]][important_indices[index]],
-       ylab=)
+  plot(Yields_stand, Season_month_variables_stand[,coeff_lasso@Dimnames[[1]][important_indices[index]]],
+       ylab = coeff_lasso@Dimnames[[1]][important_indices[index]])
   points(Yields_stand[Yields_stand<bad_yield_stand_threshold],
-        Season_month_variables_stand[,important_indices[index]][Yields_stand<bad_yield_stand_threshold],col="#d95f02")
+         Season_month_variables_stand[,coeff_lasso@Dimnames[[1]][important_indices[index]]][Yields_stand<bad_yield_stand_threshold],
+         col="#d95f02")
 }
