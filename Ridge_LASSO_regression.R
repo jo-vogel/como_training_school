@@ -2,16 +2,15 @@
 ###########               Ridge and LASSO regression                           ###########
 ###########   on unstandardised and standardised crop model data               ###########
 ###########                                                                    ###########
-########### Author: Pauline Rivoire                                            ###########
+###########       Author: Pauline Rivoire                                      ###########
 ##########################################################################################
-
 
 
 ###############################
 ##### Unstandardised data #####
 ###############################
 
-##### Initialisation, librairies, data #####
+##### Initialisation, librairies and data #####
 
 # Clean everything
 print("Are you sure you want to run the next line? ;) everything in the environment will be removed")
@@ -61,13 +60,13 @@ cbind(coeff_ridge@Dimnames[[1]][sorted_indices], round(coeff_ridge[sorted_indice
 predCV <- predict(CV.Ridge_regression, newx = Testing_Data[,-1], 
                   s = lambda_val,
                   type = "response")
-#Misclassification error
+# Misclassification error
 misClassError(Testing_Data[,1]>bad_yield_threshold, predCV)
 
-#Lambda kept
+# Lambda kept
 CV.Ridge_regression$lambda.1se
 
-#ROC Curve
+# ROC Curve
 plotROC(Testing_Data[,1]>bad_yield_threshold, predCV)
 
 
@@ -75,13 +74,13 @@ plotROC(Testing_Data[,1]>bad_yield_threshold, predCV)
 ##### Plot proba of bad yield against 1 meteo variable
 
 
-#extract the largest coefficient
+# extract the largest coefficient
 nb_important_indices <- 5 + 1
 
 important_indices <- sorted_indices[1:nb_important_indices]
 important_indices <- important_indices[-which(important_indices==1)]
 
-#print them
+# print them
 cbind(coeff_ridge@Dimnames[[1]][important_indices], round(coeff_ridge[important_indices], digits = 5))
 
 # scatterplot with yield for these variables
@@ -193,7 +192,7 @@ Yields_stand <- Season_month_variables_stand[,1]
 
 
 #Percentile wanted
-percentile <- 0.025
+percentile <- 0.1
 bad_yield_stand_threshold <- quantile(Yields_stand, percentile)
 
 
@@ -245,7 +244,7 @@ plotROC(Testing_Data[,1]>bad_yield_stand_threshold, predCV)
 
 
 #extract the variables with largest coefficient
-nb_important_indices <- 5 + 1
+nb_important_indices <- 10 + 1
 
 important_indices <- sorted_indices[1:nb_important_indices]
 important_indices <- important_indices[-which(important_indices==1)]
@@ -257,7 +256,7 @@ cbind(coeff_ridge@Dimnames[[1]][important_indices], round(coeff_ridge[important_
 # scatterplot with yield for these variables
 
 par(mar=c(4,4,1,1))
-for (index in 1:(nb_important_indices-1)) {
+for (index in 1:((nb_important_indices-1)/2)) {
   plot(Yields_stand, Season_month_variables_stand[,coeff_ridge@Dimnames[[1]][important_indices[index]]],
        ylab = coeff_ridge@Dimnames[[1]][important_indices[index]])
   points(Yields_stand[Yields_stand<bad_yield_stand_threshold],
@@ -338,3 +337,4 @@ for (index in 1:(nb_important_indices-1)) {
          Season_month_variables_stand[,coeff_lasso@Dimnames[[1]][important_indices[index]]][Yields_stand<bad_yield_stand_threshold],
          col="#d95f02")
 }
+
