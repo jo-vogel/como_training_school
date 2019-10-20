@@ -76,10 +76,13 @@ plotROC(Testing_Data[,1]>bad_yield_stand_threshold, predCV)
 # Get AIC and BIC with the selected lambda
 ridge.fit <- glmnet(x = Training_Data[,-1], y = Training_Data[,"Yields"]>bad_yield_stand_threshold,
                     family = "binomial", alpha = 0, lambda = CV.Ridge_regression$lambda.1se)
-tLL <- ridge.fit$nulldev - deviance(ridge.fit)
-k <- ridge.fit$df
-n <- ridge.fit$nobs
-AIC <- -tLL+2*k+2*k*(k+1)/(n-k-1)
+
+tLL <- ridge.fit$nulldev - deviance(ridge.fit) # tLL is 2 times the likelihood of the model
+k <- ridge.fit$df                              # number of nonzero coefficients
+n <- ridge.fit$nobs                            # number of observations
+
+
+AIC <- -tLL+2*k+2*k*(k+1)/(n-k-1)             #AIC corrected = AIC with penalty for number of parameters
 print(paste("AIC", AIC))
 
 BIC<-log(n)*k - tLL
@@ -161,13 +164,15 @@ plotROC(Testing_Data[,1]>bad_yield_stand_threshold, predCV_lasso)
 # Get AIC and BIC with the selected lambda
 ridge.fit <- glmnet(x = Training_Data[,-1], y = Training_Data[,"Yields"]>bad_yield_stand_threshold,
                     family = "binomial", alpha = 0, lambda = CV.Lasso_regression$lambda.1se)
-tLL <- ridge.fit$nulldev - deviance(ridge.fit)
-k <- ridge.fit$df
-n <- ridge.fit$nobs
-AIC <- -tLL+2*k+2*k*(k+1)/(n-k-1)
-print(paste("AIC", AIC))
 
-BIC<-log(n)*k - tLL
+tLL <- ridge.fit$nulldev - deviance(ridge.fit) # tLL is 2 times the likelihood of the model
+k <- ridge.fit$df                              # number of nonzero coefficients
+n <- ridge.fit$nobs                            # number of observations
+
+AICc <- -tLL+2*k+2*k*(k+1)/(n-k-1)             #AIC corrected = AIC with penalty for number of parameters
+print(paste("AIC corrected", AIC))
+
+BIC <- log(n)*k - tLL
 print(paste("BIC", BIC))
 
 
