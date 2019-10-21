@@ -27,7 +27,7 @@ Yields_stand <- Season_month_variables_stand[,1]
 
 
 #Percentile wanted
-percentile <- 0.1
+percentile <- 0.05
 bad_yield_stand_threshold <- quantile(Yields_stand, percentile)
 
 
@@ -117,6 +117,41 @@ for (index in 1:((nb_important_indices-1)/2)) {
 
 
 
+# Plot proba of bad yield against important variable
+# Mean value of the standardized data = 0, easier to get proba bad yield of the model
+
+proba_bad_yield <- function(variable_name, stand_var_values,
+                            additionnal_var_name, additionnal_stand_var_value){
+  intercept <- coeff_ridge@x[coeff_ridge@Dimnames[[1]]=="(Intercept)"]
+  coeff <- coeff_ridge@x[coeff_ridge@Dimnames[[1]]==variable_name]
+  coeff_additional <- coeff_ridge@x[coeff_ridge@Dimnames[[1]]==additionnal_var_name]
+  return(1/(1+exp(intercept + coeff*stand_var_values + coeff_additional*additionnal_stand_var_value)))
+}#end for proba_bad_yield function
+
+range(Season_month_variables_stand[,"tasmax_July"])
+
+plot(seq(-3,3, by = 0.1),
+     proba_bad_yield(variable_name = "tasmax_July", stand_var_values = seq(-3,3, by = 0.1),
+                     additionnal_var_name="sfcwind_Winter",
+                     additionnal_stand_var_value = 0),
+     ylab="proba bad yield", xlab = "Standardised tasmax_July")
+
+points(seq(-3,3, by = 0.1),
+       proba_bad_yield(variable_name = "tasmax_July", stand_var_values = seq(-3,3, by = 0.1),
+                       additionnal_var_name="sfcwind_Winter",
+                       additionnal_stand_var_value = min(Season_month_variables_stand[,"sfcwind_Winter"])),
+       col="brown")
+
+points(seq(-3,3, by = 0.1),
+       proba_bad_yield(variable_name = "tasmax_July", stand_var_values = seq(-3,3, by = 0.1),
+                       additionnal_var_name="sfcwind_Winter",
+                       additionnal_stand_var_value = max(Season_month_variables_stand[,"sfcwind_Winter"])),
+       col="blue")
+
+
+
+
+
 
 
 ###### Lasso regression #####
@@ -200,6 +235,10 @@ for (index in 1:(nb_important_indices-1)) {
          Season_month_variables_stand[,coeff_lasso@Dimnames[[1]][important_indices[index]]][Yields_stand<bad_yield_stand_threshold],
          col="#d95f02")
 }
+
+
+
+
 
 
 
