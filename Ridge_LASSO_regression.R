@@ -128,27 +128,28 @@ proba_bad_yield <- function(variable_name, stand_var_values,
   return(1/(1+exp(intercept + coeff*stand_var_values + coeff_additional*additionnal_stand_var_value)))
 }#end for proba_bad_yield function
 
-range(Season_month_variables_stand[,"tasmax_July"])
+range(Season_month_variables_stand[,"dps_July"])
 
 plot(seq(-3,3, by = 0.1),
-     proba_bad_yield(variable_name = "tasmax_July", stand_var_values = seq(-3,3, by = 0.1),
-                     additionnal_var_name="sfcwind_Winter",
+     proba_bad_yield(variable_name = "dps_July", stand_var_values = seq(-3,3, by = 0.1),
+                     additionnal_var_name="pr_July",
                      additionnal_stand_var_value = 0),
-     ylab="proba bad yield", xlab = "Standardised tasmax_July")
+     ylab="proba bad yield", xlab = "Standardised dps_July")
 
 points(seq(-3,3, by = 0.1),
-       proba_bad_yield(variable_name = "tasmax_July", stand_var_values = seq(-3,3, by = 0.1),
-                       additionnal_var_name="sfcwind_Winter",
-                       additionnal_stand_var_value = min(Season_month_variables_stand[,"sfcwind_Winter"])),
+       proba_bad_yield(variable_name = "dps_July", stand_var_values = seq(-3,3, by = 0.1),
+                       additionnal_var_name="pr_July",
+                       additionnal_stand_var_value = min(Season_month_variables_stand[,"pr_July"])),
        col="brown")
 
 points(seq(-3,3, by = 0.1),
-       proba_bad_yield(variable_name = "tasmax_July", stand_var_values = seq(-3,3, by = 0.1),
-                       additionnal_var_name="sfcwind_Winter",
-                       additionnal_stand_var_value = max(Season_month_variables_stand[,"sfcwind_Winter"])),
+       proba_bad_yield(variable_name = "dps_July", stand_var_values = seq(-3,3, by = 0.1),
+                       additionnal_var_name="pr_July",
+                       additionnal_stand_var_value = max(Season_month_variables_stand[,"pr_July"])),
        col="blue")
 
-
+legend("topright", title="Standardised pr_July" ,legend=c("0", "min over all years", "max over all years"),
+       col=c("black", "brown", "blue"), pch=1)
 
 
 
