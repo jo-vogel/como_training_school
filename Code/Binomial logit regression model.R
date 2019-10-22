@@ -212,6 +212,10 @@ con_tab1b <- con_tab1
 colnames(con_tab1) <- c('TRUE','FALSE');rownames(con_tab1) <- c('TRUE','FALSE')
 con_tab1[,1] <- con_tab1[,1]/540
 con_tab1[,2] <-con_tab1[,2]/60
+spec <- ff/(ff+tf)
+sens <- tt/(tt+ft)
+# sensitivity(model1) # does not work for this logit model type
+# specificity(model1)
 
 # Comb. 2
 # monthly_tmax_prec_dpd_juag_sp.su_juag_cy <- cbind(tmax_mean[[7]]+tmax_mean[[8]],dpd_mean[[7]]+dpd_mean[[8]],prec_spr_sum_sum,cy)

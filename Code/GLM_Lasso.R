@@ -117,11 +117,11 @@ vifx(the_best_glm_intact)
 
 # mynum <- 79 # 10 min for about 29 variables
 # X1 <- AllTraining_Data[,vec+1]
-X1_train <- AllTraining_Data[,2:79]
-y1_train <- AllTraining_Data[,1]
+X1_train <- AllTraining_Data[,2:79] # predictors
+y1_train <- AllTraining_Data[,1] # predictand
 # subset_Testing_Data <-  AllTesting_Data[,vec+1]
-x1_test <-  AllTesting_Data[,2:79]
-y1_test <- AllTesting_Data[,1]
+x1_test <-  AllTesting_Data[,2:79] # predictors
+y1_test <- AllTesting_Data[,1] # predictand
 
 # numLevels <- AllTraining_Data[,vec+1] %>% sapply(nlevels)
 numLevels <- AllTraining_Data[,2:79] %>% sapply(nlevels)
@@ -141,6 +141,7 @@ names(numLevels)[coefs$mainEffects$cont] # Main effect variables (without intera
 coefs$interactions # model part with interactions pairs
 names(numLevels)[coefs$interactions$contcont] # Main effect variables (with interactions)
 
+
 # Assessing performance ####
 sqrt(cv_fit$cvErr[[i_1Std]]) # root mean squared error (RMSE) on validation data
 
@@ -154,21 +155,54 @@ fitted.results_bestglm <- ifelse(mypred > 0.5,1,0)
 
 misClassError(y1_test,fitted.results_bestglm)
 
-# AIC(cv_fit$) # does not work, needs log-likelihood
+# Confusion matrix ####
+# a) Confusion matrix manually calculated
+obs_pred <- cbind(y1_test,fitted.results_bestglm)
+tp <- sum(rowSums(obs_pred)==2)
+tn <- sum(rowSums(obs_pred)==0)
+fp <- sum(obs_pred[,1]==0 & obs_pred[,2]==1)
+fn <- sum(obs_pred[,1]==1 & obs_pred[,2]==0)
+con_tab1 <- matrix(c(tp,fn,fp,tn),nrow=2,ncol=2)
+con_tab1b <- con_tab1
+colnames(con_tab1) <- c('Actual TRUE','Actual FALSE');rownames(con_tab1) <- c('Predicted TRUE','Predicted FALSE')
+con_tab1[,1] <- con_tab1[,1]/ sum(y1_test==1)
+con_tab1[,2] <-con_tab1[,2]/sum(y1_test==0)
+# b) Confusion matrix from package InformationValue
+con_tab <- InformationValue::confusionMatrix(y1_test,fitted.results_bestglm)
+
+# Sensitivity and Specificity
+# a) Manually calculated
+spec <- tn/(tn+fp) 
+sens <- tp/(tp+fn) 
+# b) Using package caret
+caret::sensitivity(data=as.factor(fitted.results_bestglm),reference=as.factor(y1_test),positive="1",negative="0")
+caret::specificity(data=as.factor(fitted.results_bestglm),reference=as.factor(y1_test),positive="1",negative="0")
+# c) using package InformationValue
+InformationValue::sensitivity(y1_test,fitted.results_bestglm)
+InformationValue::specificity(y1_test,fitted.results_bestglm)
 
 
 # ROC ####
-
 pr <- prediction(mypred, y1_test)
 prf <- performance(pr, measure = "tpr", x.measure = "fpr")
 plot(prf)
 plotROC(actuals=y1_test,predictedScores=fitted.results_bestglm)
-
+auc2 <- auc(y1_test,fitted.results_bestglm)
 auc <- performance(pr, measure = "auc")
 auc@y.values[[1]]
 
+# Calculate Sensitivity and Specificity using performance command
+spec2 <- performance(pr, measure = "spec") 
+# spec2b <- performance(pr, measure = "tnr") # equivalent
+plot(spec2) # you can see that at cutoff 0.5 it is equal to my result, however I don't know how to extract the value
+# sens2 <- performance(pr, measure = "sens") # does now work
+sens2 <- performance(pr, measure = "tpr")
+sens_spec <- performance(pr, measure="sens", x.measure="spec")
+plot(sens_spec) # inverted AUC
 
 
+
+# AIC(cv_fit$) # does not work, needs log-likelihood
 
 
 # Linear model for comparison ####
