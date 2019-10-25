@@ -35,7 +35,7 @@ Month_variables_stand <- cbind(Yields_stand, Season_month_variables_stand[,-1][,
 Variables <- Month_variables_stand
 
 #Percentile wanted, in c(0.025, 0.05, 0.1)
-percentile <- 0.05
+percentile <- 0.1
 bad_yield_stand_threshold <- quantile(Yields_stand, percentile)
 
 
