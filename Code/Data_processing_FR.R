@@ -1,5 +1,4 @@
 # Load data ####
-warning('Upload changed data (small changes')
 library(ncdf4)
 setwd("C:/Promotion/Training school") # path should be your local path to the file
 
