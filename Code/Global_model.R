@@ -1,3 +1,6 @@
+# Data processing for northern hemisphere
+# Author: Johannes Vogel
+
 library(ncdf4)
 library(rgdal)
 library(raster)
@@ -17,126 +20,167 @@ nh_variables <- lapply(1:length(nh_files),function(x){ncvar_get(nh_data[[x]])})
 lati <- ncvar_get(nh_data[[1]],"lat")
 long <- ncvar_get(nh_data[[1]],"lon")
 lapply(1:length(nh_files),function(x){nc_close(nh_data[[x]])})  
-
-
-# ## Adjust growing season #####
-gs_start <- nh_variables[[2]][,,1] # Julian date of start of season
-gs_length <- matrix(data=nh_variables[[2]],nrow=320*76,ncol=1600)
-max_gs_length <- apply(gs_length,1,max) # maximum growing season length
-# num_years <- 4
-# nh_variables[[1]][180,50,]
-# nh_variables[[2]][180,50,1]
-# sum(!is.na(max_gs_length))/sum(is.na(max_gs_length)) # only 4% are not NAs and therefore contain wheat yield data
-
+pix_num <- dim(nh_variables[[1]])[1]*dim(nh_variables[[1]])[2] # number of pixels
 
 # Calculate threshold
 threshold <- 0.05
 yields <- matrix(data=nh_variables[[3]],nrow=320*76,ncol=1600) # reshape
 # identical(nh_variables[[3]][180,50,],yields[49*320+180,]) # reshaping worked
-low_yield <- sapply(1:24320,function(x) {quantile(yields[x,],threshold,na.rm=T)})
-# cy <- ifelse(yields<low_yield,0,1)
-# myfun <- function(x){ifelse(yields<low_yield,0,1)}
-# cy <- apply(yields,1,function(x){ifelse(yields<low_yield,0,1)})
-cy <- t(sapply(1:24320,function(x){ifelse(yields[x,]<low_yield[x],0,1)}))
-# cy <- sapply(1:24320,function(x){ifelse(yields[x,]<low_yield[x],0,1)})
-
-sum(yields[49*320+180,]<low_yield[49*320+180])
-sum(cy[49*320+180,])
-a <- rowSums(cy)
-sum(!is.na(a)) # all pixels with data: 955
-ind <- which(!is.na(a))
-table(a) # für die meisten Pixel funktioniert ist, für manche wenige nicht
+low_yield <- sapply(1:pix_num,function(x) {quantile(yields[x,],threshold,na.rm=T)})
+cy <- t(sapply(1:pix_num,function(x){ifelse(yields[x,]<low_yield[x],0,1)}))
+# sum(yields[49*320+180,]<low_yield[49*320+180]) # check if correctly assigned: yes, 80/1600 are below threshold
+# sum(cy[49*320+180,]) # Number is accurate: 1520 entries (95) without high crop loss
+row_sums_cy <- rowSums(cy)
+# sum(!is.na(row_sums_cy)) # all pixels with data: 955
+table(row_sums_cy) # works fine for most pixel, but not for a few it is problematic
 # problem with ties, for some pixel (e.g. sum(yields[4352,]==0)), there are so many 0s that the treshold is at 0
-which(a==1600)
-plot(yields[4352,])
+# which(row_sums_cy==1600)
+plot(yields[4352,]) # one of the problematic pixels: contains a lot of zeros
 # 901/995 pixel are all right
 
-# plot it
 
-# does not work
-# coordinates
-lon <- rep(long,length(lati))
-lat <- rep(lati,each=length(long))
-coord <- cbind(lon,lat)
-# 
+
+# Plotting ####
+
+message('does not work') 
+# lon <- rep(long,length(lati)) # coordinates rearranged
+# lat <- rep(lati,each=length(long))
+# coord <- cbind(lon,lat)
 # dat_coord <- cbind(coord,gs_length[,1])
-# dat_ras <- rasterFromXYZ(dat_coord)
+# dat_ras <- rasterFromXYZ(dat_coord) # gives error
 
 
 border <- readOGR('D:/user/vogelj/Data/ne_50m_admin_0_countries/ne_50m_admin_0_countries.shp')	
 # download from https://www.naturalearthdata.com/downloads/50m-cultural-vectors/50m-admin-0-countries-2/
 
-gs_length_ras <- raster(t(max_gs_length), xmn=min(long), xmx=max(long), ymn=min(lati), ymx=max(lati), crs=CRS(projection(border)))
-gs_start_ras <- raster(t(gs_start), xmn=min(long), xmx=max(long), ymn=min(lati), ymx=max(lati), crs=CRS(projection(border)))
+
+
+## Growing season #####
+gs_start <- nh_variables[[2]][,,1] # Julian date of start of season
+gs_length <- matrix(data=nh_variables[[2]],nrow=320*76,ncol=1600)
+max_gs_length <- apply(gs_length,1,max) # maximum growing season length
+# num_years <- 4
+# nh_variables[[1]][180,50,] # Growing season length example for one pixel
+# sum(!is.na(max_gs_length))/sum(is.na(max_gs_length)) # only 4% are not NAs and therefore contain wheat yield data
+total_yield <- rowSums(yields)
+max_gs_length <- matrix(data=max_gs_length,nrow=320,ncol=76) # reshape to 2dim
+total_yield <- matrix(data=total_yield,nrow=320,ncol=76) # reshape to 2dim
+
+max_temp_aug <- matrix(nh_variables[[8]][,,1,],nrow=pix_num,ncol=1600)
+# identical(mean(max_temp_aug[49*320+180,]),mean(nh_variables[[8]][180,50,1,])) # correctly reshaped
+mean_max_temp_aug <- rowMeans(max_temp_aug)
+mean_max_temp_aug <- matrix(data=mean_max_temp_aug,nrow=320,ncol=76)
+
+message('latitude needs to be inverted')
+gs_length_ras <- raster(t(max_gs_length[,76:1]), xmn=min(long), xmx=max(long), ymn=min(lati), ymx=max(lati), crs=CRS(projection(border)))
+gs_start_ras <- raster(t(gs_start[,76:1]), xmn=min(long), xmx=max(long), ymn=min(lati), ymx=max(lati), crs=CRS(projection(border)))
+total_yield_ras <- raster(t(total_yield[,76:1]), xmn=min(long), xmx=max(long), ymn=min(lati), ymx=max(lati), crs=CRS(projection(border)))
+mean_max_temp_aug_ras <- raster(t(mean_max_temp_aug[,76:1]), xmn=min(long), xmx=max(long), ymn=min(lati), ymx=max(lati), crs=CRS(projection(border)))
 
 projection(border) # projections are equal
 projection(gs_length_ras)
 
 # png(file=paste0(getwd(),"/rasterplot.png"),height=8,width=10,unit="cm",
-    # pointsize = 6, bg = "white", res = 1000, restoreConsole = TRUE, type = "windows")
+# pointsize = 6, bg = "white", res = 1000, restoreConsole = TRUE, type = "windows")
 x11()
 plot(gs_length_ras,asp=1);plot(border,add=T)
 plot(gs_start_ras,asp=1);plot(border,add=T)
+plot(total_yield_ras,asp=1);plot(border,add=T)
+plot(mean_max_temp_aug_ras,asp=1);plot(border,add=T)
 # dev.off()
 
 
 
 
-
 # Lasso model building ####
+###########################
+
 
 # make it for one pixel first
 # then a few
 # then parallise it and run globally
-# you only need to run 955 pixel, the rest is NA
+# you only need to run 955 pixels, the rest is NA
 
-message('check if dimensions are correct')
-# monthly_data <- array(data=c(nh_variables[[5]][,,1:12,],nh_variables[[8]][,,1:12,],nh_variables[[9]][,,1:12,]),dim=c(24320,1600,36))
-# Model_data <- abind(cy,monthly_data) # Replace actual crop yield by binary info on fail/success
-Data <- array(data=c(cy,nh_variables[[5]][,,1:12,],nh_variables[[8]][,,1:12,],nh_variables[[9]][,,1:12,]),dim=c(24320,1600,37))
-Model_data <- Data                
-      
+# Create data table ####
+monthly_data <- abind(nh_variables[[5]][,,1:12,],nh_variables[[8]][,,1:12,],nh_variables[[9]][,,1:12,],nh_variables[[10]][,,1:12,],along=3)
+monthly_data3dim <- array(data=monthly_data,dim=c(pix_num,48,1600))
+cy_reshaped <- array(data=cy,dim=c(24320,1,1600))
+Model_data <- abind(cy_reshaped,monthly_data3dim,along=2)
+
+
+# Check if dimensions are correct
+# # monthly_data works fine
+# monthly_data[180,50,1,1]
+# nh_variables[[5]][180,50,1,1]
+# monthly_data[180,50,2,1]
+# nh_variables[[5]][180,50,2,1]
+# 
+# monthly_data[180,50,,1]
+# nh_variables[[5]][180,50,1:12,1] 
+# 
+# # monthly_data3dim works fine
+# monthly_data3dim[49*320+180,1,1]
+# nh_variables[[5]][180,50,1,1]
+# monthly_data3dim[49*320+180,2,1]
+# nh_variables[[5]][180,50,2,1]
+# 
+# monthly_data3dim[49*320+180,,1]
+# nh_variables[[5]][180,50,1:12,1]
+# 
+# # Model_data works fine
+# Model_data[49*320+180,2,1]
+# nh_variables[[5]][180,50,1,1]
+# Model_data[49*320+180,3,1]
+# nh_variables[[5]][180,50,2,1]
+# 
+# Model_data[49*320+180,,1]
+# nh_variables[[5]][180,50,1:12,1]
+
+
+
 # Split data into training and testing data set
 set.seed(1994)
 training_indices <- sample(1:1600, size = floor(1600*0.6))
 testing_indices <- (1:1600)[-sort(training_indices)]
-Training_Data <- Model_data[,training_indices,]
-Testing_Data <- Model_data[,testing_indices,]
+Training_Data <- Model_data[,,training_indices]
+Testing_Data <- Model_data[,,testing_indices]
 
-all_pixels <- 24320
-wheat_pixels <- ind # pixels with wheat yield data
+
+wheat_pixels <- which(!is.na(row_sums_cy)) # pixels with wheat yield data
 cv_fit_list <- vector(mode='list',length=length(wheat_pixels))
-# count <- 1
+count <- 1
 
 
-no_cores <- detectCores() / 2 - 1
-cl<-makeCluster(no_cores)
-clusterEvalQ(cl, library(glinternet),library(dplyr)) # parallelisation hat eigenes environment, daher m?ssen packages und bestimmte Variablen erneut geladen werden
-registerDoParallel(cl)
+# no_cores <- detectCores() / 8 - 1
+# cl<-makeCluster(no_cores)
+# clusterEvalQ(cl, {
+#   library(glinternet)
+#   library(dplyr)
+# }) # parallelisation has own environment, therefore some packages and variables need be loaded again
+# registerDoParallel(cl)
 
-cv_fit <- foreach (i=wheat_pixels,.combine=list) %dopar% { 
-# for (i in 1:wheat_pixels){
+# cv_fit <- foreach (i=wheat_pixels,.combine=list) %dopar% { 
+for (i in wheat_pixels[1:3]){
   AllData <- as.data.frame(Model_data[i,,])
   AllTraining_Data <- as.data.frame(Training_Data[i,,])
   AllTesting_Data <- as.data.frame(Testing_Data[i,,])
   
   
-  X1_train <- AllTraining_Data[,2:length(AllTraining_Data)] # predictors
-  y1_train <- AllTraining_Data[,1] # predictand
+  X1_train <- t(AllTraining_Data[2:dim(AllTraining_Data)[1],]) # predictors
+  y1_train <- t(AllTraining_Data[1,]) # predictand
   # subset_Testing_Data <-  AllTesting_Data[,vec+1]
-  x1_test <-  AllTesting_Data[,2:length(AllTesting_Data)] # predictors
-  y1_test <- AllTesting_Data[,1] # predictand
+  x1_test <-  t(AllTesting_Data[2:dim(AllTesting_Data)[1],]) # predictors
+  y1_test <- t(AllTesting_Data[1,]) # predictand
   
-  # numLevels <- AllTraining_Data[,vec+1] %>% sapply(nlevels)
-  numLevels <- AllTraining_Data[,2:length(AllTraining_Data)] %>% sapply(nlevels)
-  numLevels[numLevels==0] <- 1 # set to 1 for continuous variables
+  numLevels <- rep(1,times=dim(AllTesting_Data)[1]-1)
   
   # Fit model
   cv_fit <- glinternet.cv(X1_train, y1_train, numLevels,family = "binomial")
-  glinternet.cv(X1_train, y1_train, numLevels,family = "binomial")
-  # cv_fit_list[[i]] <- cv_fit
-  # count <- count + 1
+  # glinternet.cv(X1_train, y1_train, numLevels,family = "binomial")
+  cv_fit_list[[i]] <- cv_fit
+  count <- count + 1
 }
+stopCluster(cl)
 
 # plot(cv_fit)
 # 
@@ -214,7 +258,5 @@ cv_fit <- foreach (i=wheat_pixels,.combine=list) %dopar% {
 # Problems
 # 17 months
 # ties for some pixels
-# projection, weird spatial plots in general
-# order of dimensions
 # no model output
 
