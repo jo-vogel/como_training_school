@@ -46,12 +46,15 @@ long <- ncvar_get(nh_data[[1]],"lon")
 lapply(1:length(nh_files),function(x){nc_close(nh_data[[x]])})  
 
 
-#standardisation
+##### Standardisation #####
 T1 <- Sys.time()
 yield_stand <- aperm(apply(nh_variables[[which(nh_files=="crop_yield_NH.nc")]],
                            FUN = scale, MARGIN = c(1,2)), perm = c(2,3,1))
 T2 <- Sys.time()
 difftime(T2,T1)
+#quick check
+plot(yield_stand[165,45,], nh_variables[[which(nh_files=="crop_yield_NH.nc")]][165,45,])
+
 
 dim(nh_variables[[which(nh_files=="meteo_pr_NH.nc")]])
 
