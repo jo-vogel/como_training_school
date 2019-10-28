@@ -35,7 +35,7 @@ Month_variables_stand <- cbind(Yields_stand, Season_month_variables_stand[,-1][,
 Variables <- Month_variables_stand
 
 #Percentile wanted, in c(0.025, 0.05, 0.1)
-percentile <- 0.1
+percentile <- 0.05
 bad_yield_stand_threshold <- quantile(Yields_stand, percentile)
 
 
@@ -85,7 +85,30 @@ plotROC(Testing_Data[,1]>bad_yield_stand_threshold, predCV)
 
 
 # Confusion matrix from package InformationValue
-InformationValue::confusionMatrix(Testing_Data[,1]>bad_yield_stand_threshold, predCV)
+InformationValue::confusionMatrix(actuals = Testing_Data[,1]>bad_yield_stand_threshold,
+                                  predictedScores = predCV, threshold = 0.5)
+
+
+##### Play on the segregation threshold for optimizing the specificity #####
+#cannot apply sensitivity function on vector: do it manually :/
+Thresh_segreg <- seq(0.5,0.99, by = 0.01)
+my_speci <- numeric()
+my_sensi <- numeric()
+for (index in 1:length(Thresh_segreg)) {
+  my_sensi[index] <- InformationValue::sensitivity(actuals = Testing_Data[,1]>bad_yield_stand_threshold,
+                                                   predictedScores = predCV, threshold = Thresh_segreg[index])
+  my_speci[index] <- InformationValue::specificity(actuals = Testing_Data[,1]>bad_yield_stand_threshold,
+                                                   predictedScores = predCV, threshold = Thresh_segreg[index])
+  
+}#end for index
+
+plot(Thresh_segreg, my_sensi, ylim = c(0,1), type = "l",
+     xlab = "segregation threshold",
+     ylab = "sensitivity and specifity",
+     main = paste("Ridge regression, percentile=", percentile))
+text(x=0.55, y=0.9, "sensitivity")
+lines(Thresh_segreg, my_speci, col="red")
+text(x=0.55, y=0.6, "specificity", col="red")
 
 # Sensitivity and Specificity using package InformationValue
 InformationValue::sensitivity(Testing_Data[,1]>bad_yield_stand_threshold, predCV)
