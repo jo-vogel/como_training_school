@@ -2,6 +2,7 @@
 
 
 # Data loading and processing ####
+setwd("D:/Promotion/Group project")
 # setwd("C:/Users/vogel/boxup/Promotion/Damocles COST Action/Training school/Group1_Project")
 # load('./Processed data/Data.RData') # Matrix with all pretictands
 load('./Processed data/Seasonal_monthly_variables.RData') # Matrix with all pretictands
@@ -18,34 +19,45 @@ library(InformationValue)
 library(ROCR)
 library(tictoc)
 
+
 # Season_month_variables_stand <- apply(Data,2,scale) # z-score standardisation
+Data_stand <- apply(Data,2,scale) # z-score standardisation
+
 
 # Determine low yield based on percentile threshold
 thresholds <- c(0.025,0.05,0.1)
 low_yield <- quantile(cy_gsl_FR[,1],thresholds[3])
 cy <- ifelse(cy_gsl_FR[,1]<low_yield,0,1)
-Data[,1] <- cy # Replace actual crop yield by binary info on fail/success
+Data_stand[,1] <- cy # Replace actual crop yield by binary info on fail/success
 
-# Split data into training and testing data set
-set.seed(1994)
-training_indices <- sample(1:1600, size = floor(1600*0.6))
-testing_indices <- (1:1600)[-sort(training_indices)]
-Training_Data <- Data[training_indices,]
-Testing_Data <- Data[testing_indices,]
 
-Dpd <- sapply(1:13, function(x){Data[,x+1]-Data[,x+53]}) # calculate dew point depression
+Dpd <- sapply(1:13, function(x){Data_stand[,x+1]-Data_stand[,x+53]}) # calculate dew point depression
 colnames(Dpd) <- c("Dpd_November","Dpd_December","Dpd_January","Dpd_February","Dpd_March","Dpd_April","Dpd_May","Dpd_June","Dpd_July","Dpd_August","Dpd_Winter","Dpd_Spring","Dpd_Summer")
 # # Xy <- cbind(data.frame(Data[,2:16]),Data[,1]) # only dew point 
 # # Xy <- cbind(Dpd[,11:13],data.frame(Data[,c(25:27,77:79,1)])) # dps, prcp, tasmin
 # # Xy <- cbind(Dpd[,8:10],data.frame(Data[,c(22:24,1)])) # dps, prcp
 # Xy <- data.frame(Data[,c(12:14,25:27,64:66,77:79,1)]) # dps, prcp, tmin, tmax for all seasons
-vec <- c(11:13,24:26,37:39,50:52,63:65,76:78) # seasonal data
+vec <- c(11:13,24:26,37:39,50:52,63:65,76:78)+1 # seasonal data
 vec2 <- vec[-c(7:12)] # exclude wind and srds
+Data_seas <- cbind(Data_stand[,c(1,vec)],Dpd[,11:13])
+Data_month <- cbind(Data_stand[,-vec],Dpd[,1:10])
 
 
-AllData <- as.data.frame(Data)
+Data_stand <- Data_seas[,c(1,5:7,14:22)] # seasonal data (min/max temp, prec., dpd)
+# Data_stand <- Data_month[,c(1,12:21,41:71)] # monthly data (min/max temp, prec., dpd)
+
+
+# Split data into training and testing data set
+set.seed(1994)
+training_indices <- sample(1:1600, size = floor(1600*0.6))
+testing_indices <- (1:1600)[-sort(training_indices)]
+Training_Data <- Data_stand[training_indices,]
+Testing_Data <- Data_stand[testing_indices,]
+
+AllData <- as.data.frame(Data_stand)
 AllTraining_Data <- as.data.frame(Training_Data)
 AllTesting_Data <- as.data.frame(Testing_Data)
+
 
 Xy <- data.frame(AllTraining_Data[,c(vec2+1,1)]) # Subset
 Xy_test <- data.frame(AllTesting_Data[,c(vec2+1,1)])
@@ -117,20 +129,21 @@ vifx(the_best_glm_intact)
 
 # mynum <- 79 # 10 min for about 29 variables
 # X1 <- AllTraining_Data[,vec+1]
-X1_train <- AllTraining_Data[,2:79] # predictors
+X1_train <- AllTraining_Data[,2:length(AllTraining_Data)] # predictors
 y1_train <- AllTraining_Data[,1] # predictand
 # subset_Testing_Data <-  AllTesting_Data[,vec+1]
-x1_test <-  AllTesting_Data[,2:79] # predictors
+x1_test <-  AllTesting_Data[,2:length(AllTesting_Data)] # predictors
 y1_test <- AllTesting_Data[,1] # predictand
 
 # numLevels <- AllTraining_Data[,vec+1] %>% sapply(nlevels)
-numLevels <- AllTraining_Data[,2:79] %>% sapply(nlevels)
+numLevels <- AllTraining_Data[,2:length(AllTraining_Data)] %>% sapply(nlevels)
 numLevels[numLevels==0] <- 1 # set to 1 for continuous variables
 
 # Fit model
 cv_fit <- glinternet.cv(X1_train, y1_train, numLevels,family = "binomial")
 plot(cv_fit)
 
+cv_fit$lambdaHat1Std
 i_1Std <- which(cv_fit$lambdaHat1Std == cv_fit$lambda) # the preferential lambda (tuning parameter)
 
 coefs <- coef(cv_fit$glinternetFit)[[i_1Std]] 
@@ -206,15 +219,15 @@ plot(sens_spec) # inverted AUC
 
 
 # Linear model for comparison ####
-# X2 <- model.matrix(Price ~ . - 1, df) # not needed (no categorical predictors)
-X1m <- as.matrix(X1_train)
-cv_glmnet <- cv.glmnet(X1m,y1_train)
-# cv_glmnet <- cv.glmnet(X,y)
-sqrt(min(cv_glmnet$cvm))
+# # X2 <- model.matrix(Price ~ . - 1, df) # not needed (no categorical predictors)
+# X1m <- as.matrix(X1_train)
+# cv_glmnet <- cv.glmnet(X1m,y1_train)
+# # cv_glmnet <- cv.glmnet(X,y)
+# sqrt(min(cv_glmnet$cvm))
 
 
 
-save.image('./Code/Workspaces/GLM_Lasso.RData')
+# save.image('./Code/Workspaces/GLM_Lasso.RData')
 
 							
 
