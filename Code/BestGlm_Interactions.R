@@ -1,3 +1,8 @@
+##### CODE BESTGLM FR #####
+#PRESELECTION: Linear Correlation #
+#Author: Cristina Deidda #
+
+
 setwd("C:/Users/39349/Documenti/DAMOCLES")
 load('cube_FR.RData')
 # time_gs_1year2 <- read.csv("Dates_of_growing_season_1year.csv") # does not work, wrong class
@@ -100,7 +105,7 @@ Data_All<-data.frame(Data_All)
    
    
    ################################
-#############SEASONAL_MATRIX#######################àà
+#############SEASONAL_MATRIX#######################Ã Ã 
 
 x2<-matrix()
 a<-12
