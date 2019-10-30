@@ -88,6 +88,12 @@ plotROC(Testing_Data[,1]>bad_yield_stand_threshold, predCV)
 InformationValue::confusionMatrix(actuals = Testing_Data[,1]>bad_yield_stand_threshold,
                                   predictedScores = predCV, threshold = 0.5)
 
+# Sensitivity and Specificity using package InformationValue
+InformationValue::sensitivity(actuals = Testing_Data[,1]>bad_yield_stand_threshold,
+                              predictedScores = predCV, tthreshold = 0.5)
+InformationValue::specificity(actuals = Testing_Data[,1]>bad_yield_stand_threshold,
+                              predictedScores = predCV, tthreshold = 0.5)
+
 
 ##### Play on the segregation threshold for optimizing the specificity #####
 #cannot apply sensitivity function on vector: do it manually :/
@@ -109,10 +115,6 @@ plot(Thresh_segreg, my_sensi, ylim = c(0,1), type = "l",
 text(x=0.55, y=0.9, "sensitivity")
 lines(Thresh_segreg, my_speci, col="red")
 text(x=0.55, y=0.6, "specificity", col="red")
-
-# Sensitivity and Specificity using package InformationValue
-InformationValue::sensitivity(Testing_Data[,1]>bad_yield_stand_threshold, predCV)
-InformationValue::specificity(Testing_Data[,1]>bad_yield_stand_threshold, predCV)
 
 
 
@@ -145,84 +147,85 @@ important_indices <- important_indices[-which(important_indices==1)]
 cbind(coeff_ridge@Dimnames[[1]][important_indices], round(coeff_ridge[important_indices], digits = 5))
 
 
-# scatterplot with yield for these variables
+# # scatterplot with yield for these variables
+# 
+# par(mar=c(4,4,1,1))
+# for (index in 1:((nb_important_indices-1)/2)) {
+#   plot(Yields_stand, Variables[,coeff_ridge@Dimnames[[1]][important_indices[index]]],
+#        ylab = coeff_ridge@Dimnames[[1]][important_indices[index]])
+#   points(Yields_stand[Yields_stand<bad_yield_stand_threshold],
+#          Variables[,coeff_ridge@Dimnames[[1]][important_indices[index]]][Yields_stand<bad_yield_stand_threshold],
+#          col="#d95f02")
+# }
+
+
+
+
+
+##### Plot proba of bad yield against important variable ####
+
+
+proba_bad_yield <- function(variable_name, stand_var_values,
+                            additionnal_var_name, additionnal_stand_var_value){
+  # intercept <- log((1-percentile)/percentile) + coeff_ridge@x[coeff_ridge@Dimnames[[1]]=="(Intercept)"]
+  intercept <- coeff_ridge@x[coeff_ridge@Dimnames[[1]]=="(Intercept)"]
+  coeff <- coeff_ridge@x[coeff_ridge@Dimnames[[1]]==variable_name]
+  coeff_additional <- coeff_ridge@x[coeff_ridge@Dimnames[[1]]==additionnal_var_name]
+  return(1/(1+exp(intercept + coeff*stand_var_values + coeff_additional*additionnal_stand_var_value)))
+}#end for proba_bad_yield function
+
+
+#first variable with 3 values for the 3rd FOR 5th PERCENTILE
+range(Season_month_variables_stand[,"dps_July"])
 
 par(mar=c(4,4,1,1))
-for (index in 1:((nb_important_indices-1)/2)) {
-  plot(Yields_stand, Variables[,coeff_ridge@Dimnames[[1]][important_indices[index]]],
-       ylab = coeff_ridge@Dimnames[[1]][important_indices[index]])
-  points(Yields_stand[Yields_stand<bad_yield_stand_threshold],
-         Variables[,coeff_ridge@Dimnames[[1]][important_indices[index]]][Yields_stand<bad_yield_stand_threshold],
-         col="#d95f02")
-}
+plot(seq(-3,3, by = 0.1),
+     proba_bad_yield(variable_name = "dps_July", stand_var_values = seq(-3,3, by = 0.1),
+                     additionnal_var_name="pr_July",
+                     additionnal_stand_var_value = 0),
+     ylab="proba bad yield", xlab = "Standardised dps_July")
+
+points(seq(-3,3, by = 0.1),
+       proba_bad_yield(variable_name = "dps_July", stand_var_values = seq(-3,3, by = 0.1),
+                       additionnal_var_name="pr_July",
+                       additionnal_stand_var_value = min(Season_month_variables_stand[,"pr_July"])),
+       col="brown")
+
+points(seq(-3,3, by = 0.1),
+       proba_bad_yield(variable_name = "dps_July", stand_var_values = seq(-3,3, by = 0.1),
+                       additionnal_var_name="pr_July",
+                       additionnal_stand_var_value = max(Season_month_variables_stand[,"pr_July"])),
+       col="blue")
+
+legend("topright", title="Standardised pr_July" ,legend=c("0", "min over all years", "max over all years"),
+       col=c("black", "brown", "blue"), pch=1)
 
 
 
+#second variable with 3 values for the 3rd FOR 5th PERCENTILE
+range(Season_month_variables_stand[,"tasmax_July"])
 
+par(mar=c(4,4,1,1))
+plot(seq(-3,4, by = 0.1),
+     proba_bad_yield(variable_name = "tasmax_July", stand_var_values = seq(-3,4, by = 0.1),
+                     additionnal_var_name="pr_July",
+                     additionnal_stand_var_value = 0),
+     ylab="proba bad yield", xlab = "Standardised tasmax_July")
 
-# # Plot proba of bad yield against important variable
-# # Mean value of the standardized data = 0, easier to get proba bad yield of the model
-# 
-# proba_bad_yield <- function(variable_name, stand_var_values,
-#                             additionnal_var_name, additionnal_stand_var_value){
-#   intercept <- coeff_ridge@x[coeff_ridge@Dimnames[[1]]=="(Intercept)"]
-#   coeff <- coeff_ridge@x[coeff_ridge@Dimnames[[1]]==variable_name]
-#   coeff_additional <- coeff_ridge@x[coeff_ridge@Dimnames[[1]]==additionnal_var_name]
-#   return(1/(1+exp(intercept + coeff*stand_var_values + coeff_additional*additionnal_stand_var_value)))
-# }#end for proba_bad_yield function
-# 
-# 
-# #first variable with 3 values for the 3rd FOR 5th PERCENTILE
-# range(Season_month_variables_stand[,"dps_July"])
-# 
-# par(mar=c(4,4,1,1))
-# plot(seq(-3,3, by = 0.1),
-#      proba_bad_yield(variable_name = "dps_July", stand_var_values = seq(-3,3, by = 0.1),
-#                      additionnal_var_name="pr_July",
-#                      additionnal_stand_var_value = 0),
-#      ylab="proba bad yield", xlab = "Standardised dps_July")
-# 
-# points(seq(-3,3, by = 0.1),
-#        proba_bad_yield(variable_name = "dps_July", stand_var_values = seq(-3,3, by = 0.1),
-#                        additionnal_var_name="pr_July",
-#                        additionnal_stand_var_value = min(Season_month_variables_stand[,"pr_July"])),
-#        col="brown")
-# 
-# points(seq(-3,3, by = 0.1),
-#        proba_bad_yield(variable_name = "dps_July", stand_var_values = seq(-3,3, by = 0.1),
-#                        additionnal_var_name="pr_July",
-#                        additionnal_stand_var_value = max(Season_month_variables_stand[,"pr_July"])),
-#        col="blue")
-# 
-# legend("topright", title="Standardised pr_July" ,legend=c("0", "min over all years", "max over all years"),
-#        col=c("black", "brown", "blue"), pch=1)
-# 
-# 
-# 
-# #second variable with 3 values for the 3rd FOR 5th PERCENTILE
-# range(Season_month_variables_stand[,"tasmax_July"])
-# 
-# par(mar=c(4,4,1,1))
-# plot(seq(-3,4, by = 0.1),
-#      proba_bad_yield(variable_name = "tasmax_July", stand_var_values = seq(-3,4, by = 0.1),
-#                      additionnal_var_name="pr_July",
-#                      additionnal_stand_var_value = 0),
-#      ylab="proba bad yield", xlab = "Standardised tasmax_July")
-# 
-# points(seq(-3,4, by = 0.1),
-#        proba_bad_yield(variable_name = "tasmax_July", stand_var_values = seq(-3,4, by = 0.1),
-#                        additionnal_var_name="pr_July",
-#                        additionnal_stand_var_value = min(Season_month_variables_stand[,"pr_July"])),
-#        col="brown")
-# 
-# points(seq(-3,4, by = 0.1),
-#        proba_bad_yield(variable_name = "tasmax_July", stand_var_values = seq(-3,4, by = 0.1),
-#                        additionnal_var_name="pr_July",
-#                        additionnal_stand_var_value = max(Season_month_variables_stand[,"pr_July"])),
-#        col="blue")
-# 
-# legend("topleft", title="Standardised pr_July" ,legend=c("0", "min over all years", "max over all years"),
-#        col=c("black", "brown", "blue"), pch=1)
+points(seq(-3,4, by = 0.1),
+       proba_bad_yield(variable_name = "tasmax_July", stand_var_values = seq(-3,4, by = 0.1),
+                       additionnal_var_name="pr_July",
+                       additionnal_stand_var_value = min(Season_month_variables_stand[,"pr_July"])),
+       col="brown")
+
+points(seq(-3,4, by = 0.1),
+       proba_bad_yield(variable_name = "tasmax_July", stand_var_values = seq(-3,4, by = 0.1),
+                       additionnal_var_name="pr_July",
+                       additionnal_stand_var_value = max(Season_month_variables_stand[,"pr_July"])),
+       col="blue")
+
+legend("topleft", title="Standardised pr_July" ,legend=c("0", "min over all years", "max over all years"),
+       col=c("black", "brown", "blue"), pch=1)
 
 
 
