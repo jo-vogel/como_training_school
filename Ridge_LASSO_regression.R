@@ -35,7 +35,7 @@ Month_variables_stand <- cbind(Yields_stand, Season_month_variables_stand[,-1][,
 Variables <- Month_variables_stand
 
 #Percentile wanted, in c(0.025, 0.05, 0.1)
-percentile <- 0.05
+percentile <- 0.1
 bad_yield_stand_threshold <- quantile(Yields_stand, percentile)
 
 
@@ -90,32 +90,38 @@ InformationValue::confusionMatrix(actuals = Testing_Data[,1]>bad_yield_stand_thr
 
 # Sensitivity and Specificity using package InformationValue
 InformationValue::sensitivity(actuals = Testing_Data[,1]>bad_yield_stand_threshold,
-                              predictedScores = predCV, tthreshold = 0.5)
+                              predictedScores = predCV, threshold = 0.5)
 InformationValue::specificity(actuals = Testing_Data[,1]>bad_yield_stand_threshold,
-                              predictedScores = predCV, tthreshold = 0.5)
+                              predictedScores = predCV, threshold = 0.5)
 
 
 ##### Play on the segregation threshold for optimizing the specificity #####
 #cannot apply sensitivity function on vector: do it manually :/
-Thresh_segreg <- seq(0.5,0.99, by = 0.01)
+Thresh_segreg <- seq(0.01,0.99, by = 0.01)
 my_speci <- numeric()
 my_sensi <- numeric()
+my_miscla <- numeric()
 for (index in 1:length(Thresh_segreg)) {
   my_sensi[index] <- InformationValue::sensitivity(actuals = Testing_Data[,1]>bad_yield_stand_threshold,
                                                    predictedScores = predCV, threshold = Thresh_segreg[index])
   my_speci[index] <- InformationValue::specificity(actuals = Testing_Data[,1]>bad_yield_stand_threshold,
                                                    predictedScores = predCV, threshold = Thresh_segreg[index])
+  my_miscla[index] <- InformationValue::misClassError(actuals = Testing_Data[,1]>bad_yield_stand_threshold,
+                                                                     predictedScores = predCV, threshold = Thresh_segreg[index])
   
 }#end for index
 
-plot(Thresh_segreg, my_sensi, ylim = c(0,1), type = "l",
+plot(Thresh_segreg, my_sensi, ylim = c(0,1), type = "l", col="blue",
      xlab = "segregation threshold",
      ylab = "sensitivity and specifity",
      main = paste("Ridge regression, percentile=", percentile))
-text(x=0.55, y=0.9, "sensitivity")
+text(x=0.55, y=0.9, "sensitivity", col="blue")
 lines(Thresh_segreg, my_speci, col="red")
 text(x=0.55, y=0.6, "specificity", col="red")
-
+lines(Thresh_segreg, my_miscla, lwd=2)
+text(x=0.55, y=0.1, "misclassErr")
+abline(v=(1-percentile), lty=2)
+text(x=(1-percentile)-0.02, y=0.15, "prior proba", srt=90)
 
 
 # # Get AIC and BIC
@@ -328,6 +334,35 @@ important_indices <- important_indices[-which(important_indices==1)]
 
 cbind(coeff_lasso@Dimnames[[1]][important_indices], round(coeff_lasso[important_indices], digits = 5))
 # scatterplot with yield for these variables
+
+##### Play on the segregation threshold for optimizing the specificity #####
+#cannot apply sensitivity function on vector: do it manually :/
+Thresh_segreg <- seq(0.01,0.99, by = 0.01)
+my_speci <- numeric()
+my_sensi <- numeric()
+my_miscla <- numeric()
+for (index in 1:length(Thresh_segreg)) {
+  my_sensi[index] <- InformationValue::sensitivity(actuals = Testing_Data[,1]>bad_yield_stand_threshold,
+                                                   predictedScores = predCV_lasso, threshold = Thresh_segreg[index])
+  my_speci[index] <- InformationValue::specificity(actuals = Testing_Data[,1]>bad_yield_stand_threshold,
+                                                   predictedScores = predCV_lasso, threshold = Thresh_segreg[index])
+  my_miscla[index] <- InformationValue::misClassError(actuals = Testing_Data[,1]>bad_yield_stand_threshold,
+                                                      predictedScores = predCV_lasso, threshold = Thresh_segreg[index])
+  
+}#end for index
+
+plot(Thresh_segreg, my_sensi, ylim = c(0,1), type = "l", col="blue",
+     xlab = "segregation threshold",
+     ylab = "sensitivity and specifity",
+     main = paste("Ridge regression, percentile=", percentile))
+text(x=0.55, y=0.9, "sensitivity", col="blue")
+lines(Thresh_segreg, my_speci, col="red")
+text(x=0.55, y=0.6, "specificity", col="red")
+lines(Thresh_segreg, my_miscla, lwd=2)
+text(x=0.55, y=0.1, "misclassErr")
+abline(v=(1-percentile), lty=2)
+text(x=(1-percentile)-0.02, y=0.15, "prior proba", srt=90)
+
 
 par(mar=c(4,4,1,1))
 for (index in 1:(nb_important_indices-1)) {
