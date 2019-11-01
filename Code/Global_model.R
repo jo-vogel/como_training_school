@@ -9,7 +9,9 @@ library(glinternet)
 library(abind)
 library(foreach) 
 library(doParallel)
-
+library(InformationValue)
+library(ROCR)
+library(glmnet)
 
 # path_to_NH_files <- "D:/Local/Data/Group project Como"
 path_to_NH_files <- "D:/user/vogelj/Data/Group project Como"
@@ -23,6 +25,7 @@ lapply(1:length(nh_files),function(x){nc_close(nh_data[[x]])})
 pix_num <- dim(nh_variables[[1]])[1]*dim(nh_variables[[1]])[2] # number of pixels
 
 # Calculate threshold
+# threshold <- 0.025
 threshold <- 0.05
 yields <- matrix(data=nh_variables[[3]],nrow=320*76,ncol=1600) # reshape
 # identical(nh_variables[[3]][180,50,],yields[49*320+180,]) # reshaping worked
@@ -37,7 +40,6 @@ table(row_sums_cy) # works fine for most pixel, but not for a few it is problema
 # which(row_sums_cy==1600)
 plot(yields[4352,]) # one of the problematic pixels: contains a lot of zeros
 # 901/995 pixel are all right
-
 
 
 # Plotting ####
@@ -81,7 +83,7 @@ projection(border) # projections are equal
 projection(gs_length_ras)
 
 # png(file=paste0(getwd(),"/rasterplot.png"),height=8,width=10,unit="cm",
-# pointsize = 6, bg = "white", res = 1000, restoreConsole = TRUE, type = "windows")
+    # pointsize = 6, bg = "white", res = 1000, restoreConsole = TRUE, type = "windows")
 x11()
 plot(gs_length_ras,asp=1);plot(border,add=T)
 plot(gs_start_ras,asp=1);plot(border,add=T)
@@ -146,24 +148,34 @@ Training_Data <- Model_data[,,training_indices]
 Testing_Data <- Model_data[,,testing_indices]
 
 
-wheat_pixels <- which(!is.na(row_sums_cy)) # pixels with wheat yield data
-cv_fit_list <- vector(mode='list',length=length(wheat_pixels))
-count <- 1
+# Exclude irrelevant (without wheat yield) pixels
+# Two exclusion criteria: a) NA values or b) many 0 values (so that quantile threshold becomes 0)
+# for a) Exclusion of 23325 pixels
+# for b): Exclusion of 65 problematic pixels with frequent yields of 0 (65 pixels in the case of lowest threshold 0.025)
+# 930 pixels remain
+pix_exclude <- c(which(is.na(row_sums_cy)),which(row_sums_cy==1600))
+Model_data_wheat <- Model_data[-pix_exclude,,]
+Training_Data_wheat <- Training_Data[-pix_exclude,,]
+Testing_Data_wheat <- Testing_Data[-pix_exclude,,]
 
+cv_fit_list <- vector(mode='list',length=length(dim(Model_data_wheat)[1]))
+# count <- 1
+# wheat_pixels <- which(!is.na(row_sums_cy)) # pixels with wheat yield data
 
-# no_cores <- detectCores() / 8 - 1
-# cl<-makeCluster(no_cores)
-# clusterEvalQ(cl, {
-#   library(glinternet)
-#   library(dplyr)
-# }) # parallelisation has own environment, therefore some packages and variables need be loaded again
-# registerDoParallel(cl)
+no_cores <- detectCores() / 8 - 1
+cl<-makeCluster(no_cores)
+clusterEvalQ(cl, {
+  library(glinternet)
+  library(dplyr)
+}) # parallelisation has own environment, therefore some packages and variables need be loaded again
+registerDoParallel(cl)
 
-# cv_fit <- foreach (i=wheat_pixels,.combine=list) %dopar% { 
-for (i in wheat_pixels[1:3]){
-  AllData <- as.data.frame(Model_data[i,,])
-  AllTraining_Data <- as.data.frame(Training_Data[i,,])
-  AllTesting_Data <- as.data.frame(Testing_Data[i,,])
+# cv_fit <- foreach (i=1:dim(Model_data_wheat)[1],.combine=list) %dopar% {
+cv_fit <- foreach (i=1,.combine=list) %dopar% {
+# for (i in 1:dim(Model_data_wheat)[1][1:3]){
+  AllData <- as.data.frame(Model_data_wheat[i,,])
+  AllTraining_Data <- as.data.frame(Training_Data_wheat[i,,])
+  AllTesting_Data <- as.data.frame(Testing_Data_wheat[i,,])
   
   
   X1_train <- t(AllTraining_Data[2:dim(AllTraining_Data)[1],]) # predictors
@@ -175,83 +187,83 @@ for (i in wheat_pixels[1:3]){
   numLevels <- rep(1,times=dim(AllTesting_Data)[1]-1)
   
   # Fit model
-  cv_fit <- glinternet.cv(X1_train, y1_train, numLevels,family = "binomial")
-  # glinternet.cv(X1_train, y1_train, numLevels,family = "binomial")
-  cv_fit_list[[i]] <- cv_fit
-  count <- count + 1
+  # cv_fit <- glinternet.cv(X1_train, y1_train, numLevels,family = "binomial")
+  glinternet.cv(X1_train, y1_train, numLevels,family = "binomial")
+  # cv_fit_list[[i]] <- cv_fit
+  # count <- count + 1
 }
 stopCluster(cl)
 
-# plot(cv_fit)
-# 
-# i_1Std <- which(cv_fit$lambdaHat1Std == cv_fit$lambda) # the preferential lambda (tuning parameter)
-# 
-# coefs <- coef(cv_fit$glinternetFit)[[i_1Std]] 
-# 
-# coefs$mainEffects # model part without interactions
-# names(numLevels)[coefs$mainEffects$cont] # Main effect variables (without interactions)
-# 
-# coefs$interactions # model part with interactions pairs
-# names(numLevels)[coefs$interactions$contcont] # Main effect variables (with interactions)
-# 
-# 
-# # Assessing performance ####
-# sqrt(cv_fit$cvErr[[i_1Std]]) # root mean squared error (RMSE) on validation data
-# 
-# 
-# # predict.glinternet.cv(cv_fit,subset_Testing_Data,type="response") # does not work
-# # glinternet::predict.glinternet.cv(cv_fit,AllTesting_Data,type="response") # does not work
-# # predict.glinternet(cv_fit,AllTesting_Data,type="response") # does not work
-# mypred <- predict(cv_fit,x1_test,type="response")
-# fitted.results_bestglm <- ifelse(mypred > 0.5,1,0)
-# 
-# 
-# misClassError(y1_test,fitted.results_bestglm)
-# 
-# # Confusion matrix ####
-# # a) Confusion matrix manually calculated
-# obs_pred <- cbind(y1_test,fitted.results_bestglm)
-# tp <- sum(rowSums(obs_pred)==2)
-# tn <- sum(rowSums(obs_pred)==0)
-# fp <- sum(obs_pred[,1]==0 & obs_pred[,2]==1)
-# fn <- sum(obs_pred[,1]==1 & obs_pred[,2]==0)
-# con_tab1 <- matrix(c(tp,fn,fp,tn),nrow=2,ncol=2)
-# con_tab1b <- con_tab1
-# colnames(con_tab1) <- c('Actual TRUE','Actual FALSE');rownames(con_tab1) <- c('Predicted TRUE','Predicted FALSE')
-# con_tab1[,1] <- con_tab1[,1]/ sum(y1_test==1)
-# con_tab1[,2] <-con_tab1[,2]/sum(y1_test==0)
-# # b) Confusion matrix from package InformationValue
-# con_tab <- InformationValue::confusionMatrix(y1_test,fitted.results_bestglm)
-# 
-# # Sensitivity and Specificity
-# # a) Manually calculated
-# spec <- tn/(tn+fp) 
-# sens <- tp/(tp+fn) 
-# # b) Using package caret
-# caret::sensitivity(data=as.factor(fitted.results_bestglm),reference=as.factor(y1_test),positive="1",negative="0")
-# caret::specificity(data=as.factor(fitted.results_bestglm),reference=as.factor(y1_test),positive="1",negative="0")
-# # c) using package InformationValue
-# InformationValue::sensitivity(y1_test,fitted.results_bestglm)
-# InformationValue::specificity(y1_test,fitted.results_bestglm)
-# 
-# 
-# # ROC ####
-# pr <- prediction(mypred, y1_test)
-# prf <- performance(pr, measure = "tpr", x.measure = "fpr")
-# plot(prf)
-# plotROC(actuals=y1_test,predictedScores=fitted.results_bestglm)
-# auc2 <- auc(y1_test,fitted.results_bestglm)
-# auc <- performance(pr, measure = "auc")
-# auc@y.values[[1]]
-# 
-# # Calculate Sensitivity and Specificity using performance command
-# spec2 <- performance(pr, measure = "spec") 
-# # spec2b <- performance(pr, measure = "tnr") # equivalent
-# plot(spec2) # you can see that at cutoff 0.5 it is equal to my result, however I don't know how to extract the value
-# # sens2 <- performance(pr, measure = "sens") # does now work
-# sens2 <- performance(pr, measure = "tpr")
-# sens_spec <- performance(pr, measure="sens", x.measure="spec")
-# plot(sens_spec) # inverted AUC
+plot(cv_fit)
+
+i_1Std <- which(cv_fit$lambdaHat1Std == cv_fit$lambda) # the preferential lambda (tuning parameter)
+
+coefs <- coef(cv_fit$glinternetFit)[[i_1Std]]
+
+coefs$mainEffects # model part without interactions
+names(numLevels)[coefs$mainEffects$cont] # Main effect variables (without interactions)
+
+coefs$interactions # model part with interactions pairs
+names(numLevels)[coefs$interactions$contcont] # Main effect variables (with interactions)
+
+
+# Assessing performance ####
+sqrt(cv_fit$cvErr[[i_1Std]]) # root mean squared error (RMSE) on validation data
+
+
+# predict.glinternet.cv(cv_fit,subset_Testing_Data,type="response") # does not work
+# glinternet::predict.glinternet.cv(cv_fit,AllTesting_Data,type="response") # does not work
+# predict.glinternet(cv_fit,AllTesting_Data,type="response") # does not work
+mypred <- predict(cv_fit,x1_test,type="response")
+fitted.results_bestglm <- ifelse(mypred > 0.5,1,0)
+
+
+misClassError(y1_test,fitted.results_bestglm)
+
+# Confusion matrix ####
+# a) Confusion matrix manually calculated
+obs_pred <- cbind(y1_test,fitted.results_bestglm)
+tp <- sum(rowSums(obs_pred)==2)
+tn <- sum(rowSums(obs_pred)==0)
+fp <- sum(obs_pred[,1]==0 & obs_pred[,2]==1)
+fn <- sum(obs_pred[,1]==1 & obs_pred[,2]==0)
+con_tab1 <- matrix(c(tp,fn,fp,tn),nrow=2,ncol=2)
+con_tab1b <- con_tab1
+colnames(con_tab1) <- c('Actual TRUE','Actual FALSE');rownames(con_tab1) <- c('Predicted TRUE','Predicted FALSE')
+con_tab1[,1] <- con_tab1[,1]/ sum(y1_test==1)
+con_tab1[,2] <-con_tab1[,2]/sum(y1_test==0)
+# b) Confusion matrix from package InformationValue
+con_tab <- InformationValue::confusionMatrix(y1_test,fitted.results_bestglm)
+
+# Sensitivity and Specificity
+# a) Manually calculated
+spec <- tn/(tn+fp)
+sens <- tp/(tp+fn)
+# b) Using package caret
+caret::sensitivity(data=as.factor(fitted.results_bestglm),reference=as.factor(y1_test),positive="1",negative="0")
+caret::specificity(data=as.factor(fitted.results_bestglm),reference=as.factor(y1_test),positive="1",negative="0")
+# c) using package InformationValue
+InformationValue::sensitivity(y1_test,fitted.results_bestglm)
+InformationValue::specificity(y1_test,fitted.results_bestglm)
+
+
+# ROC ####
+pr <- prediction(mypred, y1_test)
+prf <- performance(pr, measure = "tpr", x.measure = "fpr")
+plot(prf)
+plotROC(actuals=y1_test,predictedScores=fitted.results_bestglm)
+auc2 <- auc(y1_test,fitted.results_bestglm)
+auc <- performance(pr, measure = "auc")
+auc@y.values[[1]]
+
+# Calculate Sensitivity and Specificity using performance command
+spec2 <- performance(pr, measure = "spec")
+# spec2b <- performance(pr, measure = "tnr") # equivalent
+plot(spec2) # you can see that at cutoff 0.5 it is equal to my result, however I don't know how to extract the value
+# sens2 <- performance(pr, measure = "sens") # does now work
+sens2 <- performance(pr, measure = "tpr")
+sens_spec <- performance(pr, measure="sens", x.measure="spec")
+plot(sens_spec) # inverted AUC
 
 
 
