@@ -2,7 +2,8 @@
 
 
 # Data loading and processing ####
-setwd("D:/Promotion/Group project")
+# setwd("D:/Promotion/Group project")
+setwd("D:/user/vogelj/Group_project")
 # setwd("C:/Users/vogel/boxup/Promotion/Damocles COST Action/Training school/Group1_Project")
 # load('./Processed data/Data.RData') # Matrix with all pretictands
 load('./Processed data/Seasonal_monthly_variables.RData') # Matrix with all pretictands
