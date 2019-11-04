@@ -13,7 +13,7 @@ rm(list=ls(all=TRUE))
 ##### Initialisation, librairies, data #####
 
 library(glmnet);library(InformationValue)
-library(ncdf4)
+library(ncdf4);library(lubridate)
 library(foreach);library(doParallel)
 
 
@@ -32,6 +32,9 @@ lapply(1:length(nh_files),function(x){nc_close(nh_data[[x]])})
 
 #yield dimension: 320*76*1600
 #meteo var dimension: 320*76*17*1600
+
+###### Spatial reduction #####
+
 #Lat and long become only 1 dimension: every slice of constant latitude 
 yields <- matrix(data=nh_variables[[which(nh_files=="crop_yield_NH.nc")]],
                  nrow=length(lati)*length(long),
@@ -46,6 +49,7 @@ yields <- yields[spatial_indices_kept,]
 
 lon_kept <- lon[spatial_indices_kept]
 lat_kept <- lat[spatial_indices_kept]
+nb_pixel_kept <- length(lon_kept)
 
 growingseason_length <- matrix(data=nh_variables[[which(nh_files=="crop_growingseason_length_NH.nc")]],
                                nrow=length(lati)*length(long),
@@ -57,15 +61,55 @@ sowing_date <- matrix(data=nh_variables[[which(nh_files=="crop_sowing_date_NH.nc
 
 precip <- array(data = nh_variables[[which(nh_files=="meteo_pr_NH.nc")]],
                 dim = c(length(lati)*length(long),
-                        dim(nh_variables[[which(nh_files=="meteo_pr_NH.nc")]][3]),
-                        dim(nh_variables[[which(nh_files=="meteo_pr_NH.nc")]][4])))[spatial_indices_kept,,]
+                        dim(nh_variables[[which(nh_files=="meteo_pr_NH.nc")]])[3],
+                        dim(nh_variables[[which(nh_files=="meteo_pr_NH.nc")]])[4]))[spatial_indices_kept,,]
 
 tasmax <- array(data = nh_variables[[which(nh_files=="meteo_tasmax_NH.nc")]],
                 dim = c(length(lati)*length(long),
-                        dim(nh_variables[[which(nh_files=="meteo_tasmax_NH.nc")]][3]),
-                        dim(nh_variables[[which(nh_files=="meteo_tasmax_NH.nc")]][4])))[spatial_indices_kept,,]
+                        dim(nh_variables[[which(nh_files=="meteo_tasmax_NH.nc")]])[3],
+                        dim(nh_variables[[which(nh_files=="meteo_tasmax_NH.nc")]])[4]))[spatial_indices_kept,,]
 
 vpd <- array(data = nh_variables[[which(nh_files=="meteo_vpd_NH.nc")]],
              dim = c(length(lati)*length(long),
-                     dim(nh_variables[[which(nh_files=="meteo_vpd_NH.nc")]][3]),
-                     dim(nh_variables[[which(nh_files=="meteo_vpd_NH.nc")]][4])))[spatial_indices_kept,,]
+                     dim(nh_variables[[which(nh_files=="meteo_vpd_NH.nc")]])[3],
+                     dim(nh_variables[[which(nh_files=="meteo_vpd_NH.nc")]])[4]))[spatial_indices_kept,,]
+
+#earn some space
+rm(nh_variables)
+
+
+
+##### temporal reduction ####
+min_sowing_day <- apply(X = sowing_date, MARGIN = 1, FUN = min)
+min_sowing_date <- as.Date(min_sowing_day, origin="2019-01-01")
+#Let's make sure that all growing season start the same year, before extracting the month
+stopifnot(year(min_sowing_date)==2019)
+sowing_month <- month(min_sowing_date)
+
+#just a trick to have the number of month of the growing season (might not be the most clever way to do it)
+
+harvest_day <- sowing_date + growingseason_length
+
+max_harvest_day <- apply(X = harvest_day, MARGIN = 1, FUN = max)
+
+max_harvest_date <- as.Date(max_harvest_day, origin="2019-01-01")
+stopifnot(year(max_harvest_date)>=2020)
+
+harvest_month <- numeric(length = nb_pixel_kept)
+
+for (loc in 1:nb_pixel_kept) {
+  if(year(max_harvest_date)[loc]==2020){
+    harvest_month[loc]<-month(max_harvest_date[loc]) + 12
+  } else {
+    harvest_month[loc]<-month(max_harvest_date[loc]) + 24
+  }#end ifelse
+}#end for loc
+
+#remove useless months
+months_to_keep <- matrix(data = NA, nrow = nb_pixel_kept,
+                         ncol = dim(precip)[2])
+
+for(loc in 1:nb_pixel_kept) {
+  months_to_keep[loc,]<-((1:dim(precip)[2])+7>=sowing_month[loc] &
+                           (1:dim(precip)[2])+7<=harvest_month[loc])
+}#end for loc
