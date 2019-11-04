@@ -59,7 +59,7 @@ index_long_kept <- (1:length(long))[apply(nh_variables[[which(nh_files=="crop_yi
 sowing_month <- (floor(apply(nh_variables[[which(nh_files=="crop_sowing_date_NH.nc")]],
                              MARGIN = c(1,2), FUN = min)/30.5)-7)[index_long_kept,index_lati_kept]
 month_length_growing <- (floor(apply(nh_variables[[which(nh_files=="crop_growingseason_length_NH.nc")]],
-                                    MARGIN = c(1,2), FUN = max)/30.5)+1)[index_long_kept,index_lati_kept]
+                                     MARGIN = c(1,2), FUN = max)/30.5)+1)[index_long_kept,index_lati_kept]
 
 
 #reduce the variables
