@@ -6,6 +6,10 @@
 ##############################################################################
 
 
+# Clean everything
+print("Are you sure you want to run the next line? ;) everything in the environment will be removed")
+rm(list=ls(all=TRUE))
+
 # which method? model_name in c("Ridge", "Lasso)
 model_name <- "Ridge"
 
@@ -25,11 +29,6 @@ library(ncdf4)
 library(foreach);library(doParallel)
 
 
-# Clean everything
-print("Are you sure you want to run the next line? ;) everything in the environment will be removed")
-rm(list=ls(all=TRUE))
-
-
 
 
 # Get the data
@@ -45,11 +44,19 @@ lati <- ncvar_get(nh_data[[1]],"lat")
 long <- ncvar_get(nh_data[[1]],"lon")
 lapply(1:length(nh_files),function(x){nc_close(nh_data[[x]])})  
 
+image(nh_variables[[which(nh_files=="crop_yield_NH.nc")]][,,1])
+
+##### Reduce the size (remove useless small and big long and lati) #####
+min((1:length(lati))[!is.na()])
+
+
 
 ##### Standardisation #####
 T1 <- Sys.time()
 yield_stand <- aperm(apply(nh_variables[[which(nh_files=="crop_yield_NH.nc")]],
                            FUN = scale, MARGIN = c(1,2)), perm = c(2,3,1))
+vpd_stand <- aperm(apply(nh_variables[[which(nh_files=="meteo_vpd_NH.nc")]],
+                         FUN = scale, MARGIN = c(1,2,3)), perm=c(2,3,4,1))
 T2 <- Sys.time()
 difftime(T2,T1)
 #quick check

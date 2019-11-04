@@ -35,7 +35,7 @@ Month_variables_stand <- cbind(Yields_stand, Season_month_variables_stand[,-1][,
 Variables <- Month_variables_stand
 
 #Percentile wanted, in c(0.025, 0.05, 0.1)
-percentile <- 0.1
+percentile <- 0.05
 bad_yield_stand_threshold <- quantile(Yields_stand, percentile)
 
 
@@ -180,25 +180,39 @@ proba_bad_yield <- function(variable_name, stand_var_values,
   return(1/(1+exp(intercept + coeff*stand_var_values + coeff_additional*additionnal_stand_var_value)))
 }#end for proba_bad_yield function
 
+#function that gives the probability of having a bad yield. Argument: meteo var names, meteo var values
+#problem: can only be applied with 1 value for every variables.
+proba_bad_yield_2 <- function(variables_name, variables_values){
+  coeff <- numeric()
+  for (var in 1:length(variables_name)) {
+    coeff[var] <- coeff_ridge@x[coeff_ridge@Dimnames[[1]]==variables_name[var]]
+  }
+  intercept <- coeff_ridge@x[coeff_ridge@Dimnames[[1]]=="(Intercept)"]
+  return(1/(1+exp(intercept + sum(coeff*variables_values))))
+}#end for proba_bad_yield function
+
 
 #first variable with 3 values for the 3rd FOR 5th PERCENTILE
 range(Season_month_variables_stand[,"dps_July"])
 
 par(mar=c(4,4,1,1))
-plot(seq(-3,3, by = 0.1),
-     proba_bad_yield(variable_name = "dps_July", stand_var_values = seq(-3,3, by = 0.1),
+plot(seq(-10,3, by = 0.1),
+     proba_bad_yield(variable_name = "dps_July", stand_var_values = seq(-10,3, by = 0.1),
                      additionnal_var_name="pr_July",
                      additionnal_stand_var_value = 0),
-     ylab="proba bad yield", xlab = "Standardised dps_July")
+     ylab="proba bad yield", xlab = "Standardised dps_July",
+     ylim = c(0,max(proba_bad_yield(variable_name = "dps_July", stand_var_values = seq(-10,3, by = 0.1),
+                                    additionnal_var_name="pr_July",
+                                    additionnal_stand_var_value = min(Season_month_variables_stand[,"pr_July"])))))
 
-points(seq(-3,3, by = 0.1),
-       proba_bad_yield(variable_name = "dps_July", stand_var_values = seq(-3,3, by = 0.1),
+points(seq(-10,3, by = 0.1),
+       proba_bad_yield(variable_name = "dps_July", stand_var_values = seq(-10,3, by = 0.1),
                        additionnal_var_name="pr_July",
                        additionnal_stand_var_value = min(Season_month_variables_stand[,"pr_July"])),
        col="brown")
 
-points(seq(-3,3, by = 0.1),
-       proba_bad_yield(variable_name = "dps_July", stand_var_values = seq(-3,3, by = 0.1),
+points(seq(-10,3, by = 0.1),
+       proba_bad_yield(variable_name = "dps_July", stand_var_values = seq(-10,3, by = 0.1),
                        additionnal_var_name="pr_July",
                        additionnal_stand_var_value = max(Season_month_variables_stand[,"pr_July"])),
        col="blue")
@@ -216,7 +230,10 @@ plot(seq(-3,4, by = 0.1),
      proba_bad_yield(variable_name = "tasmax_July", stand_var_values = seq(-3,4, by = 0.1),
                      additionnal_var_name="pr_July",
                      additionnal_stand_var_value = 0),
-     ylab="proba bad yield", xlab = "Standardised tasmax_July")
+     ylab="proba bad yield", xlab = "Standardised tasmax_July",
+     ylim = c(0,max(proba_bad_yield(variable_name = "dps_July", stand_var_values = seq(-3,3, by = 0.1),
+                                    additionnal_var_name="pr_July",
+                                    additionnal_stand_var_value = min(Season_month_variables_stand[,"pr_July"])))))
 
 points(seq(-3,4, by = 0.1),
        proba_bad_yield(variable_name = "tasmax_July", stand_var_values = seq(-3,4, by = 0.1),
