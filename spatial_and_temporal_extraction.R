@@ -94,6 +94,7 @@ max_harvest_day <- apply(X = harvest_day, MARGIN = 1, FUN = max)
 
 max_harvest_date <- as.Date(max_harvest_day, origin="2019-01-01")
 stopifnot(year(max_harvest_date)>=2020)
+stopifnot(year(max_harvest_date)<=2021)
 
 harvest_month <- numeric(length = nb_pixel_kept)
 
@@ -113,3 +114,22 @@ for(loc in 1:nb_pixel_kept) {
   months_to_keep[loc,]<-((1:dim(precip)[2])+7>=sowing_month[loc] &
                            (1:dim(precip)[2])+7<=harvest_month[loc])
 }#end for loc
+
+#rapid check
+for (ind in sample(1:995, size = 4)) {
+  print(paste("index", ind))
+  print(paste("lat", lat[ind]))
+  print(paste("lon", lon[ind]))
+  print("min sowing date")
+  print(min_sowing_date[ind])
+  print("max harvest date")
+  print(max_harvest_date[ind])
+  print("months to keep")
+  print(months_to_keep[ind,])
+}#end for ind
+
+#for some station, max growing season is ver large and far from the rest of the distribution
+plot(ecdf(growingseason_length[406,]))
+plot(ecdf(growingseason_length[411,]))
+plot(ecdf(growingseason_length[347,]))
+plot(ecdf(growingseason_length[517,]))
