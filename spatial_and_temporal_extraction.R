@@ -86,7 +86,15 @@ min_sowing_date <- as.Date(min_sowing_day, origin="2019-01-01")
 stopifnot(year(min_sowing_date)==2019)
 sowing_month <- month(min_sowing_date)
 
-#just a trick to have the number of month of the growing season (might not be the most clever way to do it)
+#get the latest harvest day
+
+#for some station, max growing season is ver large and far from the rest of the distribution
+plot(ecdf(growingseason_length[406,]))
+plot(ecdf(growingseason_length[411,]))
+plot(ecdf(growingseason_length[347,]))
+
+# #get rid of too long growing season
+# growingseason_length[growingseason_length>365] <- NA
 
 harvest_day <- sowing_date + growingseason_length
 
@@ -127,9 +135,4 @@ for (ind in sample(1:995, size = 4)) {
   print("months to keep")
   print(months_to_keep[ind,])
 }#end for ind
-
-#for some station, max growing season is ver large and far from the rest of the distribution
-plot(ecdf(growingseason_length[406,]))
-plot(ecdf(growingseason_length[411,]))
-plot(ecdf(growingseason_length[347,]))
 plot(ecdf(growingseason_length[517,]))
