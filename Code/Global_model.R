@@ -13,6 +13,7 @@ library(InformationValue)
 library(ROCR)
 library(glmnet)
 library(tictoc)
+library(BBmisc)
 
 # path_to_NH_files <- "D:/Local/Data/Group project Como"
 path_to_NH_files <- "D:/user/vogelj/Data/Group project Como"
@@ -47,13 +48,6 @@ plot(yields[4352,]) # one of the problematic pixels: contains a lot of zeros
 
 
 # Plotting ####
-
-# message('does not work') 
-lon <- rep(long,length(lati)) # coordinates rearranged
-lat <- rep(lati,each=length(long))
-coord <- cbind(lon,lat)
-# dat_coord <- cbind(coord,gs_length[,1])
-# # dat_ras <- rasterFromXYZ(dat_coord) # gives error
 
 
 border <- readOGR('D:/user/vogelj/Data/ne_50m_admin_0_countries/ne_50m_admin_0_countries.shp')	
@@ -96,6 +90,14 @@ plot(mean_max_temp_aug_ras,asp=1);plot(border,add=T)
 # dev.off()
 
 
+# message('does not work') 
+lon <- rep(long,length(lati)) # coordinates rearranged
+lat <- rep(lati,each=length(long))
+coord <- cbind(lon,lat)
+# dat_coord <- cbind(coord,gs_length[,1])
+# # dat_ras <- rasterFromXYZ(dat_coord) # gives error
+
+
 
 # Lasso model building ####
 ###########################
@@ -121,10 +123,12 @@ cy_wheat <- cy[pix_in,]
 
 # z-score standardisation
 # Model_data_stand <- sapply(1:dim(Model_data_wheat)[1], function(x){apply(Model_data_wheat[x,,],2,scale)})
-Model_data_stand <- array(data=NA,dim=dim(Model_data_wheat))
+# Model_data_stand <- array(data=NA,dim=dim(Model_data_wheat))
 message("Very important: apply inverts the dimensions!")
+# range <- function(x){(x-min(x))/(max(x)-min(x))}
 for (i in 1:dim(Model_data_wheat)[1]){
-  Model_data_stand[i,,] <- t(apply(Model_data_wheat[i,,],1,scale)) # reinvert dimensions (inverted by apply)
+  # Model_data_stand[i,,] <- t(apply(Model_data_wheat[i,,],1,scale)) # reinvert dimensions (inverted by apply)
+  Model_data_stand[i,,] <- t(apply(Model_data_wheat[i,,],1,normalize, method="range",range=c(-1,1))) # reinvert dimensions (inverted by apply)
 }
 
 cy_reshaped <- array(data=cy_wheat,dim=c(dim(cy_wheat)[1],1,1600))
