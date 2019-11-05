@@ -48,12 +48,12 @@ plot(yields[4352,]) # one of the problematic pixels: contains a lot of zeros
 
 # Plotting ####
 
-message('does not work') 
+# message('does not work') 
 lon <- rep(long,length(lati)) # coordinates rearranged
 lat <- rep(lati,each=length(long))
 coord <- cbind(lon,lat)
-dat_coord <- cbind(coord,gs_length[,1])
-# dat_ras <- rasterFromXYZ(dat_coord) # gives error
+# dat_coord <- cbind(coord,gs_length[,1])
+# # dat_ras <- rasterFromXYZ(dat_coord) # gives error
 
 
 border <- readOGR('D:/user/vogelj/Data/ne_50m_admin_0_countries/ne_50m_admin_0_countries.shp')	
@@ -97,14 +97,9 @@ plot(mean_max_temp_aug_ras,asp=1);plot(border,add=T)
 
 
 
-
 # Lasso model building ####
 ###########################
 
-
-# make it for one pixel first
-# then a few
-# then parallise it and run globally
 # you only need to run 955 pixels, the rest is NA
 
 # Create data table ####
@@ -133,8 +128,8 @@ for (i in 1:dim(Model_data_wheat)[1]){
 }
 
 cy_reshaped <- array(data=cy_wheat,dim=c(dim(cy_wheat)[1],1,1600))
-# Model_data <- abind(cy_reshaped,Model_data_stand,along=2)
-Model_data <- abind(cy_reshaped,Model_data_wheat,along=2)
+Model_data <- abind(cy_reshaped,Model_data_stand,along=2)
+# Model_data <- abind(cy_reshaped,Model_data_wheat,along=2)
 colnames(Model_data) <- c("Yield","pr_Aug","pr_Sep","pr_Oct","pr_Nov","pr_Dec","pr_Jan","pr_Feb","pr_Mar","pr_Apr","pr_May","pr_Jun","pr_Jul","tmax_Aug","tmax_Sep","tmax_Oct","tmax_Nov","tmax_Dec","tmax_Jan","tmax_Feb","tmax_Mar","tmax_Apr","tmax_May","tmax_Jun","tmax_Jul","vpd_Aug","vpd_Sep","vpd_Oct","vpd_Nov","vpd_Dec","vpd_Jan","vpd_Feb","vpd_Mar","vpd_Apr","vpd_May","vpd_Jun","vpd_Jul")
 
 # Check if dimensions are correct
@@ -173,11 +168,16 @@ Training_Data <- Model_data[,,training_indices]
 Testing_Data <- Model_data[,,testing_indices]
 
 
-cv_fit_list <- vector(mode='list',length=dim(Model_data)[1])
+# cv_fit_list <- vector(mode='list',length=dim(Model_data)[1])
 # count <- 1
 # wheat_pixels <- which(!is.na(row_sums_cy)) # pixels with wheat yield data
 numLevels <- rep(1,times=dim(Model_data)[2]-1)
 names(numLevels) <- colnames(Model_data[,2:length(colnames(Model_data)),])
+
+x1_train_list <- lapply(seq_along(pix_in), function(x){ as.data.frame(t(Training_Data[x,2:dim(Training_Data)[2],]))}) # predictors
+y1_train_list <- lapply(seq_along(pix_in), function(x){ Training_Data[x,1,]}) # predictand
+x1_test_list <- lapply(seq_along(pix_in), function(x){ as.data.frame(t(Testing_Data[x,2:dim(Testing_Data)[2],]))}) # predictors
+y1_test_list <- lapply(seq_along(pix_in), function(x){Testing_Data[x,1,]}) # predictand
 
 tic()
 no_cores <- detectCores() / 2 - 1
@@ -189,23 +189,21 @@ clusterEvalQ(cl, {
 registerDoParallel(cl)
 
 # cv_fit <- foreach (i=1:dim(Model_data)[1],.combine=list) %dopar% {
-cv_fit <- foreach (i=1:10,.multicombine=TRUE) %dopar% {
+# cv_fit <- foreach (i=1:dim(Model_data)[1],.multicombine=TRUE) %dopar% {
+cv_fit <- foreach (i=574:929,.multicombine=TRUE) %dopar% {
 # for (i in 1:dim(Model_data)[1][1:3]){
-  AllData <- as.data.frame(t(Model_data[i,,]))
-  AllTraining_Data <- as.data.frame(t(Training_Data[i,,]))
-  AllTesting_Data <- as.data.frame(t(Testing_Data[i,,]))
-  
-  
-  X1_train <- AllTraining_Data[,2:dim(AllTraining_Data)[2]] # predictors
-  y1_train <- AllTraining_Data[,1] # predictand
-  # subset_Testing_Data <-  AllTesting_Data[,vec+1]
-  x1_test <-  AllTesting_Data[,2:dim(AllTesting_Data)[2]] # predictors
-  y1_test <- AllTesting_Data[,1] # predictand
-  
+  # x1_train <- as.data.frame(t(Training_Data[i,2:dim(Training_Data)[2],])) # predictors
+  # y1_train <- Training_Data[i,1,] # predictand
+  # x1_test <-  as.data.frame(t(Testing_Data[i,2:dim(Testing_Data)[2],])) # predictors
+  # y1_test <- Testing_Data[i,1,] # predictand
+  x1_train <- x1_train_list[[i]]
+  y1_train <- y1_train_list[[i]]
+  # x1_test <- x1_test_list[[i]]
+  # y1_test <- y1_test_list[[i]]
 
   # Fit model
   # cv_fit <- glinternet.cv(X1_train, y1_train, numLevels,family = "binomial")
-  glinternet.cv(X1_train, y1_train, numLevels,family = "binomial")
+  glinternet.cv(x1_train, y1_train, numLevels,family = "binomial")
   # cv_fit_list[[i]] <- cv_fit
   # count <- count + 1
 }
@@ -232,9 +230,11 @@ sqrt(cv_fit$cvErr[[i_1Std]]) # root mean squared error (RMSE) on validation data
 # predict.glinternet.cv(cv_fit,subset_Testing_Data,type="response") # does not work
 # glinternet::predict.glinternet.cv(cv_fit,AllTesting_Data,type="response") # does not work
 # predict.glinternet(cv_fit,AllTesting_Data,type="response") # does not work
-mypred <- predict(cv_fit,x1_test,type="response")
-fitted.results_bestglm <- ifelse(mypred > 0.5,1,0)
+# mypred <- predict(cv_fit,x1_test,type="response")
+# fitted.results_bestglm <- ifelse(mypred > 0.5,1,0)
 
+mypred <- lapply(1:50, function(x){predict(cv_fit_all[[x]],x1_test_list[[x]],type="response")}) 
+fitted.results_bestglm <- lapply(1:50, function(x){ifelse(mypred[[x]] > 0.5,1,0)})
 
 misClassError(y1_test,fitted.results_bestglm)
 
@@ -253,16 +253,11 @@ con_tab1[,2] <-con_tab1[,2]/sum(y1_test==0)
 # b) Confusion matrix from package InformationValue
 con_tab <- InformationValue::confusionMatrix(y1_test,fitted.results_bestglm)
 
-# Sensitivity and Specificity
-# a) Manually calculated
-spec <- tn/(tn+fp)
-sens <- tp/(tp+fn)
-# b) Using package caret
-caret::sensitivity(data=as.factor(fitted.results_bestglm),reference=as.factor(y1_test),positive="1",negative="0")
-caret::specificity(data=as.factor(fitted.results_bestglm),reference=as.factor(y1_test),positive="1",negative="0")
-# c) using package InformationValue
-InformationValue::sensitivity(y1_test,fitted.results_bestglm)
-InformationValue::specificity(y1_test,fitted.results_bestglm)
+# Sensitivity and Specificity using package InformationValue
+# InformationValue::sensitivity(y1_test,fitted.results_bestglm)
+# InformationValue::specificity(y1_test,fitted.results_bestglm)
+sensi <- sapply(1:50, function(x){InformationValue::sensitivity(y1_test_list[[x]],fitted.results_bestglm[[x]])})
+speci <- sapply(1:50, function(x){InformationValue::specificity(y1_test_list[[x]],fitted.results_bestglm[[x]])})
 
 
 # ROC ####
@@ -284,9 +279,29 @@ sens_spec <- performance(pr, measure="sens", x.measure="spec")
 plot(sens_spec) # inverted AUC
 
 
+# Plot specificity and sensitivity on a map
+spec <- matrix(NA,nrow=320,ncol=320)
+sens <- matrix(NA,nrow=320,ncol=320)
+
+pix_in2 <- vector(mode="numeric",length=24320)
+pix_in2[pix_in] <- 1
+pix_in2[pix_in[1:50]] <- 1
+coord_pix <- cbind(coord,pix_in2)
+coord_spec <- coord_pix
+# coord_spec[,pix_in[1:50]] <- speci
+# coord_spec[,pix_in[x]] <- speci
+
+for (i in 1: 50){
+  coord_spec[pix_in[i],3] <- speci[i]
+}
+
+coord_spec2 <- matrix(coord_spec[,3],nrow=320,ncol=76)
+
+# dat_ras <- rasterFromXYZ(coord_spec)
+spec_ras <- raster(t(coord_spec2[,76:1]), xmn=min(long), xmx=max(long), ymn=min(lati), ymx=max(lati), crs=CRS(projection(border)))
+
+x11()
+plot(spec_ras,asp=1);plot(border,add=T)
 
 # Problems
 # 17 months
-# ties for some pixels
-# no model output
-
