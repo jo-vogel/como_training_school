@@ -191,11 +191,16 @@ pix_to_rm <- setdiff(1:dim(yields)[1], pix_to_keep)
 #were these pixels already removed with GSL<=365? Not all of them
 #pix_to_rm %in% strange_gs_pixels
 
+# #to plot map
+# border <- readOGR('C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/ne_50m_admin_0_countries.shp')
+
+
+##### Final dataset to store #####
+
 lat_kept <- lat_kept[pix_to_keep]
 lon_kept <- lon_kept[pix_to_keep]
 yields <- yields[pix_to_keep,,]
 tasmax <- tasmax[pix_to_keep,,]
 vpd <- tasmax[pix_to_keep,,]
 
-# #to plot map
-# border <- readOGR('C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/ne_50m_admin_0_countries.shp')	
+#what kind of format?
