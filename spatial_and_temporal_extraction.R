@@ -86,32 +86,70 @@ min_sowing_date <- as.Date(min_sowing_day, origin="2019-01-01")
 stopifnot(year(min_sowing_date)==2019)
 sowing_month <- month(min_sowing_date)
 
-#get the latest harvest day
+max_growingseason_length <- apply(X = growingseason_length, MARGIN = 1, FUN = max)
 
-#for some station, max growing season is ver large and far from the rest of the distribution
-plot(ecdf(growingseason_length[406,]))
-plot(ecdf(growingseason_length[411,]))
-plot(ecdf(growingseason_length[347,]))
+# #strange years
+# plot(max_growingseason_length, xlab="pixel index", ylab="Max gorwing season length")
+# strange_gs_pixels <- which(max_growingseason_length>365)
+# strange_years_number <- numeric()
+# i <- 0
+# for (pix in strange_gs_pixels) {
+#   i<-i+1
+#   strange_years_number[i] <- length(which(growingseason_length[pix,]>365))
+# }#end for pix
+# 
+# plot(strange_years_number/1600*100, ylab="% of years", xlab = "pixels",
+#      main="% of years with growing season>365days\n for pixel with some years with growing season>365days")
+# plot(growingseason_length[strange_gs_pixel[23],], ylab="growing season length", xlab="year",
+#      main="growing season lengths (GSL)\n for 1 pixel with 51% of GSL>365")
+# plot(growingseason_length[strange_gs_pixel[25],], ylab="growing season length", xlab="year",
+#      main="growing season lengths (GSL)\n for 1 pixel with 5% of GSL>365")
+# plot(growingseason_length[815,], ylab="growing season length", xlab="year",
+#      main="growing season lengths (GSL)\n for 1 pixel with only 1 year with GSL>365")
 
-# #get rid of too long growing season
-# growingseason_length[growingseason_length>365] <- NA
 
-harvest_day <- sowing_date + growingseason_length
+#get rid of too long growing season
+#I put yield and meteo data as NA for years with growing season>365days
+years_to_remove <- growingseason_length>365
+growingseason_length_corrected <- growingseason_length
+sowing_date_corrected <- sowing_date
 
-max_harvest_day <- apply(X = harvest_day, MARGIN = 1, FUN = max)
+for (pix in 1:length(lat_kept)) {
+  nb_years_to_rm <- length(which(years_to_remove[pix,]==T))
+  
+  yields[pix,years_to_remove[pix,]] <- rep(NA, nb_years_to_rm)
+  sowing_date_corrected[pix,years_to_remove[pix,]] <- rep(NA, nb_years_to_rm)
+  growingseason_length_corrected[pix,years_to_remove[pix,]] <- rep(NA, nb_years_to_rm)
+  
+  for (mon in 1:dim(vpd)[2]) {#mon=month
+    vpd[pix,mon,years_to_remove[pix,]] <- rep(NA, nb_years_to_rm)
+    tasmax[pix,mon,years_to_remove[pix,]] <- rep(NA, nb_years_to_rm)
+    precip[pix,mon,years_to_remove[pix,]] <- rep(NA, nb_years_to_rm)
+  }#end for mon
+}#end for pix
+
+min_sowing_day <- apply(X = sowing_date_corrected, MARGIN = 1, FUN = min)
+min_sowing_date <- as.Date(min_sowing_day, origin="2019-01-01")
+#Let's make sure that all growing season start the same year, before extracting the month
+stopifnot(year(min_sowing_date)==2019)
+sowing_month <- month(min_sowing_date)
+
+max_growingseason_length <- apply(X = growingseason_length_corrected, MARGIN = 1, FUN = max)
+
+#that's better:
+plot(max_growingseason_length, xlab="pixel index", ylab="Max gorwing season length")
+
+harvest_day <- sowing_date_corrected + growingseason_length_corrected
+
+max_harvest_day <- apply(X = harvest_day, MARGIN = 1, FUN = max, na.rm=T)
 
 max_harvest_date <- as.Date(max_harvest_day, origin="2019-01-01")
-stopifnot(year(max_harvest_date)>=2020)
-stopifnot(year(max_harvest_date)<=2021)
+stopifnot(year(max_harvest_date)==2020)
 
 harvest_month <- numeric(length = nb_pixel_kept)
 
 for (loc in 1:nb_pixel_kept) {
-  if(year(max_harvest_date)[loc]==2020){
     harvest_month[loc]<-month(max_harvest_date[loc]) + 12
-  } else {
-    harvest_month[loc]<-month(max_harvest_date[loc]) + 24
-  }#end ifelse
 }#end for loc
 
 #remove useless months
@@ -124,7 +162,7 @@ for(loc in 1:nb_pixel_kept) {
 }#end for loc
 
 #rapid check
-for (ind in sample(1:995, size = 4)) {
+for (ind in sample(1:nb_pixel_kept, size = 4)) {
   print(paste("index", ind))
   print(paste("lat", lat[ind]))
   print(paste("lon", lon[ind]))
@@ -135,4 +173,29 @@ for (ind in sample(1:995, size = 4)) {
   print("months to keep")
   print(months_to_keep[ind,])
 }#end for ind
-plot(ecdf(growingseason_length[517,]))
+
+
+for (pix in 1:nb_pixel_kept) {
+  for (YY in 1:dim(vpd)[3]) {#YY = year
+    month_to_rm <- which(months_to_keep[pix,]==F)
+    nb_months_to_rm <- length(month_to_rm)
+    vpd[pix,month_to_rm,YY] <- rep(NA, nb_months_to_rm)
+    tasmax[pix,month_to_rm,YY] <- rep(NA, nb_months_to_rm)
+    precip[pix,month_to_rm,YY] <- rep(NA, nb_months_to_rm)
+  }#end for YY
+}#end for pix
+
+#Discard pixels with 0.025 percentile yield<1: 31 pixels
+pix_to_keep <- which(apply(X=yields, MARGIN = 1, FUN = stats::quantile, probs=0.025, na.rm=T)>1)
+pix_to_rm <- setdiff(1:dim(yields)[1], pix_to_keep)
+#were these pixels already removed with GSL<=365? Not all of them
+#pix_to_rm %in% strange_gs_pixels
+
+lat_kept <- lat_kept[pix_to_keep]
+lon_kept <- lon_kept[pix_to_keep]
+yields <- yields[pix_to_keep,,]
+tasmax <- tasmax[pix_to_keep,,]
+vpd <- tasmax[pix_to_keep,,]
+
+# #to plot map
+# border <- readOGR('C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/ne_50m_admin_0_countries.shp')	
