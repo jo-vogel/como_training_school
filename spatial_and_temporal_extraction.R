@@ -3,6 +3,7 @@
 ###########   of global standardised crop model data    ###########
 ###########                                             ###########
 ###########       Author: Pauline Rivoire               ###########
+
 ###################################################################
 
 
@@ -15,7 +16,7 @@ rm(list=ls(all=TRUE))
 library(glmnet);library(InformationValue)
 library(ncdf4);library(lubridate)
 library(foreach);library(doParallel)
-
+library(abind); library(raster); library(BBmisc)
 
 # Get the data
 path_to_NH_files <- "C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/Data/Global"
@@ -137,7 +138,7 @@ sowing_month <- month(min_sowing_date)
 max_growingseason_length <- apply(X = growingseason_length_corrected, MARGIN = 1, FUN = max)
 
 #that's better:
-plot(max_growingseason_length, xlab="pixel index", ylab="Max gorwing season length")
+plot(max_growingseason_length, xlab="pixel index", ylab="Max growing season length")
 
 harvest_day <- sowing_date_corrected + growingseason_length_corrected
 
@@ -151,6 +152,7 @@ harvest_month <- numeric(length = nb_pixel_kept)
 for (loc in 1:nb_pixel_kept) {
     harvest_month[loc]<-month(max_harvest_date[loc]) + 12
 }#end for loc
+
 
 #remove useless months
 months_to_keep <- matrix(data = NA, nrow = nb_pixel_kept,
@@ -186,7 +188,8 @@ for (pix in 1:nb_pixel_kept) {
 }#end for pix
 
 #Discard pixels with 0.025 percentile yield<1: 31 pixels
-pix_to_keep <- which(apply(X=yields, MARGIN = 1, FUN = stats::quantile, probs=0.025, na.rm=T)>1)
+# pix_to_keep <- which(apply(X=yields, MARGIN = 1, FUN = stats::quantile, probs=0.025, na.rm=T)>1)
+pix_to_keep <- which(apply(X=yields, MARGIN = 1, FUN = stats::quantile, probs=0.025, na.rm=T)!=0)
 pix_to_rm <- setdiff(1:dim(yields)[1], pix_to_keep)
 #were these pixels already removed with GSL<=365? Not all of them
 #pix_to_rm %in% strange_gs_pixels
@@ -199,8 +202,43 @@ pix_to_rm <- setdiff(1:dim(yields)[1], pix_to_keep)
 
 lat_kept <- lat_kept[pix_to_keep]
 lon_kept <- lon_kept[pix_to_keep]
-yields <- yields[pix_to_keep,,]
+# yields <- yields[pix_to_keep,,]
+yields <- yields[pix_to_keep,]
 tasmax <- tasmax[pix_to_keep,,]
 vpd <- tasmax[pix_to_keep,,]
+precip <- precip[pix_to_keep,,]
 
-#what kind of format?
+coords <- cbind(lat_kept,lon_kept)
+coords_3d <- array(coords,dim=c(965,2,1600))
+yields_3dim <- array(yields,dim=c(965,1,1600))
+Model_data <- abind(yields,coords_3d,tasmax,vpd,precip,along=2)
+
+message('gives warnings, maybe due to NAs')
+Model_data_stand <- array(data=NA,dim=dim(Model_data))
+for (i in 1:dim(Model_data)[1]){
+    # Model_data_stand[i,,] <- t(apply(Model_data_wheat[i,,],1,scale)) # reinvert dimensions (inverted by apply)
+    Model_data_stand[i,,] <- t(apply(Model_data[i,,],1,normalize, method="range",range=c(-1,1))) # reinvert dimensions (inverted by apply)
+}
+  
+
+
+# Create tif raster object
+Model_data_reshape <- aperm(Model_data,perm=c(1,3,2))
+
+Model_data_brick <- brick(Model_data_reshape)
+Model_data_stack <- stack(Model_data_reshape)
+
+
+# write it to hard drive
+writeRaster(Model_data_brick,filename="Model_data_brick.tif", format="GTiff",overwrite=T)
+writeRaster(Model_data_brick,filename="Model_data_stack.tif", format="GTiff",overwrite=T)
+save(Model_data,file="Model_data.RData") # works
+
+
+# load it
+load("Model_data.RData") # works
+message('tif files do not contain data for unknown reason')
+Model_brick <- raster("Model_data_brick.tif")
+Model_stack <- raster("Model_data_stack.tif")
+
+

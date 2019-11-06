@@ -123,7 +123,7 @@ cy_wheat <- cy[pix_in,]
 
 # z-score standardisation
 # Model_data_stand <- sapply(1:dim(Model_data_wheat)[1], function(x){apply(Model_data_wheat[x,,],2,scale)})
-# Model_data_stand <- array(data=NA,dim=dim(Model_data_wheat))
+Model_data_stand <- array(data=NA,dim=dim(Model_data_wheat))
 message("Very important: apply inverts the dimensions!")
 # range <- function(x){(x-min(x))/(max(x)-min(x))}
 for (i in 1:dim(Model_data_wheat)[1]){
