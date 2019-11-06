@@ -132,7 +132,7 @@ for (pix in 1:length(lat_kept)) {
 min_sowing_day <- apply(X = sowing_date_corrected, MARGIN = 1, FUN = min)
 min_sowing_date <- as.Date(min_sowing_day, origin="2019-01-01")
 #Let's make sure that all growing season start the same year, before extracting the month
-stopifnot(year(min_sowing_date)==2019)
+stopifnot(year(min_sowing_date[!is.na(min_sowing_date)])==2019)
 sowing_month <- month(min_sowing_date)
 
 max_growingseason_length <- apply(X = growingseason_length_corrected, MARGIN = 1, FUN = max)
@@ -205,8 +205,112 @@ lon_kept <- lon_kept[pix_to_keep]
 # yields <- yields[pix_to_keep,,]
 yields <- yields[pix_to_keep,]
 tasmax <- tasmax[pix_to_keep,,]
-vpd <- tasmax[pix_to_keep,,]
+vpd <- vpd[pix_to_keep,,]
 precip <- precip[pix_to_keep,,]
+
+
+##### Store in netcdf file #####
+
+#standardize with range
+message('gives warnings, maybe due to NAs')
+yields_stand_range <- t(apply(yields, FUN = normalize, method = "range", range=c(-1,1), MARGIN = 1))
+
+tasmax_stand_range <- aperm(apply(tasmax, FUN = normalize, method = "range", range=c(-1,1), MARGIN = c(1,2)),
+                            perm=c(2,3,1))
+
+vpd_stand_range <- aperm(apply(vpd, FUN = normalize, method = "range", range=c(-1,1), MARGIN = c(1,2)),
+                         perm=c(2,3,1))
+
+precip_stand_range <- aperm(apply(precip, FUN = normalize, method = "range", range=c(-1,1), MARGIN = c(1,2)),
+                            perm=c(2,3,1))
+
+setwd("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/Data/Global")
+
+
+ncfname1 <- "NH_nonNA_yield_and_meteovar.nc"
+ncfname2 <- "NH_nonNA_yield_and_meteovar_scale_range.nc"
+
+
+
+# create and write the netCDF file -- ncdf4 version
+# define dimensions
+londim <- ncdim_def(name = "lon", units = "degrees", vals = lon_kept)
+yeardim <- ncdim_def(name = "year", units = "year", vals = 1:1600)
+monthdim <- ncdim_def(name = "month", units = "month",
+                      vals = (1:17+7))
+
+# define variables
+fillvalue <- 1e32
+
+yield_var <- ncvar_def(name = "yield", units = "kg/ha",
+                       dim = list(londim, yeardim), missval = fillvalue,
+                       prec = "float")
+
+yield_stand_var <- ncvar_def(name = "yield", units = "kg/ha normalized [-1,1]",
+                             dim = list(londim, yeardim), missval = fillvalue,
+                             prec = "float")
+
+vpd_var <- ncvar_def(name = "vpd", units = "Pa",
+                     dim = list(londim, monthdim, yeardim),
+                     missval = fillvalue, prec = "float")
+
+vpd_stand_var <- ncvar_def(name = "vpd", units = "Pa normalized [-1,1]",
+                           dim = list(londim, monthdim, yeardim),
+                           missval = fillvalue, prec = "float")
+
+tasmax_var <- ncvar_def(name = "tasmax", units = "K",
+                        dim = list(londim, monthdim, yeardim),
+                        missval = fillvalue, prec = "float")
+
+tasmax_stand_var <- ncvar_def(name = "tasmax", units = "K normalized [-1,1]",
+                              dim = list(londim, monthdim, yeardim),
+                              missval = fillvalue, prec = "float")
+
+precip_var <- ncvar_def(name = "pr", units = "mm/day",
+                        dim = list(londim, monthdim, yeardim),
+                        missval = fillvalue, prec = "float")
+
+precip_stand_var <- ncvar_def(name = "pr", units = "mm/day normalized [-1,1]",
+                              dim = list(londim, monthdim, yeardim),
+                              missval = fillvalue, prec = "float")
+
+lat_var <- ncvar_def(name = "lat", units = "degree",
+                     dim = list(londim),
+                     missval = fillvalue, prec = "float")
+
+# create netCDF file and put arrays
+ncout1 <- nc_create(ncfname1,list(yield_var, vpd_var,
+                                  tasmax_var, precip_var,
+                                  lat_var),force_v4=TRUE)
+
+ncout2 <- nc_create(ncfname2,list(yield_stand_var, vpd_stand_var,
+                                  tasmax_stand_var, precip_stand_var,
+                                  lat_var),force_v4=TRUE)
+
+# put variables
+ncvar_put(nc = ncout1, varid = yield_var, vals = yields)
+ncvar_put(ncout1,precip_var,precip)
+ncvar_put(ncout1,tasmax_var,tasmax)
+ncvar_put(ncout1,vpd_var,vpd)
+ncvar_put(ncout1,lat_var,lat_kept)
+ncvar_put(ncout2,yield_stand_var,yields_stand_range)
+ncvar_put(ncout2,precip_stand_var,precip_stand_range)
+ncvar_put(ncout2,tasmax_stand_var,tasmax_stand_range)
+ncvar_put(ncout2,vpd_stand_var,vpd_stand_range)
+ncvar_put(ncout2,lat_var,lat_kept)
+
+nc_close(ncout1)
+nc_close(ncout2)
+
+
+
+
+
+
+
+##### Tiff method #####
+
+
 
 coords <- cbind(lat_kept,lon_kept)
 coords_3d <- array(coords,dim=c(965,2,1600))
