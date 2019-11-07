@@ -34,8 +34,8 @@ nh_files <- list.files(path=path_to_NH_files,pattern="*NH.nc") # all files from 
 nh_data <- lapply(1:length(nh_files),function(x){nc_open(paste0(path_to_NH_files,"/",nh_files[x]))})
 lat_all <- ncvar_get(nh_data[[1]],"lat")
 lon_all <- ncvar_get(nh_data[[1]],"lon")
-lati_all <- rep(lati,each=length(lon_all))
-long_all <- rep(long,length(lat_all)) # coordinates rearranged
+lati_all <- rep(lat_all,each=length(lon_all))
+long_all <- rep(lon_all,length(lat_all)) # coordinates rearranged
 coord_all <- cbind(long_all,lati_all)
 
 
@@ -200,10 +200,11 @@ toc()
 
 # Model performance assessment ####
 ###################################
+test_length <- 5 
+message('test_length is just temporary, include number how many runs you did')
+i_1Std <- lapply(1:test_length, function(x){ which(cv_fit[[x]]$lambdaHat1Std == cv_fit[[x]]$lambda)}) # the preferential lambda (tuning parameter)
 
-i_1Std <- lapply(1:5, function(x){ which(cv_fit[[x]]$lambdaHat1Std == cv_fit[[x]]$lambda)}) # the preferential lambda (tuning parameter)
-
-coefs <- lapply(1:5, function(x){coef(cv_fit[[x]]$glinternetFit)[[i_1Std[[x]]]]})
+coefs <- lapply(1:test_length, function(x){coef(cv_fit[[x]]$glinternetFit)[[i_1Std[[x]]]]})
 
 # coefs$mainEffects # model part without interactions
 # names(numLevels)[coefs$mainEffects$cont] # Main effect variables (without interactions)
@@ -212,14 +213,14 @@ coefs <- lapply(1:5, function(x){coef(cv_fit[[x]]$glinternetFit)[[i_1Std[[x]]]]}
 # names(numLevels)[coefs$interactions$contcont] # Main effect variables (with interactions)
 
 
-mypred <- lapply(1:5, function(x){predict(cv_fit[[x]],x1_test_list[[x]],type="response")}) 
-fitted.results_bestglm <- lapply(1:5, function(x){ifelse(mypred[[x]] > 0.5,1,0)})
+mypred <- lapply(1:test_length, function(x){predict(cv_fit[[x]],x1_test_list[[x]],type="response")}) 
+fitted.results_bestglm <- lapply(1:test_length, function(x){ifelse(mypred[[x]] > 0.5,1,0)})
 
-mis_clas_err <- lapply(1:5, function(x){misClassError(y1_test_list[[x]],fitted.results_bestglm[[x]])})
+mis_clas_err <- lapply(1:test_length, function(x){misClassError(y1_test_list[[x]],fitted.results_bestglm[[x]])})
 
-con_tab <-  lapply(1:5, function(x){InformationValue::confusionMatrix(y1_test_list[[x]],fitted.results_bestglm[[x]])})
-sensi <- sapply(1:5, function(x){InformationValue::sensitivity(y1_test_list[[x]],fitted.results_bestglm[[x]])})
-speci <- sapply(1:5, function(x){InformationValue::specificity(y1_test_list[[x]],fitted.results_bestglm[[x]])})
+con_tab <-  lapply(1:test_length, function(x){InformationValue::confusionMatrix(y1_test_list[[x]],fitted.results_bestglm[[x]])})
+sensi <- sapply(1:test_length, function(x){InformationValue::sensitivity(y1_test_list[[x]],fitted.results_bestglm[[x]])})
+speci <- sapply(1:test_length, function(x){InformationValue::specificity(y1_test_list[[x]],fitted.results_bestglm[[x]])})
 
 
 
@@ -231,7 +232,7 @@ coord_all_temp <- cbind(coord_all,paste(coord_all[,1],coord_all[,2]))
 loc_pix <- which(coord_all_temp[,3] %in% coord_subset_temp [,3]) # locations of our pixels in the whole coordinate set
 
 coord_all <- cbind(coord_all,rep(NA,24320))
-for (i in 1:5){
+for (i in 1:test_length){
   coord_all[loc_pix[i],3] <- speci[i]
 }
 
