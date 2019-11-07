@@ -210,7 +210,7 @@ precip <- precip[pix_to_keep,,]
 ##### Store in netcdf file #####
 
 #standardize with range
-message('gives warnings, maybe due to NAs')
+message('gives warnings due to NAs')
 yields_stand_range <- t(apply(yields, FUN = normalize, method = "range", range=c(-1,1), MARGIN = 1))
 
 tasmax_stand_range <- aperm(apply(tasmax, FUN = normalize, method = "range", range=c(-1,1), MARGIN = c(1,2)),

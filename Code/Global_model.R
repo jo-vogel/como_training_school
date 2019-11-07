@@ -15,6 +15,9 @@ library(glmnet)
 library(tictoc)
 library(BBmisc)
 
+
+# Load data ####
+#################
 # path_to_NH_files <- "D:/Local/Data/Group project Como"
 path_to_NH_files <- "D:/user/vogelj/Data/Group project Como"
 
@@ -26,7 +29,9 @@ long <- ncvar_get(nh_data[[1]],"lon")
 lapply(1:length(nh_files),function(x){nc_close(nh_data[[x]])})  
 pix_num <- dim(nh_variables[[1]])[1]*dim(nh_variables[[1]])[2] # number of pixels
 
-# Calculate threshold
+
+# Calculate threshold ####
+##########################
 threshold <- 0.05
 yields <- matrix(data=nh_variables[[3]],nrow=320*76,ncol=1600) # reshape
 # identical(nh_variables[[3]][180,50,],yields[49*320+180,]) # reshaping worked
@@ -48,7 +53,7 @@ plot(yields[4352,]) # one of the problematic pixels: contains a lot of zeros
 
 
 # Plotting ####
-
+###############
 
 border <- readOGR('D:/user/vogelj/Data/ne_50m_admin_0_countries/ne_50m_admin_0_countries.shp')	
 # download from https://www.naturalearthdata.com/downloads/50m-cultural-vectors/50m-admin-0-countries-2/
@@ -81,7 +86,7 @@ projection(border) # projections are equal
 projection(gs_length_ras)
 
 # png(file=paste0(getwd(),"/rasterplot.png"),height=8,width=10,unit="cm",
-    # pointsize = 6, bg = "white", res = 1000, restoreConsole = TRUE, type = "windows")
+# pointsize = 6, bg = "white", res = 1000, restoreConsole = TRUE, type = "windows")
 x11()
 plot(gs_length_ras,asp=1);plot(border,add=T)
 plot(gs_start_ras,asp=1);plot(border,add=T)
@@ -121,7 +126,8 @@ pix_in <- pix_in[-10] # exclude erroneous pixel (see "Erroneous pixel.R" for det
 Model_data_wheat <- monthly_data3dim[pix_in,,]
 cy_wheat <- cy[pix_in,]
 
-# z-score standardisation
+
+# z-score standardisation ####
 # Model_data_stand <- sapply(1:dim(Model_data_wheat)[1], function(x){apply(Model_data_wheat[x,,],2,scale)})
 Model_data_stand <- array(data=NA,dim=dim(Model_data_wheat))
 message("Very important: apply inverts the dimensions!")
@@ -175,13 +181,21 @@ Testing_Data <- Model_data[,,testing_indices]
 # cv_fit_list <- vector(mode='list',length=dim(Model_data)[1])
 # count <- 1
 # wheat_pixels <- which(!is.na(row_sums_cy)) # pixels with wheat yield data
-numLevels <- rep(1,times=dim(Model_data)[2]-1)
-names(numLevels) <- colnames(Model_data[,2:length(colnames(Model_data)),])
 
 x1_train_list <- lapply(seq_along(pix_in), function(x){ as.data.frame(t(Training_Data[x,2:dim(Training_Data)[2],]))}) # predictors
 y1_train_list <- lapply(seq_along(pix_in), function(x){ Training_Data[x,1,]}) # predictand
 x1_test_list <- lapply(seq_along(pix_in), function(x){ as.data.frame(t(Testing_Data[x,2:dim(Testing_Data)[2],]))}) # predictors
 y1_test_list <- lapply(seq_along(pix_in), function(x){Testing_Data[x,1,]}) # predictand
+
+numLevels <- rep(1,times=dim(Model_data)[2]-1)
+names(numLevels) <- colnames(Model_data[,2:length(colnames(Model_data)),])
+
+var_num <- apply(non_na_col,1,sum)
+numLevels_list <- sapply(1:pix_num, function(x){ rep(1,times=var_num[x])})
+for (i in 1:pix_num){
+  names(numLevels_list[[i]]) <-  colnames(x1_test_list[[i]])
+}
+
 
 tic()
 no_cores <- detectCores() / 2 - 1
@@ -194,8 +208,8 @@ registerDoParallel(cl)
 
 # cv_fit <- foreach (i=1:dim(Model_data)[1],.combine=list) %dopar% {
 # cv_fit <- foreach (i=1:dim(Model_data)[1],.multicombine=TRUE) %dopar% {
-cv_fit <- foreach (i=574:929,.multicombine=TRUE) %dopar% {
-# for (i in 1:dim(Model_data)[1][1:3]){
+cv_fit <- foreach (i=1:5,.multicombine=TRUE) %dopar% {
+  # for (i in 1:dim(Model_data)[1][1:3]){
   # x1_train <- as.data.frame(t(Training_Data[i,2:dim(Training_Data)[2],])) # predictors
   # y1_train <- Training_Data[i,1,] # predictand
   # x1_test <-  as.data.frame(t(Testing_Data[i,2:dim(Testing_Data)[2],])) # predictors
@@ -204,7 +218,7 @@ cv_fit <- foreach (i=574:929,.multicombine=TRUE) %dopar% {
   y1_train <- y1_train_list[[i]]
   # x1_test <- x1_test_list[[i]]
   # y1_test <- y1_test_list[[i]]
-
+  
   # Fit model
   # cv_fit <- glinternet.cv(X1_train, y1_train, numLevels,family = "binomial")
   glinternet.cv(x1_train, y1_train, numLevels,family = "binomial")

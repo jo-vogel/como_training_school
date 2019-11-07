@@ -21,17 +21,18 @@ tasmax <- ncvar_get(nh_data[[1]],"tasmax")
 vpd <- ncvar_get(nh_data[[1]],"vpd")
 pr <- ncvar_get(nh_data[[1]],"pr")
 lat <- ncvar_get(nh_data[[1]],"lat")
+lon <- ncvar_get(nh_data[[1]],"lon")
 yield_stand <- ncvar_get(nh_data[[2]],"yield")
 tasmax_stand <- ncvar_get(nh_data[[2]],"tasmax")
 vpd_stand <- ncvar_get(nh_data[[2]],"vpd")
 pr_stand <- ncvar_get(nh_data[[2]],"pr")
 lapply(1:length(nh_files),function(x){nc_close(nh_data[[x]])})
-
+coord <- cbind(lat,lon)
 
 # Process data ####
 ###################
 
-yields_3dim <- array(yield,dim=c(pix_num,1,1600));yields_stand_3dim <- array(yield,dim=c(pix_num,1,1600))
+yields_3dim <- array(yield,dim=c(965,1,1600));yields_stand_3dim <- array(yield,dim=c(965,1,1600))
 Model_data <- abind(yields_3dim,tasmax,vpd,pr,along=2)
 Model_data_stand <- abind(yields_stand_3dim,tasmax_stand,vpd_stand,pr_stand,along=2)
 
@@ -97,6 +98,12 @@ for (i in 1:pix_num){
 # Lasso model ####
 ##################
 
+
+pix_with_NA <- which(apply(cy,1,anyNA))
+final_pix <- 1:965; 
+final_pix <- final_pix[-pix_with_NA]
+
+
 tic()
 no_cores <- detectCores() / 2 - 1
 cl<-makeCluster(no_cores)
@@ -125,3 +132,57 @@ toc()
 # Model performance assessment ####
 ###################################
 
+i_1Std <- lapply(1:5, function(x){ which(cv_fit[[x]]$lambdaHat1Std == cv_fit[[x]]$lambda)}) # the preferential lambda (tuning parameter)
+
+coefs <- lapply(1:5, function(x){coef(cv_fit[[x]]$glinternetFit)[[i_1Std[[x]]]]})
+
+# coefs$mainEffects # model part without interactions
+# names(numLevels)[coefs$mainEffects$cont] # Main effect variables (without interactions)
+# 
+# coefs$interactions # model part with interactions pairs
+# names(numLevels)[coefs$interactions$contcont] # Main effect variables (with interactions)
+
+
+mypred <- lapply(1:5, function(x){predict(cv_fit[[x]],x1_test_list[[x]],type="response")}) 
+fitted.results_bestglm <- lapply(1:5, function(x){ifelse(mypred[[x]] > 0.5,1,0)})
+
+mis_clas_err <- lapply(1:5, function(x){misClassError(y1_test_list[[x]],fitted.results_bestglm[[x]])})
+
+con_tab <-  lapply(1:5, function(x){InformationValue::confusionMatrix(y1_test_list[[x]],fitted.results_bestglm[[x]])})
+sensi <- sapply(1:5, function(x){InformationValue::sensitivity(y1_test_list[[x]],fitted.results_bestglm[[x]])})
+speci <- sapply(1:5, function(x){InformationValue::specificity(y1_test_list[[x]],fitted.results_bestglm[[x]])})
+
+
+
+# # Plot specificity and sensitivity on a map
+
+longs <- rep(long,length(lati)) # coordinates rearranged
+lats <- rep(lati,each=length(long))
+coord_all <- cbind(longs,lats)
+
+
+
+
+
+spec <- matrix(NA,nrow=320,ncol=320)
+sens <- matrix(NA,nrow=320,ncol=320)
+
+pix_in2 <- vector(mode="numeric",length=24320)
+pix_in2[pix_in] <- 1 # mark all pixels with values
+pix_in2[pix_in[1:50]] <- 1
+coord_pix <- cbind(coord,pix_in2)
+coord_spec <- coord_pix
+# coord_spec[,pix_in[1:50]] <- speci
+# coord_spec[,pix_in[x]] <- speci
+
+for (i in 1: 50){
+  coord_spec[pix_in[i],3] <- speci[i]
+}
+
+coord_spec2 <- matrix(coord_spec[,3],nrow=320,ncol=76)
+
+# dat_ras <- rasterFromXYZ(coord_spec)
+spec_ras <- raster(t(coord_spec2[,76:1]), xmn=min(long), xmx=max(long), ymn=min(lati), ymx=max(lati), crs=CRS(projection(border)))
+
+x11()
+plot(spec_ras,asp=1);plot(border,add=T)
