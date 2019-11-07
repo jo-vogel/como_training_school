@@ -3,7 +3,6 @@
 ###########   of global standardised crop model data    ###########
 ###########                                             ###########
 ###########       Author: Pauline Rivoire               ###########
-
 ###################################################################
 
 
@@ -187,7 +186,7 @@ for (pix in 1:nb_pixel_kept) {
   }#end for YY
 }#end for pix
 
-#Discard pixels with 0.025 percentile yield<1: 31 pixels
+#Discard pixels with 0.025 percentile yield==0: 31 pixels
 # pix_to_keep <- which(apply(X=yields, MARGIN = 1, FUN = stats::quantile, probs=0.025, na.rm=T)>1)
 pix_to_keep <- which(apply(X=yields, MARGIN = 1, FUN = stats::quantile, probs=0.025, na.rm=T)!=0)
 pix_to_rm <- setdiff(1:dim(yields)[1], pix_to_keep)
@@ -202,7 +201,6 @@ pix_to_rm <- setdiff(1:dim(yields)[1], pix_to_keep)
 
 lat_kept <- lat_kept[pix_to_keep]
 lon_kept <- lon_kept[pix_to_keep]
-# yields <- yields[pix_to_keep,,]
 yields <- yields[pix_to_keep,]
 tasmax <- tasmax[pix_to_keep,,]
 vpd <- vpd[pix_to_keep,,]
@@ -227,8 +225,8 @@ precip_stand_range <- aperm(apply(precip, FUN = normalize, method = "range", ran
 setwd("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/Data/Global")
 
 
-ncfname1 <- "NH_nonNA_yield_and_meteovar.nc"
-ncfname2 <- "NH_nonNA_yield_and_meteovar_scale_range.nc"
+ncfname1 <- "NH_yield_and_meteovar.nc"
+ncfname2 <- "NH_yield_and_meteovar_range-scaled.nc"
 
 
 
@@ -244,39 +242,39 @@ fillvalue <- 1e32
 
 yield_var <- ncvar_def(name = "yield", units = "kg/ha",
                        dim = list(londim, yeardim), missval = fillvalue,
-                       prec = "float")
+                       prec = "double")
 
 yield_stand_var <- ncvar_def(name = "yield", units = "kg/ha normalized [-1,1]",
                              dim = list(londim, yeardim), missval = fillvalue,
-                             prec = "float")
+                             prec = "double")
 
 vpd_var <- ncvar_def(name = "vpd", units = "Pa",
                      dim = list(londim, monthdim, yeardim),
-                     missval = fillvalue, prec = "float")
+                     missval = fillvalue, prec = "double")
 
 vpd_stand_var <- ncvar_def(name = "vpd", units = "Pa normalized [-1,1]",
                            dim = list(londim, monthdim, yeardim),
-                           missval = fillvalue, prec = "float")
+                           missval = fillvalue, prec = "double")
 
 tasmax_var <- ncvar_def(name = "tasmax", units = "K",
                         dim = list(londim, monthdim, yeardim),
-                        missval = fillvalue, prec = "float")
+                        missval = fillvalue, prec = "double")
 
 tasmax_stand_var <- ncvar_def(name = "tasmax", units = "K normalized [-1,1]",
                               dim = list(londim, monthdim, yeardim),
-                              missval = fillvalue, prec = "float")
+                              missval = fillvalue, prec = "double")
 
 precip_var <- ncvar_def(name = "pr", units = "mm/day",
                         dim = list(londim, monthdim, yeardim),
-                        missval = fillvalue, prec = "float")
+                        missval = fillvalue, prec = "double")
 
 precip_stand_var <- ncvar_def(name = "pr", units = "mm/day normalized [-1,1]",
                               dim = list(londim, monthdim, yeardim),
-                              missval = fillvalue, prec = "float")
+                              missval = fillvalue, prec = "double")
 
 lat_var <- ncvar_def(name = "lat", units = "degree",
                      dim = list(londim),
-                     missval = fillvalue, prec = "float")
+                     missval = fillvalue, prec = "double")
 
 # create netCDF file and put arrays
 ncout1 <- nc_create(ncfname1,list(yield_var, vpd_var,
@@ -303,9 +301,26 @@ nc_close(ncout1)
 nc_close(ncout2)
 
 
+#Checking these files
+
+TRY <- nc_open(filename = "NH_yield_and_meteovar.nc")
+print(TRY$var)
+YIELDTRY <- ncvar_get(nc = TRY, varid = "yield")
+YIELDTRY[1,]==yields[1,]
 
 
+TRY2 <- nc_open(filename = "NH_yield_and_meteovar_range-scaled.nc")
+PRSTANDTRY <- ncvar_get(nc = TRY2, varid = "pr")
+TASMAXSTANDTRY <- ncvar_get(nc = TRY2, varid = "tasmax")
 
+PRSTANDTRY[12,6,]==precip_stand_range[12,6,]
+
+LATTRY2 <- ncvar_get(TRY2, varid = "lat")
+LATTRY2 == lat_kept
+TASMAXSTANDTRY[1,6,]==tasmax_stand_range[1,6,]
+
+nc_close(TRY)
+nc_close(TRY2)
 
 
 ##### Tiff method #####
