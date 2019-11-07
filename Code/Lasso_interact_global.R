@@ -20,14 +20,24 @@ yield <- ncvar_get(nh_data[[1]],"yield")
 tasmax <- ncvar_get(nh_data[[1]],"tasmax")
 vpd <- ncvar_get(nh_data[[1]],"vpd")
 pr <- ncvar_get(nh_data[[1]],"pr")
-lat <- ncvar_get(nh_data[[1]],"lat")
-lon <- ncvar_get(nh_data[[1]],"lon")
+lat_subset <- ncvar_get(nh_data[[1]],"lat")
+lon_subset <- ncvar_get(nh_data[[1]],"lon")
 yield_stand <- ncvar_get(nh_data[[2]],"yield")
 tasmax_stand <- ncvar_get(nh_data[[2]],"tasmax")
 vpd_stand <- ncvar_get(nh_data[[2]],"vpd")
 pr_stand <- ncvar_get(nh_data[[2]],"pr")
 lapply(1:length(nh_files),function(x){nc_close(nh_data[[x]])})
-coord <- cbind(lat,lon)
+coord_subset <- cbind(lon_subset,lat_subset)
+
+# load all coordinates of northern hemisphere
+nh_files <- list.files(path=path_to_NH_files,pattern="*NH.nc") # all files from northern hemisphere
+nh_data <- lapply(1:length(nh_files),function(x){nc_open(paste0(path_to_NH_files,"/",nh_files[x]))})
+lat_all <- ncvar_get(nh_data[[1]],"lat")
+lon_all <- ncvar_get(nh_data[[1]],"lon")
+lati_all <- rep(lati,each=length(lon_all))
+long_all <- rep(long,length(lat_all)) # coordinates rearranged
+coord_all <- cbind(long_all,lati_all)
+
 
 # Process data ####
 ###################
@@ -62,7 +72,6 @@ colnames(Model_data_stand) <- columnnames
 
 
 # Exclude NA variable columns
-na_col <- vector("logical",52)
 na_col <- matrix(data=NA,nrow=pix_num,ncol=52)
 for (j in 1:pix_num){
   for (i in 1:52){
@@ -73,19 +82,53 @@ non_na_col <- !na_col # columns without NAs
 non_na_col[,1] <- FALSE # exclude yield (it is no predictor and should therefore be ignored)
 
 
+na_time <- vector("list",length=pix_num) # for each pixel, the positions of NAs over time
+for (j in 1:pix_num){
+  na_time[[j]] <- which(is.na(Model_data[j,1,])) # locations of years with NA values
+}
+
+
+# Option 1: Exclude years with NAs (not the whole pixel, just the NA years of it) ####
+######################################################################################
+
 # Split data into training and testing data set
+vec <- 1:1600
+
+years_with_na <- vector("logical",length=pix_num)
+for (i in 1:pix_num){
+  years_with_na[i] <- ifelse(length(na_time[[i]] ) ==0,F,T)
+}
+
+training_indices <- vector("list",length=pix_num)
+testing_indices <- vector("list",length=pix_num)
 set.seed(1994)
-training_indices <- sort(sample(1:1600, size = floor(1600*0.6)))
-testing_indices <- (1:1600)[-training_indices]
-Training_Data <- Model_data_stand[,,training_indices]
-Testing_Data <- Model_data_stand[,,testing_indices]
+for (x in 1:pix_num) {
+  if (years_with_na[x]) {
+    training_indices[[x]] <- sort(sample(x=vec[-na_time[[x]]], size = floor((1600-length(na_time[[x]]))*0.6)))
+    testing_indices[[x]] <- vec[-c(na_time[[x]], training_indices[[x]])]
+  } else {
+    training_indices[[x]] <- sort(sample(1:1600, size = floor(1600*0.6)))
+    testing_indices[[x]] <- (1:1600)[-training_indices[[x]]]    
+  }
+}
+# training_indices2 <- sapply(1:pix_num, function(x) {sort(sample(x=vec[-na_time[[x]]], size = floor((1600-length(na_time[[x]]))*0.6)))})
+# testing_indices2 <- sapply(1:pix_num, function(x) {vec[-na_time[[x]]][-training_indices[[x]]]})
+# training_indices2 <- sapply(1:pix_num, function(x) {sort(sample(1:(1600-length(na_time[[x]])), size = floor((1600-length(na_time[[x]]))*0.6)))})
+# testing_indices2 <- sapply(1:pix_num, function(x) {(1:(1600-length(na_time[[x]])))[-training_indices2[[x]]]})
+
+Training_Data <- lapply(1:pix_num,function(x){Model_data_stand[x,,training_indices[[x]]]})
+Testing_Data <- lapply(1:pix_num,function(x){Model_data_stand[x,,testing_indices[[x]]]})
+
 pix_in <- 1:pix_num
+# x1_train_list <- lapply(seq_along(pix_in), function(x){ as.data.frame(t(Training_Data[x,non_na_col[x,],]))}) # predictors
+# y1_train_list <- lapply(seq_along(pix_in), function(x){ Training_Data[x,1,]}) # predictand
+# x1_test_list <- lapply(seq_along(pix_in), function(x){ as.data.frame(t(Testing_Data[x,non_na_col[x,],]))}) # predictors
+# y1_test_list <- lapply(seq_along(pix_in), function(x){Testing_Data[x,1,]}) # predictand
 
-x1_train_list <- lapply(seq_along(pix_in), function(x){ as.data.frame(t(Training_Data[x,non_na_col[x,],]))}) # predictors
-y1_train_list <- lapply(seq_along(pix_in), function(x){ Training_Data[x,1,]}) # predictand
-
-x1_test_list <- lapply(seq_along(pix_in), function(x){ as.data.frame(t(Testing_Data[x,non_na_col[x,],]))}) # predictors
-y1_test_list <- lapply(seq_along(pix_in), function(x){Testing_Data[x,1,]}) # predictand
+x1_train_list <- lapply(seq_along(pix_in), function(x){ as.data.frame(t(Training_Data[[x]][non_na_col[x,],]))}) # predictors
+y1_train_list <- lapply(seq_along(pix_in), function(x){ Training_Data[[x]][1,]}) # predictand
+x1_test_list <- lapply(seq_along(pix_in), function(x){ as.data.frame(t(Testing_Data[[x]][non_na_col[x,],]))}) # predictors
+y1_test_list <- lapply(seq_along(pix_in), function(x){Testing_Data[[x]][1,]}) # predictand
 
 var_num <- apply(non_na_col,1,sum)
 numLevels_list <- sapply(1:pix_num, function(x){ rep(1,times=var_num[x])})
@@ -94,14 +137,40 @@ for (i in 1:pix_num){
 }
 
 
+# Alternative Option 2: exclude all pixels which have years with NA ####
+####################################################################
+
+# # Split data into training and testing data set
+# set.seed(1994)
+# training_indices <- sort(sample(1:1600, size = floor(1600*0.6)))
+# testing_indices <- (1:1600)[-training_indices]
+# Training_Data <- Model_data_stand[,,training_indices]
+# Testing_Data <- Model_data_stand[,,testing_indices]
+# 
+# pix_in <- 1:pix_num
+# x1_train_list <- lapply(seq_along(pix_in), function(x){ as.data.frame(t(Training_Data[x,non_na_col[x,],]))}) # predictors
+# y1_train_list <- lapply(seq_along(pix_in), function(x){ Training_Data[x,1,]}) # predictand
+# 
+# x1_test_list <- lapply(seq_along(pix_in), function(x){ as.data.frame(t(Testing_Data[x,non_na_col[x,],]))}) # predictors
+# y1_test_list <- lapply(seq_along(pix_in), function(x){Testing_Data[x,1,]}) # predictand
+# 
+# var_num <- apply(non_na_col,1,sum)
+# numLevels_list <- sapply(1:pix_num, function(x){ rep(1,times=var_num[x])})
+# for (i in 1:pix_num){
+#   names(numLevels_list[[i]]) <-  colnames(x1_test_list[[i]])
+# }
+
+# pix_with_NA <- which(apply(cy,1,anyNA))
+# final_pix <- 1:965;
+# final_pix <- final_pix[-pix_with_NA]
+
+
+
+
 
 # Lasso model ####
 ##################
 
-
-pix_with_NA <- which(apply(cy,1,anyNA))
-final_pix <- 1:965; 
-final_pix <- final_pix[-pix_with_NA]
 
 
 tic()
@@ -116,8 +185,8 @@ registerDoParallel(cl)
 
 # cv_fit <- foreach (i=1:dim(Model_data)[1],.multicombine=TRUE) %dopar% {
 cv_fit <- foreach (i=1:5,.multicombine=TRUE) %dopar% {
+# cv_fit <- foreach (i=final_pix,.multicombine=TRUE) %dopar% {
   # for (i in 1:dim(Model_data)[1][1:3]){
-  # Fit model
   # cv_fit <- glinternet.cv(X1_train, y1_train, numLevels,family = "binomial")
   glinternet.cv(x1_train_list[[i]], y1_train_list[[i]], numLevels_list[[i]],family = "binomial")
   # cv_fit_list[[i]] <- cv_fit
@@ -154,35 +223,22 @@ speci <- sapply(1:5, function(x){InformationValue::specificity(y1_test_list[[x]]
 
 
 
-# # Plot specificity and sensitivity on a map
+# Plot specificity and sensitivity on a map ####
 
-longs <- rep(long,length(lati)) # coordinates rearranged
-lats <- rep(lati,each=length(long))
-coord_all <- cbind(longs,lats)
+# Workaround: bind lat and lon to one object, so that you have to look for just one object, and not lat-/lon-pairs
+coord_subset_temp <- cbind(coord_subset,paste(coord_subset[,1],coord_subset[,2]))
+coord_all_temp <- cbind(coord_all,paste(coord_all[,1],coord_all[,2]))
+loc_pix <- which(coord_all_temp[,3] %in% coord_subset_temp [,3]) # locations of our pixels in the whole coordinate set
 
-
-
-
-
-spec <- matrix(NA,nrow=320,ncol=320)
-sens <- matrix(NA,nrow=320,ncol=320)
-
-pix_in2 <- vector(mode="numeric",length=24320)
-pix_in2[pix_in] <- 1 # mark all pixels with values
-pix_in2[pix_in[1:50]] <- 1
-coord_pix <- cbind(coord,pix_in2)
-coord_spec <- coord_pix
-# coord_spec[,pix_in[1:50]] <- speci
-# coord_spec[,pix_in[x]] <- speci
-
-for (i in 1: 50){
-  coord_spec[pix_in[i],3] <- speci[i]
+coord_all <- cbind(coord_all,rep(NA,24320))
+for (i in 1:5){
+  coord_all[loc_pix[i],3] <- speci[i]
 }
 
-coord_spec2 <- matrix(coord_spec[,3],nrow=320,ncol=76)
+spec_mat <- matrix(as.numeric(coord_all[,3]),nrow=320,ncol=76)
 
-# dat_ras <- rasterFromXYZ(coord_spec)
-spec_ras <- raster(t(coord_spec2[,76:1]), xmn=min(long), xmx=max(long), ymn=min(lati), ymx=max(lati), crs=CRS(projection(border)))
+border <- readOGR('D:/user/vogelj/Data/ne_50m_admin_0_countries/ne_50m_admin_0_countries.shp')	
+spec_ras <- raster(t(spec_mat[,76:1]), xmn=min(lon_all), xmx=max(lon_all), ymn=min(lat_all), ymx=max(lat_all), crs=CRS(projection(border)))
 
 x11()
 plot(spec_ras,asp=1);plot(border,add=T)
