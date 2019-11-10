@@ -1,8 +1,6 @@
 ##############################################################################
 ###########          Ridge and LASSO regression                    ###########
 ###########   on global standardised crop model data               ###########
-###########                                                        ###########
-###########       Author: Pauline Rivoire                          ###########
 ##############################################################################
 
 
@@ -11,10 +9,26 @@ print("Are you sure you want to run the next line? ;) everything in the environm
 rm(list=ls(all=TRUE))
 
 # which method? model_name in c("Ridge", "Lasso)
-model_name <- "Ridge"
+model_name <- "Lasso"
+stopifnot(model_name %in% c("Ridge", "Lasso"))
+
+if(model_name=="Lasso"){
+  no_model <- 1
+}
+
+if(model_name=="Ridge"){
+  no_model <- 0
+}
+
+#which lambda?
+lambda_VALS <- c("lambda.min", "lambda.1se")
+lambda_val <- lambda_VALS[1]
 
 #threshold for bad yields in c(0.025,0.05,0.1)
 threshold <- 0.05
+
+#which segregation threshold for the model?
+segreg_th <- 0.5
 
 #############################
 ##### Standardised data #####
@@ -22,93 +36,263 @@ threshold <- 0.05
 
 ##### Initialisation, librairies, data #####
 
-library(glmnet);library(InformationValue)
-
-library(ncdf4)
-
+library(ncdf4);library(rgdal);library(raster)
+library(glmnet);library(InformationValue);library(ROCR)
+library(abind)
 library(foreach);library(doParallel)
+library(tictoc)
 
 
 
 
 # Get the data
+# path_to_NH_files <- "/scratch3/pauline/Damocles_training_school_Como2019/GroupProject1/Data/NH"
 path_to_NH_files <- "C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/Data/Global"
 
-nh_files <- list.files(path=path_to_NH_files,pattern="*NH.nc") # all files from northern hemisphere
+nh_files <- list.files(path=path_to_NH_files,pattern="NH_yield*") # all files from northern hemisphere
 nh_data <- lapply(1:length(nh_files),
                   FUN = function(x){nc_open(paste0(path_to_NH_files,"/",nh_files[x]))})
-nh_variables <- lapply(1:length(nh_files),
-                       FUN = function(x){ncvar_get(nh_data[[x]])})
-
-lati <- ncvar_get(nh_data[[1]],"lat")
-long <- ncvar_get(nh_data[[1]],"lon")
-lapply(1:length(nh_files),function(x){nc_close(nh_data[[x]])})  
-
-image(nh_variables[[which(nh_files=="crop_yield_NH.nc")]][,,1])
-
-##### Reduce the size (spatial and growing season length) #####
-#index of lat with at least one non NA value
-index_lati_kept <- (1:length(lati))[apply(nh_variables[[which(nh_files=="crop_yield_NH.nc")]],
-                                          MARGIN = 2, FUN = max, na.rm=T)>0]
-#index of lon with at least one non NA value
-index_long_kept <- (1:length(long))[apply(nh_variables[[which(nh_files=="crop_yield_NH.nc")]],
-                                          MARGIN = 1, FUN = max, na.rm=T)>0]
+yield <- ncvar_get(nh_data[[1]],"yield")
+tasmax <- ncvar_get(nh_data[[1]],"tasmax")
+vpd <- ncvar_get(nh_data[[1]],"vpd")
+pr <- ncvar_get(nh_data[[1]],"pr")
+lat_subset <- ncvar_get(nh_data[[1]],"lat")
+lon_subset <- ncvar_get(nh_data[[1]],"lon")
+yield_stand <- ncvar_get(nh_data[[2]],"yield")
+tasmax_stand <- ncvar_get(nh_data[[2]],"tasmax")
+vpd_stand <- ncvar_get(nh_data[[2]],"vpd")
+pr_stand <- ncvar_get(nh_data[[2]],"pr")
+lapply(1:length(nh_files),function(x){nc_close(nh_data[[x]])})
+coord_subset <- cbind(lon_subset,lat_subset)
 
 
-#index of growing season starting month (1=August)
-sowing_month <- (floor(apply(nh_variables[[which(nh_files=="crop_sowing_date_NH.nc")]],
-                             MARGIN = c(1,2), FUN = min)/30.5)-7)[index_long_kept,index_lati_kept]
-month_length_growing <- (floor(apply(nh_variables[[which(nh_files=="crop_growingseason_length_NH.nc")]],
-                                     MARGIN = c(1,2), FUN = max)/30.5)+1)[index_long_kept,index_lati_kept]
+# load all coordinates of northern hemisphere
+nh_files <- list.files(path=path_to_NH_files,pattern="*NH.nc") # all files from northern hemisphere
+nh_data <- lapply(1:length(nh_files),function(x){nc_open(paste0(path_to_NH_files,"/",nh_files[x]))})
+lat_all <- ncvar_get(nh_data[[1]],"lat")
+lon_all <- ncvar_get(nh_data[[1]],"lon")
+lati_all <- rep(lat_all,each=length(lon_all))
+long_all <- rep(lon_all,length(lat_all)) # coordinates rearranged
+coord_all <- cbind(long_all,lati_all)
+
+lapply(1:length(nh_files),function(x){nc_close(nh_data[[x]])})
 
 
-#reduce the variables
-yield <-nh_variables[[which(nh_files=="crop_yield_NH.nc")]][index_long_kept,index_lati_kept,]
-vpd <- nh_variables[[which(nh_files=="meteo_vpd_NH.nc")]][index_long_kept,index_lati_kept,,]
-prec <- nh_variables[[which(nh_files=="meteo_pr_NH.nc")]][index_long_kept,index_lati_kept,,]
-tasmax <- nh_variables[[which(nh_files=="meteo_tasmax_NH.nc")]][index_long_kept,index_lati_kept,,]
-nb_years <- dim(prec)[4]
-for (LAT in 1:length(index_lati_kept)) {
-  for (LON in 1:length(index_long_kept)) {
-    month_index <- 1:dim(vpd)[3]<sowing_month[LON,LAT] | 1:dim(vpd)[3]>(sowing_month[LON,LAT]+month_length_growing[LON,LAT]-1)
-    if (!is.na(sum(month_index))){
-      for (year in 1:nb_years) {
-        vpd[LON, LAT,month_index,year] <- rep(NA, sum(month_index))
-        prec[LON, LAT,month_index,year] <- rep(NA, sum(month_index))
-        tasmax[LON, LAT,month_index,year] <- rep(NA, sum(month_index))
-      }#enf for year
-    }#END IF
-  }#end for LON
-}#end for LAT
+# Process data ####
+###################
 
-#Explore the data
-#nb points with 
-sum(month_length_growing<=3, na.rm=T)
-sum(month_length_growing==3, na.rm=T)
-
-# Look at the erroneous pixel (see Erroneous pixel.R)
-month_length_growing[which(index_long_kept==180),which(index_lati_kept==12)]
-prec[which(index_long_kept==180),which(index_lati_kept==12),,1]
+yields_3dim <- array(yield,dim=c(965,1,1600));yields_stand_3dim <- array(yield,dim=c(965,1,1600))
+Model_data <- abind(yields_3dim,tasmax,vpd,pr,along=2)
+Model_data_stand <- abind(yields_stand_3dim,tasmax_stand,vpd_stand,pr_stand,along=2)
 
 
+pix_num <- dim(Model_data)[1]
+low_yield <- sapply(1:pix_num,function(x) {quantile(yield[x,],threshold,na.rm=T)})
+cy <- t(sapply(1:pix_num,function(x){ifelse(yield[x,]<low_yield[x],0,1)})) # identical for standardised and non-standardised yield
 
+cy_reshaped <- array(data=cy,dim=c(dim(cy)[1],1,1600))
+Model_data[,1,] <-cy_reshaped
+Model_data_stand[,1,] <-cy_reshaped
 
-
-##### Standardisation #####
-T1 <- Sys.time()
-yield_stand <- aperm(apply(yield, FUN = scale, MARGIN = c(1,2)), perm = c(2,3,1))
-vpd_stand <- aperm(apply(vpd, FUN = scale, MARGIN = c(1,2,3)), perm=c(2,3,4,1))
-pr_stand <- aperm(apply(prec, FUN = scale, MARGIN = c(1,2,3)), perm=c(2,3,4,1))
-tasmax_stand <- aperm(apply(tasmax, FUN = scale, MARGIN = c(1,2,3)), perm=c(2,3,4,1))
-T2 <- Sys.time()
-difftime(T2,T1)
+columnnames <- c("Yield","pr_Aug_Y1","pr_Sep_Y1","pr_Oct_Y1","pr_Nov_Y1","pr_Dec_Y1","pr_Jan_Y2",
+                 "pr_Feb_Y2","pr_Mar_Y2","pr_Apr_Y2","pr_May_Y2","pr_Jun_Y2","pr_Jul_Y2",
+                 "pr_Aug_Y2","pr_Sep_Y2","pr_Oct_Y2","pr_Nov_Y2","pr_Dec_Y2",
+                 "tmax_Aug_Y1","tmax_Sep_Y1","tmax_Oct_Y1","tmax_Nov_Y1","tmax_Dec_Y1","tmax_Jan_Y2",
+                 "tmax_Feb_Y2","tmax_Mar_Y2","tmax_Apr_Y2","tmax_May_Y2","tmax_Jun_Y2","tmax_Jul_Y2",
+                 "tmax_Aug_Y2","tmax_Sep_Y2","tmax_Oct_Y2","tmax_Nov_Y2","tmax_Dec_Y2",
+                 "vpd_Aug_Y1","vpd_Sep_Y1","vpd_Oct_Y1","vpd_Nov_Y1","vpd_Dec_Y1","vpd_Jan_Y2",
+                 "vpd_Feb_Y2","vpd_Mar_Y2","vpd_Apr_Y2","vpd_May_Y2","vpd_Jun_Y2","vpd_Jul_Y2",
+                 "vpd_Aug_Y2","vpd_Sep_Y2","vpd_Oct_Y2","vpd_Nov_Y2","vpd_Dec_Y2")
+colnames(Model_data) <- columnnames
+colnames(Model_data_stand) <- columnnames
 
 
 
-#get yield threshold
-yield_treshold <- apply(yield_stand,MARGIN = c(1,2), quantile, probs = threshold, na.rm=T)
+# Exclude NA variable columns
+na_col <- matrix(data=NA,nrow=pix_num,ncol=52)
+for (j in 1:pix_num){
+  for (i in 1:52){
+    na_col[j,i] <- all(is.na(Model_data[j,i,])) # TRUE if entire column is NA
+  }
+}
+non_na_col <- !na_col # columns without NAs
+non_na_col[,1] <- FALSE # exclude yield (it is no predictor and should therefore be ignored)
 
-#quick check: compare
-yield_th_not_stand <- apply(yield,MARGIN = c(1,2), quantile, probs = threshold, na.rm=T)
-image(yield_th_not_stand)
-image((yield_treshold*apply(yield,MARGIN = c(1,2),FUN=sd, na.rm=T))+apply(yield,MARGIN = c(1,2),FUN=mean, na.rm=T))
+
+na_time <- vector("list",length=pix_num) # for each pixel, the positions of NAs over time
+for (j in 1:pix_num){
+  na_time[[j]] <- which(is.na(Model_data[j,1,])) # locations of years with NA values
+}
+
+
+
+
+# Option 1: Exclude years with NAs (not the whole pixel, just the NA years of it) ####
+######################################################################################
+
+# Split data into training and testing data set
+vec <- 1:1600
+
+years_with_na <- vector("logical",length=pix_num)
+for (i in 1:pix_num){
+  years_with_na[i] <- ifelse(length(na_time[[i]] ) ==0,F,T)
+}
+
+training_indices <- vector("list",length=pix_num)
+testing_indices <- vector("list",length=pix_num)
+set.seed(1994)
+for (x in 1:pix_num) {
+  if (years_with_na[x]) {
+    training_indices[[x]] <- sort(sample(x=vec[-na_time[[x]]], size = floor((1600-length(na_time[[x]]))*0.6)))
+    testing_indices[[x]] <- vec[-c(na_time[[x]], training_indices[[x]])]
+  } else {
+    training_indices[[x]] <- sort(sample(1:1600, size = floor(1600*0.6)))
+    testing_indices[[x]] <- (1:1600)[-training_indices[[x]]]    
+  }
+}
+# training_indices2 <- sapply(1:pix_num, function(x) {sort(sample(x=vec[-na_time[[x]]], size = floor((1600-length(na_time[[x]]))*0.6)))})
+# testing_indices2 <- sapply(1:pix_num, function(x) {vec[-na_time[[x]]][-training_indices[[x]]]})
+# training_indices2 <- sapply(1:pix_num, function(x) {sort(sample(1:(1600-length(na_time[[x]])), size = floor((1600-length(na_time[[x]]))*0.6)))})
+# testing_indices2 <- sapply(1:pix_num, function(x) {(1:(1600-length(na_time[[x]])))[-training_indices2[[x]]]})
+
+Training_Data <- lapply(1:pix_num,function(x){Model_data_stand[x,,training_indices[[x]]]})
+Testing_Data <- lapply(1:pix_num,function(x){Model_data_stand[x,,testing_indices[[x]]]})
+
+pix_in <- 1:pix_num
+# x1_train_list <- lapply(seq_along(pix_in), function(x){ as.data.frame(t(Training_Data[x,non_na_col[x,],]))}) # predictors
+# y1_train_list <- lapply(seq_along(pix_in), function(x){ Training_Data[x,1,]}) # predictand
+# x1_test_list <- lapply(seq_along(pix_in), function(x){ as.data.frame(t(Testing_Data[x,non_na_col[x,],]))}) # predictors
+# y1_test_list <- lapply(seq_along(pix_in), function(x){Testing_Data[x,1,]}) # predictand
+
+x1_train_list <- lapply(seq_along(pix_in), function(x){ as.data.frame(t(Training_Data[[x]][non_na_col[x,],]))}) # predictors
+y1_train_list <- lapply(seq_along(pix_in), function(x){ Training_Data[[x]][1,]}) # predictand
+x1_test_list <- lapply(seq_along(pix_in), function(x){ as.data.frame(t(Testing_Data[[x]][non_na_col[x,],]))}) # predictors
+y1_test_list <- lapply(seq_along(pix_in), function(x){Testing_Data[[x]][1,]}) # predictand
+
+var_num <- apply(non_na_col,1,sum)
+numLevels_list <- sapply(1:pix_num, function(x){ rep(1,times=var_num[x])})
+for (i in 1:pix_num){
+  names(numLevels_list[[i]]) <-  colnames(x1_test_list[[i]])
+}
+
+
+# Alternative Option 2: exclude all pixels which have years with NA ####
+####################################################################
+
+# # Split data into training and testing data set
+# set.seed(1994)
+# training_indices <- sort(sample(1:1600, size = floor(1600*0.6)))
+# testing_indices <- (1:1600)[-training_indices]
+# Training_Data <- Model_data_stand[,,training_indices]
+# Testing_Data <- Model_data_stand[,,testing_indices]
+# 
+# pix_in <- 1:pix_num
+# x1_train_list <- lapply(seq_along(pix_in), function(x){ as.data.frame(t(Training_Data[x,non_na_col[x,],]))}) # predictors
+# y1_train_list <- lapply(seq_along(pix_in), function(x){ Training_Data[x,1,]}) # predictand
+# 
+# x1_test_list <- lapply(seq_along(pix_in), function(x){ as.data.frame(t(Testing_Data[x,non_na_col[x,],]))}) # predictors
+# y1_test_list <- lapply(seq_along(pix_in), function(x){Testing_Data[x,1,]}) # predictand
+# 
+# var_num <- apply(non_na_col,1,sum)
+# numLevels_list <- sapply(1:pix_num, function(x){ rep(1,times=var_num[x])})
+# for (i in 1:pix_num){
+#   names(numLevels_list[[i]]) <-  colnames(x1_test_list[[i]])
+# }
+
+# pix_with_NA <- which(apply(cy,1,anyNA))
+# final_pix <- 1:965;
+# final_pix <- final_pix[-pix_with_NA]
+
+
+
+
+
+# Run model ####
+################
+
+
+
+
+no_cores <- detectCores() / 2 - 1
+cl<-makeCluster(no_cores)
+clusterEvalQ(cl, {
+  library(glmnet)
+  library(dplyr)
+}) # parallelisation has own environment, therefore some packages and variables need be loaded again
+registerDoParallel(cl)
+
+tic()
+# cv_fit <- foreach (i=1:dim(Model_data)[1],.multicombine=TRUE) %dopar% {
+cv_fit <- foreach (i=1:5,.multicombine=TRUE) %dopar% {
+  cv.glmnet(x = as.matrix(x1_train_list[[i]]),
+            y = as.matrix(y1_train_list[[i]]),
+            family = "binomial", alpha = no_model, nfolds = 10)
+}
+stopCluster(cl)
+toc()
+
+
+#without paralellizing
+tic()
+model_cv_fitting <- list()
+for (pixel in 1:5) {
+  model_cv_fitting[[pixel]] <- cv.glmnet(x = as.matrix(x1_train_list[[pixel]]),
+                                         y = as.matrix(y1_train_list[[pixel]]),
+                                         family = "binomial", alpha = no_model, nfolds = 10)
+}
+
+toc()
+
+
+# Model performance assessment ####
+###################################
+test_length <- 5 
+
+coefs <- lapply(1:test_length, function(x){coef(model_cv_fitting[[x]], s=lambda_val)})
+
+# coefs$mainEffects # model part without interactions
+# names(numLevels)[coefs$mainEffects$cont] # Main effect variables (without interactions)
+# 
+# coefs$interactions # model part with interactions pairs
+# names(numLevels)[coefs$interactions$contcont] # Main effect variables (with interactions)
+
+
+mypred <- lapply(1:test_length, function(x){predict(model_cv_fitting[[x]],
+                                                    as.matrix(x1_test_list[[x]]),type="response")})
+
+fitted.results_model <- lapply(1:test_length, function(x){ifelse(mypred[[x]] > segreg_th,1,0)})
+
+mis_clas_err <- lapply(1:test_length, function(x){misClassError(actuals = as.matrix(y1_test_list[[x]]),
+                                                                predictedScores=mypred[[x]],
+                                                                threshold = segreg_th)})
+
+con_tab <-  lapply(1:test_length, function(x){InformationValue::confusionMatrix(as.matrix(y1_test_list[[x]]),
+                                                                                fitted.results_model[[x]])})
+sensi <- sapply(1:test_length, function(x){InformationValue::sensitivity(as.matrix(y1_test_list[[x]]),
+                                                                         fitted.results_model[[x]])})
+speci <- sapply(1:test_length, function(x){InformationValue::specificity(as.matrix(y1_test_list[[x]]),
+                                                                         fitted.results_model[[x]])})
+
+
+
+# Plot specificity and sensitivity on a map ####
+
+# Workaround: bind lat and lon to one object, so that you have to look for just one object, and not lat-/lon-pairs
+coord_subset_temp <- cbind(coord_subset,paste(coord_subset[,1],coord_subset[,2]))
+coord_all_temp <- cbind(coord_all,paste(coord_all[,1],coord_all[,2]))
+loc_pix <- which(coord_all_temp[,3] %in% coord_subset_temp [,3]) # locations of our pixels in the whole coordinate set
+
+coord_all <- cbind(coord_all,rep(NA,24320))
+for (i in 1:test_length){
+  coord_all[loc_pix[i],3] <- speci[i]
+}
+
+spec_mat <- matrix(as.numeric(coord_all[,3]),nrow=320,ncol=76)
+
+border <- readOGR('C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/ne_50m_admin_0_countries.shp')	
+spec_ras <- raster(t(spec_mat[,76:1]), xmn=min(lon_all), xmx=max(lon_all), ymn=min(lat_all), ymx=max(lat_all), crs=CRS(projection(border)))
+
+x11(width = 1000, height = 600)
+plot(spec_ras,asp=1, col=heat.colors(15));plot(border,add=T)
+
+     
