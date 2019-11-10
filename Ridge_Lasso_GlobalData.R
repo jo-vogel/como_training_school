@@ -38,7 +38,7 @@ segreg_th <- 0.5
 
 library(ncdf4);library(rgdal);library(raster)
 library(glmnet);library(InformationValue);library(ROCR)
-library(abind)
+library(abind);library(stringr)
 library(foreach);library(doParallel)
 library(tictoc)
 
@@ -235,18 +235,22 @@ toc()
 #without paralellizing
 tic()
 model_cv_fitting <- list()
-for (pixel in 1:5) {
+for (pixel in 1:dim(Model_data_stand)[1]) {
+# for (pixel in 1:5) {
   model_cv_fitting[[pixel]] <- cv.glmnet(x = as.matrix(x1_train_list[[pixel]]),
                                          y = as.matrix(y1_train_list[[pixel]]),
                                          family = "binomial", alpha = no_model, nfolds = 10)
-}
+}#end for pixel
 
 toc()
+#7310 sec for 940 pixels
+save(model_cv_fitting, file = paste("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/",
+                                    model_name,"_thresoldbadyield", str_pad(threshold*100, 3, pad = "0"),".RData", sep = ""))
 
 
 # Model performance assessment ####
 ###################################
-test_length <- 5 
+test_length <- dim(Model_data_stand)[1]
 
 coefs <- lapply(1:test_length, function(x){coef(model_cv_fitting[[x]], s=lambda_val)})
 
@@ -283,16 +287,19 @@ coord_all_temp <- cbind(coord_all,paste(coord_all[,1],coord_all[,2]))
 loc_pix <- which(coord_all_temp[,3] %in% coord_subset_temp [,3]) # locations of our pixels in the whole coordinate set
 
 coord_all <- cbind(coord_all,rep(NA,24320))
+coord_all_sensi <- cbind(coord_all,rep(NA,24320))
 for (i in 1:test_length){
   coord_all[loc_pix[i],3] <- speci[i]
+  coord_all_sensi[loc_pix[i],3] <- sensi[i]
 }
 
 spec_mat <- matrix(as.numeric(coord_all[,3]),nrow=320,ncol=76)
+sensi_mat <- matrix(as.numeric(coord_all_sensi[,3]),nrow=320,ncol=76)
 
 border <- readOGR('C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/ne_50m_admin_0_countries.shp')	
-spec_ras <- raster(t(spec_mat[,76:1]), xmn=min(lon_all), xmx=max(lon_all), ymn=min(lat_all), ymx=max(lat_all), crs=CRS(projection(border)))
-
+spec_ras_speci <- raster(t(spec_mat[,76:1]), xmn=min(lon_all), xmx=max(lon_all), ymn=min(lat_all), ymx=max(lat_all), crs=CRS(projection(border)))
+sensi_ras_speci <- raster(t(sensi_mat[,76:1]), xmn=min(lon_all), xmx=max(lon_all), ymn=min(lat_all), ymx=max(lat_all), crs=CRS(projection(border)))
 x11(width = 1000, height = 600)
-plot(spec_ras,asp=1, col=heat.colors(15));plot(border,add=T)
-
-     
+plot(spec_ras_speci,asp=1, col=heat.colors(15), main="Specificity");plot(border,add=T)
+x11(width = 1000, height = 600)
+plot(sensi_ras_speci,asp=1, col=heat.colors(15), main="Sensitivity");plot(border,add=T)
