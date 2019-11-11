@@ -30,17 +30,17 @@ threshold <- 0.05
 #which segregation threshold for the model?
 segreg_th <- 0.5
 
-#############################
-##### Standardised data #####
-#############################
-
 ##### Initialisation, librairies, data #####
 
-library(ncdf4);library(rgdal);library(raster)
+library(ncdf4);library(rgdal);library(raster);library(RColorBrewer);library(viridis)
 library(glmnet);library(InformationValue);library(ROCR)
 library(abind);library(stringr)
 library(foreach);library(doParallel)
 library(tictoc)
+
+#############################
+##### Standardised data #####
+#############################
 
 
 
@@ -240,6 +240,7 @@ for (pixel in 1:dim(Model_data_stand)[1]) {
   model_cv_fitting[[pixel]] <- cv.glmnet(x = as.matrix(x1_train_list[[pixel]]),
                                          y = as.matrix(y1_train_list[[pixel]]),
                                          family = "binomial", alpha = no_model, nfolds = 10)
+  print(paste(pixel, "out of", dim(Model_data_stand)[1]))
 }#end for pixel
 
 toc()
@@ -248,9 +249,16 @@ save(model_cv_fitting, file = paste("C:/Users/admin/Documents/Damocles_training_
                                     model_name,"_thresoldbadyield", str_pad(threshold*100, 3, pad = "0"),".RData", sep = ""))
 
 
+# Load the fitted model ####
+############################
+
+load(file = paste("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/",
+                  model_name,"_thresoldbadyield", str_pad(threshold*100, 3, pad = "0"),".RData", sep = ""))
+
+
 # Model performance assessment ####
 ###################################
-test_length <- dim(Model_data_stand)[1]
+test_length <- length(model_cv_fitting)
 
 coefs <- lapply(1:test_length, function(x){coef(model_cv_fitting[[x]], s=lambda_val)})
 
@@ -271,11 +279,14 @@ mis_clas_err <- lapply(1:test_length, function(x){misClassError(actuals = as.mat
                                                                 threshold = segreg_th)})
 
 con_tab <-  lapply(1:test_length, function(x){InformationValue::confusionMatrix(as.matrix(y1_test_list[[x]]),
-                                                                                fitted.results_model[[x]])})
+                                                                                fitted.results_model[[x]],
+                                                                                threshold = segreg_th)})
 sensi <- sapply(1:test_length, function(x){InformationValue::sensitivity(as.matrix(y1_test_list[[x]]),
-                                                                         fitted.results_model[[x]])})
+                                                                         fitted.results_model[[x]],
+                                                                         threshold = segreg_th)})
 speci <- sapply(1:test_length, function(x){InformationValue::specificity(as.matrix(y1_test_list[[x]]),
-                                                                         fitted.results_model[[x]])})
+                                                                         fitted.results_model[[x]],
+                                                                         threshold = segreg_th)})
 
 
 
@@ -299,7 +310,15 @@ sensi_mat <- matrix(as.numeric(coord_all_sensi[,3]),nrow=320,ncol=76)
 border <- readOGR('C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/ne_50m_admin_0_countries.shp')	
 spec_ras_speci <- raster(t(spec_mat[,76:1]), xmn=min(lon_all), xmx=max(lon_all), ymn=min(lat_all), ymx=max(lat_all), crs=CRS(projection(border)))
 sensi_ras_speci <- raster(t(sensi_mat[,76:1]), xmn=min(lon_all), xmx=max(lon_all), ymn=min(lat_all), ymx=max(lat_all), crs=CRS(projection(border)))
+cuts <- seq(0,1, by = 0.1)
+pal <- colorRampPalette(c("red", "yellow"))
 x11(width = 1000, height = 600)
-plot(spec_ras_speci,asp=1, col=heat.colors(15), main="Specificity");plot(border,add=T)
+plot(spec_ras_speci,asp=1, breaks=cuts, col=plasma(length(cuts)),
+     main=paste("Specificity, ", model_name, " regression\nThreshold bad yield ",
+                threshold, " ; threshold segregation", segreg_th));plot(border,add=T)
 x11(width = 1000, height = 600)
-plot(sensi_ras_speci,asp=1, col=heat.colors(15), main="Sensitivity");plot(border,add=T)
+plot(sensi_ras_speci,asp=1, breaks=cuts, col=plasma(length(cuts)),
+     main=paste("Sensitivity, ", model_name, " regression\nThreshold bad yield ",
+                threshold, " ; threshold segregation", segreg_th));plot(border,add=T)
+
+
