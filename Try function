@@ -1,3 +1,4 @@
+#it is not working#
 
 tic()
 no_cores <- detectCores() / 2 - 1
@@ -8,13 +9,13 @@ clusterEvalQ(cl, {
 }) # parallelisation has own environment, therefore some packages and variables need be loaded again
 registerDoParallel(cl)
 
-
-res<-try(exp(12),silent = T)  
+res<-vector(mode = "list", length = pix_num)
+res[[1]]<-try(exp(12),silent = T)  
 
    
-model_CV<- foreach (i=1:pix_num,.multicombine=TRUE,.packages="bestglm") %dopar% {
+model_CV<- foreach (i=2:(pix_num+1),.multicombine=TRUE,.packages="bestglm") %dopar% {
   
-  if( class(res)!="try-error")
+  if( class(res[[i-1]])!="try-error")
   {        
   res<-try(bestglm(Xy = data.frame(Training_Data [[i]]), IC = "CV", CVArgs = list(Method = "HTF", K = 10, REP =1000), 
         family=binomial),silent=T)} else{0} 
