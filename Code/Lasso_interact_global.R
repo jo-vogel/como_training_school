@@ -174,6 +174,8 @@ for (i in 1:pix_num){
 
 
 tic()
+# cv_fit_list <- vector("list",length=dim(Model_data)[1])
+
 no_cores <- detectCores() / 2 - 1
 cl<-makeCluster(no_cores)
 clusterEvalQ(cl, {
@@ -182,15 +184,15 @@ clusterEvalQ(cl, {
 }) # parallelisation has own environment, therefore some packages and variables need be loaded again
 registerDoParallel(cl)
 
-
+set.seed(1994)
 # cv_fit <- foreach (i=1:dim(Model_data)[1],.multicombine=TRUE) %dopar% {
 cv_fit <- foreach (i=1:5,.multicombine=TRUE) %dopar% {
-# cv_fit <- foreach (i=final_pix,.multicombine=TRUE) %dopar% {
   # for (i in 1:dim(Model_data)[1][1:3]){
-  # cv_fit <- glinternet.cv(X1_train, y1_train, numLevels,family = "binomial")
   glinternet.cv(x1_train_list[[i]], y1_train_list[[i]], numLevels_list[[i]],family = "binomial")
+  try(glinternet.cv(x1_train_list[[i]], y1_train_list[[i]], numLevels_list[[i]],family = "binomial"),silent=F)
+  # tryCatch(glinternet.cv(x1_train_list[[i]], y1_train_list[[i]], numLevels_list[[i]],family = "binomial"), error=function(e) paste0("Error in iteration ",i))
+  # cv_fit <- glinternet.cv(X1_train, y1_train, numLevels,family = "binomial")
   # cv_fit_list[[i]] <- cv_fit
-  # count <- count + 1
 }
 stopCluster(cl)
 toc()
