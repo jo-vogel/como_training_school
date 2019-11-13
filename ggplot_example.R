@@ -19,4 +19,4 @@ ggplot(data = DF_miscla, aes(x=lon, y=lat)) +
        title = paste(model_name,"regression"),
        subtitle = paste("Bad yield threshold=", threshold,
                         ", segregation threshold=", segreg_th, sep = ""))+
-  X11(width = 20, height = 10)
+  X11(width = 20, height = 6)
