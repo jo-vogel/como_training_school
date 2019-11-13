@@ -1,4 +1,4 @@
-get_firstcoeffs <- function(coeff, nb_of_coeff){
+get_firstcoeffs <- function(coeff, nb_of_coeff=1){
   N <- nb_of_coeff
   coeff_name_date <- matrix(data = NA, nrow = N, ncol = 2)
   row.names(coeff_name_date) <- as.character(1:N)
