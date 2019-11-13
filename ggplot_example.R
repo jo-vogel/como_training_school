@@ -9,8 +9,8 @@ ggplot(data = DF_miscla, aes(x=lon, y=lat)) +
   geom_polygon(data = world, aes(long, lat, group=group),
                fill="transparent", color="black", size=0.3) +
   geom_point(shape=15, aes(color=miscla)) +
-  scale_color_gradient(limits=c(0,max(mis_clas_err)), #lowest and highest value of the range to color: can put the same scale for the different segreg thresh
-                       low = "green", high = "red") +
+  scale_color_gradient2(limits=c(0,0.2), midpoint = 0.1,  #lowest and highest value of the range to color. mid=value where to put the mid color
+                        low = "yellow", mid = "red3", high = "black") +
   theme_void()+
   coord_fixed(xlim = c(min(coord_subset[,1])-1, max(coord_subset[,1]+1)),
               ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
