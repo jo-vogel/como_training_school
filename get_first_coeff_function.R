@@ -10,7 +10,7 @@ get_firstcoeffs <- function(coeff, nb_of_coeff=1){
                                                                        decreasing = T,
                                                                        index.return=T)$ix==1)]][ind]
     if(substr(coeff_names, start = 1, stop = 1)=="t"){
-      coeff_name_date[ind,1] <- "tmas"
+      coeff_name_date[ind,1] <- "tmax"
       coeff_name_date[ind,2] <- substr(coeff_names, start = 6, stop = 11)
     }
     
