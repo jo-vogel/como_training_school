@@ -1,0 +1,22 @@
+library(maps);library(mapdata);library(ggplot2)
+
+
+world <- map_data("world")
+DF_miscla <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], miscla = mis_clas_err) #mis_clas_err has to be a vector here, not a list
+
+
+ggplot(data = DF_miscla, aes(x=lon, y=lat)) +
+  geom_polygon(data = world, aes(long, lat, group=group),
+               fill="transparent", color="black", size=0.3) +
+  geom_point(shape=15, aes(color=miscla)) +
+  scale_color_gradient(limits=c(0,max(mis_clas_err)), #lowest and highest value of the range to color: can put the same scale for the different segreg thresh
+                       low = "green", high = "red") +
+  theme_void()+
+  coord_fixed(xlim = c(min(coord_subset[,1])-1, max(coord_subset[,1]+1)),
+              ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
+              ratio = 1.3)+
+  labs(color="Misclassification\n error",
+       title = paste(model_name,"regression"),
+       subtitle = paste("Bad yield threshold=", threshold,
+                        ", segregation threshold=", segreg_th, sep = ""))+
+  X11(width = 20, height = 10)
