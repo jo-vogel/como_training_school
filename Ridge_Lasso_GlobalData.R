@@ -28,7 +28,7 @@ lambda_val <- lambda_VALS[1]
 threshold <- 0.05
 
 #which segregation threshold for the model?
-segreg_th <- 0.5
+segreg_th <- 0.9
 
 ##### Initialisation, librairies, data #####
 
@@ -247,6 +247,7 @@ for (pixel in 1:dim(Model_data_stand)[1]) {
 }#end for pixel
 
 toc()
+
 #15 min for Ridge
 save(model_cv_fitting, file = paste("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/",
                                     model_name,"_Thresholdbadyield", str_pad(threshold*100, 3, pad = "0"),".RData", sep = ""))
@@ -290,21 +291,20 @@ mis_clas_err <- sapply(1:test_length, function(x){misClassError(actuals = as.mat
                                                                 predictedScores=mypred[[x]],
                                                                 threshold = segreg_th)})
 
-con_tab <-  lapply(1:test_length, function(x){InformationValue::confusionMatrix(as.matrix(y1_test_list[[x]]),
-                                                                                fitted.results_model[[x]],
-                                                                                threshold = segreg_th)})
-sensi <- sapply(1:test_length, function(x){InformationValue::sensitivity(as.matrix(y1_test_list[[x]]),
-                                                                         fitted.results_model[[x]],
-                                                                         threshold = segreg_th)})
+# con_tab <-  lapply(1:test_length, function(x){InformationValue::confusionMatrix(as.matrix(y1_test_list[[x]]),
+#                                                                                 fitted.results_model[[x]],
+#                                                                                 threshold = segreg_th)})
+# sensi <- sapply(1:test_length, function(x){InformationValue::sensitivity(as.matrix(y1_test_list[[x]]),
+#                                                                          fitted.results_model[[x]],
+#                                                                          threshold = segreg_th)})
 speci <- sapply(1:test_length, function(x){InformationValue::specificity(as.matrix(y1_test_list[[x]]),
                                                                          fitted.results_model[[x]],
                                                                          threshold = segreg_th)})
 
 
 
-# Plot specificity and sensitivity on a map ####
+# Plot miscla error ####
 
-# ggplot ####
 world <- map_data("world")
 DF_miscla <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], miscla = mis_clas_err)
 
@@ -312,8 +312,8 @@ ggplot(data = DF_miscla, aes(x=lon, y=lat)) +
   geom_polygon(data = world, aes(long, lat, group=group),
                fill="transparent", color="black", size=0.3) +
   geom_point(shape=15, aes(color=miscla)) +
-  scale_color_gradient(limits=c(0,(floor(max(mis_clas_err)*100) + 1)/100),
-                        low = "green", high = "red") +
+  scale_color_gradient2(limits=c(0,0.2), midpoint = 0.1,
+                        low = "yellow", mid = "red3", high = "black") +
   theme_void()+
   coord_fixed(xlim = c(min(coord_subset[,1])-1, max(coord_subset[,1]+1)),
               ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
@@ -322,99 +322,85 @@ ggplot(data = DF_miscla, aes(x=lon, y=lat)) +
        title = paste(model_name,"regression"),
        subtitle = paste("Bad yield threshold=", threshold,
                         ", segregation threshold=", segreg_th, sep = ""))+
-  X11(width = 20, height = 10)
+  X11(width = 20, height = 6)
 
 
-# Workaround: bind lat and lon to one object, so that you have to look for just one object, and not lat-/lon-pairs
-coord_subset_temp <- cbind(coord_subset,paste(coord_subset[,1],coord_subset[,2]))
-coord_all_temp <- cbind(coord_all,paste(coord_all[,1],coord_all[,2]))
-loc_pix <- which(coord_all_temp[,3] %in% coord_subset_temp [,3]) # locations of our pixels in the whole coordinate set
+# Plot specificity error ####
 
-coord_all <- cbind(coord_all,rep(NA,24320))
-coord_all_sensi <- cbind(coord_all,rep(NA,24320))
-coord_all_classerr <- cbind(coord_all,rep(NA,24320))
-for (i in 1:test_length){
-  coord_all[loc_pix[i],3] <- speci[i]
-  coord_all_sensi[loc_pix[i],3] <- sensi[i]
-  coord_all_classerr[loc_pix[i],3] <- mis_clas_err[[i]]
-}
+DF_speci <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], miscla = speci)
 
-spec_mat <- matrix(as.numeric(coord_all[,3]),nrow=320,ncol=76)
-sensi_mat <- matrix(as.numeric(coord_all_sensi[,3]),nrow=320,ncol=76)
-miscla_mat <- matrix(as.numeric(coord_all_classerr[,3]),nrow=320,ncol=76)
-
-border <- readOGR('C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/ne_50m_admin_0_countries.shp')	
-spec_ras_speci <- raster(t(spec_mat[,76:1]), xmn=min(lon_all), xmx=max(lon_all),
-                         ymn=min(lat_all), ymx=max(lat_all), crs=CRS(projection(border)))
-sensi_ras_speci <- raster(t(sensi_mat[,76:1]), xmn=min(lon_all), xmx=max(lon_all),
-                          ymn=min(lat_all), ymx=max(lat_all), crs=CRS(projection(border)))
-miscla_ras_speci <- raster(t(miscla_mat[,76:1]), xmn=min(lon_all), xmx=max(lon_all),
-                          ymn=min(lat_all), ymx=max(lat_all), crs=CRS(projection(border)))
-cuts <- seq(0,1, by = 0.1)
-x11(width = 1000, height = 600)
-plot(spec_ras_speci,asp=1, breaks=cuts, col=plasma(length(cuts)),
-     main=paste("Specificity, ", model_name, " regression\nThreshold bad yield ",
-                threshold, " ; threshold segregation", segreg_th));plot(border,add=T)
-x11(width = 1000, height = 600)
-plot(sensi_ras_speci,asp=1, breaks=cuts, col=plasma(length(cuts)),
-     main=paste("Sensitivity, ", model_name, " regression\nThreshold bad yield ",
-                threshold, " ; threshold segregation", segreg_th));plot(border,add=T)
-
-tryyyy <- numeric()
-for (i in 1:965) {
-  tryyyy[i]<-mis_clas_err[[i]]
-}
-max(tryyyy)
-cuts2 <- seq(0,0.2, by = 0.02)
-x11(width = 1000, height = 600)
-plot(miscla_ras_speci,asp=1, breaks=cuts2, col=viridis(length(cuts2)),
-     main=paste("Misclassification Error, ", model_name, " regression\nThreshold bad yield ",
-                threshold, " ; threshold segregation", segreg_th));plot(border,add=T)
-
-# Most important coefficients ####
-##################################
-set.seed(2019)
+ggplot(data = DF_speci, aes(x=lon, y=lat)) +
+  geom_polygon(data = world, aes(long, lat, group=group),
+               fill="transparent", color="black", size=0.3) +
+  geom_point(shape=15, aes(color=speci)) +
+  scale_color_gradient2(limits=c(0,1), midpoint = 0.5,
+                        low = "black", mid = "red3", high = "yellow") +
+  theme_void()+
+  coord_fixed(xlim = c(min(coord_subset[,1])-1, max(coord_subset[,1]+1)),
+              ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
+              ratio = 1.3)+
+  labs(color="Specificity",
+       title = paste(model_name,"regression"),
+       subtitle = paste("Bad yield threshold=", threshold,
+                        ", segregation threshold=", segreg_th, sep = ""))+
+  X11(width = 20, height = 6)
 
 
-firstcoeffs <- list()
-pixel_i_want <-sample(1:965, size = 1)
 
-rownames(coefs[[pixel_i_want]])[sort(abs(as.numeric(coefs[[pixel_i_want]])),
-                          decreasing = T,
-                          index.return=T)$ix[-which(sort(abs(as.numeric(coefs[[pixel_i_want]])), 
-                                                                        decreasing = T,
-                                                                        index.return=T)$ix==1)]]
-# Is it the same if I run the model on standardized data (rather than rescaled)?
-Stand_meteo_data <- apply(Model_data[pixel_i_want,-1,], FUN = scale, MARGIN = 1)
-Stand_data <- t(cbind(Model_data[pixel_i_want,1,], Stand_meteo_data))
 
-training_data_pix <- Stand_data[,training_indices[[pixel_i_want]]]
-testing_data_pix <- Stand_data[,testing_indices[[pixel_i_want]]]
 
-pix_in <- 1:pix_num
+# Correlation between yield and specificity or miscla error ####
 
-x1_train_pix <- as.data.frame(t(training_data_pix[non_na_col[pixel_i_want,],])) # predictors
-y1_train_pix <- training_data_pix[1,] # predictand
-x1_test_pix <- as.data.frame(t(testing_data_pix[non_na_col[pixel_i_want,],])) # predictors
-y1_test_pix <- testing_data_pix[1,] # predictand
+mean_yield <- apply(X=yield, MARGIN = 1, FUN = mean, na.rm=T)
+plot(mean_yield, mis_clas_err,
+     xlab="Mean Yield (kg/yr)", ylab="Miss-classification error",
+     main=paste("Scatterplot mean yield, miss-classification error\nbad yield threshold=", threshold,
+                "\nsegregation threshold=", segreg_th, sep = ""))
+plot(mean_yield, speci,
+     xlab="Mean Yield (kg/yr)", ylab="Specificity",
+     main=paste("Scatterplot mean yield, Specificity\nbad yield threshold=", threshold,
+                "\nsegregation threshold=", segreg_th, sep = ""))
 
-var_num_pix <- sum(non_na_col[pixel_i_want,])
-numLevels_pix <- rep(1,times=var_num[pixel_i_want])
-numLevels_pix <-  colnames(x1_test_pix)
 
-model_1pix <- cv.glmnet(x = as.matrix(x1_train_pix),
-                        y = as.matrix(y1_train_pix),
-                        family = "binomial", alpha = no_model, nfolds = 10)
-coef_1pix <- coef(model_1pix)
+pairs(cbind(mean_yield, mis_clas_err, speci),
+      main=paste(model_name, " regression, bad yield thr.=", threshold,
+                 "\nsegreg. thr.=", segreg_th, sep = ""))
 
-firstcoeffs[[5]] <- cbind(rownames(coefs[[pixel_i_want]])[sort(abs(as.numeric(coef_1pix)),
-                                                       decreasing = T,
-                                                       index.return=T)$ix[-which(sort(abs(as.numeric(coef_1pix)), 
-                                                                                      decreasing = T,
-                                                                                      index.return=T)$ix==1)]][1:10],
-                  rownames(coefs[[pixel_i_want]])[sort(abs(as.numeric(coefs[[pixel_i_want]])),
-                                                       decreasing = T,
-                                                       index.return=T)$ix[-which(sort(abs(as.numeric(coefs[[pixel_i_want]])), 
-                                                                                      decreasing = T,
-                                                                                      index.return=T)$ix==1)]][1:10])
-colnames(firstcoeffs[[5]])=c("Standardization", "Rescale with RANGE")
+cor(mean_yield, mis_clas_err)
+cor(mean_yield, speci)
+
+
+
+
+# Map of the most important coefficient ####
+
+source("get_first_coeff_function.R")
+
+first_var <- numeric()
+month_first_var <- numeric()
+
+for (pix in 1:length(coefs)) {
+  first_var[pix] <- get_firstcoeffs(coefs[[pix]])[,1]
+  month_first_var[pix] <- get_firstcoeffs(coefs[[pix]])[,2]
+}#end for pix
+
+DF_1var <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2],
+                       first_var = first_var, month_first_var=month_first_var)
+
+ggplot(data = DF_1var, aes(x=lon, y=lat)) +
+  geom_polygon(data = world, aes(long, lat, group=group),
+               fill="transparent", color="black", size=0.3) +
+  geom_point(shape=15, aes(color=first_var)) +
+  scale_color_manual(values = c("tmax"="red", "vpd"="green", "pr"="blue"))+
+  theme_void()+
+  coord_fixed(xlim = c(min(coord_subset[,1])-1, max(coord_subset[,1]+1)),
+              ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
+              ratio = 1.3)+
+  labs(color="1st var",
+       title = paste(model_name,"regression"),
+       subtitle = paste("Bad yield threshold=", threshold, sep = ""))+
+  X11(width = 20, height = 6)
+
+#Left to do: intensity according to month in the year
+
+#Then: Map of the number of important months
