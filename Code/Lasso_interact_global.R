@@ -198,6 +198,25 @@ stopCluster(cl)
 toc()
 
 
+# Suggestion of Pauline ####
+
+set.seed(1994)
+
+cv_fit <- foreach (i=1:dim(Model_data)[1],.multicombine=TRUE) %dopar% {
+
+  RES <- try(glinternet.cv(x1_train_list[[i]], y1_train_list[[i]], numLevels_list[[i]],family = "binomial"),
+             silent=T)
+  
+  if(class(RES)=="try-error"){
+    return(NA)
+  } else {
+    return(RES)
+  }#end ifelse error
+
+} #end foreach
+
+
+
 
 
 # Model performance assessment ####
