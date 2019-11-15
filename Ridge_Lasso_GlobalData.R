@@ -9,7 +9,7 @@ print("Are you sure you want to run the next line? ;) everything in the environm
 rm(list=ls(all=TRUE))
 
 # which method? model_name in c("Ridge", "Lasso)
-model_name <- "Ridge"
+model_name <- "Lasso"
 stopifnot(model_name %in% c("Ridge", "Lasso"))
 
 if(model_name=="Lasso"){
@@ -28,7 +28,7 @@ lambda_val <- lambda_VALS[1]
 threshold <- 0.05
 
 #which segregation threshold for the model?
-segreg_th <- 0.9
+segreg_th <- 0.5
 
 ##### Initialisation, librairies, data #####
 
@@ -285,6 +285,9 @@ coefs <- lapply(1:test_length, function(x){coef(model_cv_fitting[[x]], s=lambda_
 mypred <- lapply(1:test_length, function(x){predict(model_cv_fitting[[x]],
                                                     as.matrix(x1_test_list[[x]]),type="response")})
 
+#which segregation threshold for the model?
+segreg_th <- 0.9
+
 fitted.results_model <- lapply(1:test_length, function(x){ifelse(mypred[[x]] > segreg_th,1,0)})
 
 mis_clas_err <- sapply(1:test_length, function(x){misClassError(actuals = as.matrix(y1_test_list[[x]]),
@@ -310,19 +313,22 @@ DF_miscla <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], miscla = m
 
 ggplot(data = DF_miscla, aes(x=lon, y=lat)) +
   geom_polygon(data = world, aes(long, lat, group=group),
-               fill="transparent", color="black", size=0.3) +
+               fill="white", color="black", size=0.3) +
   geom_point(shape=15, aes(color=miscla)) +
   scale_color_gradient2(limits=c(0,0.2), midpoint = 0.1,
                         low = "yellow", mid = "red3", high = "black") +
-  theme_void()+
-  coord_fixed(xlim = c(min(coord_subset[,1])-1, max(coord_subset[,1]+1)),
+  theme(panel.ontop = F, panel.grid = element_blank(),
+        panel.border = element_rect(colour = "black", fill = NA))+
+  coord_fixed(xlim = c(-120, 135),
               ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
               ratio = 1.3)+
-  labs(color="Misclassification\n error",
-       title = paste(model_name,"regression"),
+  labs(color="Misclass.\nerror",
+       title = paste("Misclassification error, simple",model_name,"regression"),
        subtitle = paste("Bad yield threshold=", threshold,
                         ", segregation threshold=", segreg_th, sep = ""))+
-  X11(width = 20, height = 6)
+  theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
+        legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
+  X11(width = 20, height = 7)
 
 
 # Plot specificity error ####
@@ -331,19 +337,22 @@ DF_speci <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], miscla = sp
 
 ggplot(data = DF_speci, aes(x=lon, y=lat)) +
   geom_polygon(data = world, aes(long, lat, group=group),
-               fill="transparent", color="black", size=0.3) +
+               fill="white", color="black", size=0.3) +
   geom_point(shape=15, aes(color=speci)) +
   scale_color_gradient2(limits=c(0,1), midpoint = 0.5,
                         low = "black", mid = "red3", high = "yellow") +
-  theme_void()+
-  coord_fixed(xlim = c(min(coord_subset[,1])-1, max(coord_subset[,1]+1)),
+  theme(panel.ontop = F, panel.grid = element_blank(),
+        panel.border = element_rect(colour = "black", fill = NA))+
+  coord_fixed(xlim = c(-120, 135),
               ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
               ratio = 1.3)+
-  labs(color="Specificity",
-       title = paste(model_name,"regression"),
+  labs(color="Specif.",
+       title = paste("Specificity, simple",model_name,"regression"),
        subtitle = paste("Bad yield threshold=", threshold,
                         ", segregation threshold=", segreg_th, sep = ""))+
-  X11(width = 20, height = 6)
+  theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
+        legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
+  X11(width = 20, height = 7)
 
 
 
@@ -389,8 +398,50 @@ DF_1var <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2],
 
 ggplot(data = DF_1var, aes(x=lon, y=lat)) +
   geom_polygon(data = world, aes(long, lat, group=group),
-               fill="transparent", color="black", size=0.3) +
-  geom_point(shape=15, aes(color=first_var)) +
+               fill="white", color="black", size=0.3) +
+  # geom_point(shape=22, aes(color=first_var), fill = "white", size=0.9) +
+  # geom_point(data = DF_1var[first_var=="pr",], shape=15,
+  #            aes(x=lon[first_var=="pr"], y=lat[first_var=="pr"], color=month_first_var[first_var=="pr"])) +
+  # scale_color_manual(name="precip",values = c("Sep_Y1"=rgb(0,0,1,2/17),"Oct_Y1"=rgb(0,0,1,3/17),
+  #                               "Nov_Y1"=rgb(0,0,1,4/17),"Dec_Y1"=rgb(0,0,1,5/17),"Jan_Y2"=rgb(0,0,1,6/17),
+  #                               "Feb_Y2"=rgb(0,0,1,7/17),"Mar_Y2"=rgb(0,0,1,8/17),"Apr_Y2"=rgb(0,0,1,9/17),
+  #                               "May_Y2"=rgb(0,0,1,10/17),"Jun_Y2"=rgb(0,0,1,11/17),"Jul_Y2"=rgb(0,0,1,12/17))) +
+  
+  # geom_point(data = DF_1var[first_var=="vpd",], shape=15,
+  #            aes(x=lon[first_var=="vpd"], y=lat[first_var=="vpd"], color=month_first_var[first_var=="vpd"])) +
+  # scale_color_manual(name="vpd", values = c("Aug_Y1"=rgb(0,1,0,1/17),"Sep_Y1"=rgb(0,1,0,2/17),"Oct_Y1"=rgb(0,1,0,3/17),
+  #                               "Nov_Y1"=rgb(0,1,0,4/17),"Dec_Y1"=rgb(0,1,0,5/17),"Jan_Y2"=rgb(0,1,0,6/17),
+  #                               "Feb_Y2"=rgb(0,1,0,7/17),"Mar_Y2"=rgb(0,1,0,8/17),"Apr_Y2"=rgb(0,1,0,9/17),
+  #                               "May_Y2"=rgb(0,1,0,10/17),"Jun_Y2"=rgb(0,1,0,11/17),"Jul_Y2"=rgb(0,1,0,12/17))) +
+  
+  geom_point(data = DF_1var[first_var=="tmax",], shape=15,
+             aes(x=lon[first_var=="tmax"], y=lat[first_var=="tmax"], color=month_first_var[first_var=="tmax"])) +
+  scale_color_manual(name="tmax", values = c("Aug_Y1"=rgb(1,0,0,1/17),"Sep_Y1"=rgb(1,0,0,2/17),"Oct_Y1"=rgb(1,0,0,3/17),
+                                            "Nov_Y1"=rgb(1,0,0,4/17),"Dec_Y1"=rgb(1,0,0,5/17),"Jan_Y2"=rgb(1,0,0,6/17),
+                                            "Feb_Y2"=rgb(1,0,0,7/17),"Mar_Y2"=rgb(1,0,0,8/17),"Apr_Y2"=rgb(1,0,0,9/17),
+                                            "May_Y2"=rgb(1,0,0,10/17),"Jun_Y2"=rgb(1,0,0,11/17),"Jul_Y2"=rgb(1,0,0,12/17),
+                                            "Aug_Y2"=rgb(1,0,0,13/17),"Sep_Y2"=rgb(1,0,0,14/17),"Oct_Y2"=rgb(1,0,0,15/17),
+                                            "Nov_Y2"=rgb(1,0,0,16/17),"Dec_Y2"=rgb(1,0,0,17/17))) +
+  
+  # scale_color_manual(values = c("Aug_Y1"=rgb(0,1,0,1/17),"Sep_Y1"=rgb(0,1,0,2/17),"Oct_Y1"=rgb(0,1,0,3/17),
+  #                               "Nov_Y1"=rgb(0,1,0,4/17),"Dec_Y1"=rgb(0,1,0,5/17),"Jan_Y2"=rgb(0,1,0,6/17),
+  #                               "Feb_Y2"=rgb(0,1,0,7/17),"Mar_Y2"=rgb(0,1,0,8/17),"Apr_Y2"=rgb(0,1,0,9/17),
+  #                               "May_Y2"=rgb(0,1,0,10/17),"Jun_Y2"=rgb(0,1,0,11/17),"Jul_Y2"=rgb(0,1,0,12/17),
+  #                               "Aug_Y2"=rgb(0,1,0,13/17),"Sep_Y2"=rgb(0,1,0,14/17),"Oct_Y2"=rgb(0,1,0,15/17),
+  #                               "Nov_Y2"=rgb(0,1,0,16/17),"Dec_Y2"=rgb(0,1,0,17/17))) +
+  theme(panel.ontop = F, panel.grid = element_blank(),
+        panel.border = element_rect(colour = "black", fill = NA))+
+  coord_fixed(xlim = c(-120, 135),
+              ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
+              ratio = 1.3)+
+  labs(color="1st var",
+       title = paste("Most important predictor: name and month, simple",model_name,"regression"),
+       subtitle = paste("Bad yield threshold=", threshold, sep = ""))+
+  theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
+        legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
+  X11(width = 20, height = 7)
+
+
   scale_color_manual(values = c("tmax"="red", "vpd"="green", "pr"="blue"))+
   theme_void()+
   coord_fixed(xlim = c(min(coord_subset[,1])-1, max(coord_subset[,1]+1)),
@@ -404,3 +455,5 @@ ggplot(data = DF_1var, aes(x=lon, y=lat)) +
 #Left to do: intensity according to month in the year
 
 #Then: Map of the number of important months
+  
+# Lasso: number of predictors kept.
