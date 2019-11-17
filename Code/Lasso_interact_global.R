@@ -8,6 +8,7 @@ library(doParallel)
 library(InformationValue)
 library(ROCR)
 library(tictoc)
+library(rgdal)
 
 # Get the data ####
 ###################
@@ -229,11 +230,21 @@ toc()
 
 # Model performance assessment ####
 ###################################
-test_length <- 5 
-message('test_length is just temporary, include number how many runs you did')
-i_1Std <- lapply(1:test_length, function(x){ which(cv_fit[[x]]$lambdaHat1Std == cv_fit[[x]]$lambda)}) # the preferential lambda (tuning parameter)
 
-coefs <- lapply(1:test_length, function(x){coef(cv_fit[[x]]$glinternetFit)[[i_1Std[[x]]]]})
+# Identify pixels with failed runs
+failed_pixels <- which(sapply(1:965, function(x) {is.character(cv_fit[[x]])})==1)
+work_pix <- pix_in[-failed_pixels] # working pixels
+
+
+test_length <- 445
+message('test_length is just temporary, include number how many runs you did')
+
+
+i_1Std <- sapply(work_pix, function(x){ which(cv_fit[[x]]$lambdaHat1Std == cv_fit[[x]]$lambda)}) # the preferential lambda (tuning parameter)
+i_1Std_all_pix <- rep(NA,965)
+i_1Std_all_pix[work_pix] <- i_1Std # needed as a workaround (to have an object of lenght=965)
+
+coefs <- lapply(work_pix, function(x){coef(cv_fit[[x]]$glinternetFit)[[i_1Std_all_pix[[x]]]]})
 
 # coefs$mainEffects # model part without interactions
 # names(numLevels)[coefs$mainEffects$cont] # Main effect variables (without interactions)
@@ -242,14 +253,15 @@ coefs <- lapply(1:test_length, function(x){coef(cv_fit[[x]]$glinternetFit)[[i_1S
 # names(numLevels)[coefs$interactions$contcont] # Main effect variables (with interactions)
 
 
-mypred <- lapply(1:test_length, function(x){predict(cv_fit[[x]],x1_test_list[[x]],type="response")}) 
-fitted.results_bestglm <- lapply(1:test_length, function(x){ifelse(mypred[[x]] > 0.5,1,0)})
+mypred <- lapply(work_pix, function(x){predict(cv_fit[[x]],x1_test_list[[x]],type="response")}) 
+fitted.results_bestglm <- lapply(seq_along(work_pix), function(x){ifelse(mypred[[x]] > 0.5,1,0)})
 
-mis_clas_err <- lapply(1:test_length, function(x){misClassError(y1_test_list[[x]],fitted.results_bestglm[[x]])})
+y1_test_list_red <- lapply(work_pix,function(work_pix){y1_test_list[[work_pix]]})
+mis_clas_err <- sapply(seq_along(work_pix), function(x){misClassError(y1_test_list_red[[x]],fitted.results_bestglm[[x]])})
 
-con_tab <-  lapply(1:test_length, function(x){InformationValue::confusionMatrix(y1_test_list[[x]],fitted.results_bestglm[[x]])})
-sensi <- sapply(1:test_length, function(x){InformationValue::sensitivity(y1_test_list[[x]],fitted.results_bestglm[[x]])})
-speci <- sapply(1:test_length, function(x){InformationValue::specificity(y1_test_list[[x]],fitted.results_bestglm[[x]])})
+con_tab <-  lapply(seq_along(work_pix), function(x){InformationValue::confusionMatrix(y1_test_list_red[[x]],fitted.results_bestglm[[x]])})
+sensi <- sapply(seq_along(work_pix), function(x){InformationValue::sensitivity(y1_test_list_red[[x]],fitted.results_bestglm[[x]])})
+speci <- sapply(seq_along(work_pix), function(x){InformationValue::specificity(y1_test_list_red[[x]],fitted.results_bestglm[[x]])})
 
 
 
@@ -259,9 +271,10 @@ speci <- sapply(1:test_length, function(x){InformationValue::specificity(y1_test
 coord_subset_temp <- cbind(coord_subset,paste(coord_subset[,1],coord_subset[,2]))
 coord_all_temp <- cbind(coord_all,paste(coord_all[,1],coord_all[,2]))
 loc_pix <- which(coord_all_temp[,3] %in% coord_subset_temp [,3]) # locations of our pixels in the whole coordinate set
+loc_pix <- loc_pix[-failed_pixels]
 
 coord_all <- cbind(coord_all,rep(NA,24320))
-for (i in 1:test_length){
+for (i in seq_along(work_pix)){
   coord_all[loc_pix[i],3] <- speci[i]
 }
 
