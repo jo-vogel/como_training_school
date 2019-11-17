@@ -12,7 +12,10 @@ ggplot(data = DF_miscla, aes(x=lon, y=lat)) +
   scale_color_gradient2(limits=c(0,0.2), midpoint = 0.1,
                         low = "yellow", mid = "red3", high = "black") +
   theme(panel.ontop = F, panel.grid = element_blank(),
-        panel.border = element_rect(colour = "black", fill = NA))+
+        panel.border = element_rect(colour = "black", fill = NA),
+        axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
+  ylab("Lat (°N)") +
+  xlab("Lon (°E)") +
   coord_fixed(xlim = c(-120, 135),
               ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
               ratio = 1.3)+
