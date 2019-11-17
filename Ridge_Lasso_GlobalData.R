@@ -318,7 +318,10 @@ ggplot(data = DF_miscla, aes(x=lon, y=lat)) +
   scale_color_gradient2(limits=c(0,0.2), midpoint = 0.1,
                         low = "yellow", mid = "red3", high = "black") +
   theme(panel.ontop = F, panel.grid = element_blank(),
-        panel.border = element_rect(colour = "black", fill = NA))+
+        panel.border = element_rect(colour = "black", fill = NA),
+        axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
+  ylab("Lat (°N)") +
+  xlab("Lon (°E)") +
   coord_fixed(xlim = c(-120, 135),
               ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
               ratio = 1.3)+
@@ -342,7 +345,10 @@ ggplot(data = DF_speci, aes(x=lon, y=lat)) +
   scale_color_gradient2(limits=c(0,1), midpoint = 0.5,
                         low = "black", mid = "red3", high = "yellow") +
   theme(panel.ontop = F, panel.grid = element_blank(),
-        panel.border = element_rect(colour = "black", fill = NA))+
+        panel.border = element_rect(colour = "black", fill = NA),
+        axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
+  ylab("Lat (°N)") +
+  xlab("Lon (°E)") +
   coord_fixed(xlim = c(-120, 135),
               ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
               ratio = 1.3)+
@@ -379,6 +385,57 @@ cor(mean_yield, mis_clas_err)
 cor(mean_yield, speci)
 
 
+# Map of the number of coefficients kept (Lasso) #####
+if(model_name=="Lasso"){
+  coeff_kep <- numeric()
+  
+  for (pix in 1:pix_num) {
+    coeff_kep[pix] <- sum(coefs[[pix]][row.names(coefs[[pix]])!="(Intercept)"]!=0)
+  }#end for pix
+  
+  # Plot specificity error ####
+  
+  DF_numbcoeff <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], coeff_kep = coeff_kep)
+  
+  ggplot(data = DF_speci, aes(x=lon, y=lat)) +
+    geom_polygon(data = world, aes(long, lat, group=group),
+                 fill="white", color="black", size=0.3) +
+    geom_point(shape=15, aes(color=coeff_kep)) +
+    scale_color_gradient(limits=c(3,33),
+                          low = "pink", high = "darkblue") +
+    theme(panel.ontop = F, panel.grid = element_blank(),
+          panel.border = element_rect(colour = "black", fill = NA),
+          axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
+    ylab("Lat (°N)") +
+    xlab("Lon (°E)") +
+    coord_fixed(xlim = c(-120, 135),
+                ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
+                ratio = 1.3)+
+    labs(color="Nb of var.",
+         title = paste("Number of variables kept, simple",model_name,"regression"),
+         subtitle = paste("Bad yield threshold=", threshold, sep = ""))+
+    theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
+          legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
+    X11(width = 20, height = 7)
+  
+  
+  #plot ratio of nb of variable/nb of variables? because difference in growing season length!
+  
+  
+  
+  # #Apparently no correlation between nb coeff kept and mean yield, miscla or specificity
+  # plot(coeff_kep, mean_yield)
+  # plot(coeff_kep, mis_clas_err)
+  # plot(coeff_kep, speci)
+  # cor(coeff_kep, mean_yield)
+  # cor(coeff_kep, mis_clas_err)
+  # cor(coeff_kep, speci)
+  # 
+  
+}#end if Lasso
+
+
+
 
 
 # Map of the most important coefficient ####
@@ -399,61 +456,30 @@ DF_1var <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2],
 ggplot(data = DF_1var, aes(x=lon, y=lat)) +
   geom_polygon(data = world, aes(long, lat, group=group),
                fill="white", color="black", size=0.3) +
-  # geom_point(shape=22, aes(color=first_var), fill = "white", size=0.9) +
-  # geom_point(data = DF_1var[first_var=="pr",], shape=15,
-  #            aes(x=lon[first_var=="pr"], y=lat[first_var=="pr"], color=month_first_var[first_var=="pr"])) +
-  # scale_color_manual(name="precip",values = c("Sep_Y1"=rgb(0,0,1,2/17),"Oct_Y1"=rgb(0,0,1,3/17),
-  #                               "Nov_Y1"=rgb(0,0,1,4/17),"Dec_Y1"=rgb(0,0,1,5/17),"Jan_Y2"=rgb(0,0,1,6/17),
-  #                               "Feb_Y2"=rgb(0,0,1,7/17),"Mar_Y2"=rgb(0,0,1,8/17),"Apr_Y2"=rgb(0,0,1,9/17),
-  #                               "May_Y2"=rgb(0,0,1,10/17),"Jun_Y2"=rgb(0,0,1,11/17),"Jul_Y2"=rgb(0,0,1,12/17))) +
-  
-  # geom_point(data = DF_1var[first_var=="vpd",], shape=15,
-  #            aes(x=lon[first_var=="vpd"], y=lat[first_var=="vpd"], color=month_first_var[first_var=="vpd"])) +
-  # scale_color_manual(name="vpd", values = c("Aug_Y1"=rgb(0,1,0,1/17),"Sep_Y1"=rgb(0,1,0,2/17),"Oct_Y1"=rgb(0,1,0,3/17),
-  #                               "Nov_Y1"=rgb(0,1,0,4/17),"Dec_Y1"=rgb(0,1,0,5/17),"Jan_Y2"=rgb(0,1,0,6/17),
-  #                               "Feb_Y2"=rgb(0,1,0,7/17),"Mar_Y2"=rgb(0,1,0,8/17),"Apr_Y2"=rgb(0,1,0,9/17),
-  #                               "May_Y2"=rgb(0,1,0,10/17),"Jun_Y2"=rgb(0,1,0,11/17),"Jul_Y2"=rgb(0,1,0,12/17))) +
-  
-  geom_point(data = DF_1var[first_var=="tmax",], shape=15,
-             aes(x=lon[first_var=="tmax"], y=lat[first_var=="tmax"], color=month_first_var[first_var=="tmax"])) +
-  scale_color_manual(name="tmax", values = c("Aug_Y1"=rgb(1,0,0,1/17),"Sep_Y1"=rgb(1,0,0,2/17),"Oct_Y1"=rgb(1,0,0,3/17),
-                                            "Nov_Y1"=rgb(1,0,0,4/17),"Dec_Y1"=rgb(1,0,0,5/17),"Jan_Y2"=rgb(1,0,0,6/17),
-                                            "Feb_Y2"=rgb(1,0,0,7/17),"Mar_Y2"=rgb(1,0,0,8/17),"Apr_Y2"=rgb(1,0,0,9/17),
-                                            "May_Y2"=rgb(1,0,0,10/17),"Jun_Y2"=rgb(1,0,0,11/17),"Jul_Y2"=rgb(1,0,0,12/17),
-                                            "Aug_Y2"=rgb(1,0,0,13/17),"Sep_Y2"=rgb(1,0,0,14/17),"Oct_Y2"=rgb(1,0,0,15/17),
-                                            "Nov_Y2"=rgb(1,0,0,16/17),"Dec_Y2"=rgb(1,0,0,17/17))) +
-  
-  # scale_color_manual(values = c("Aug_Y1"=rgb(0,1,0,1/17),"Sep_Y1"=rgb(0,1,0,2/17),"Oct_Y1"=rgb(0,1,0,3/17),
-  #                               "Nov_Y1"=rgb(0,1,0,4/17),"Dec_Y1"=rgb(0,1,0,5/17),"Jan_Y2"=rgb(0,1,0,6/17),
-  #                               "Feb_Y2"=rgb(0,1,0,7/17),"Mar_Y2"=rgb(0,1,0,8/17),"Apr_Y2"=rgb(0,1,0,9/17),
-  #                               "May_Y2"=rgb(0,1,0,10/17),"Jun_Y2"=rgb(0,1,0,11/17),"Jul_Y2"=rgb(0,1,0,12/17),
-  #                               "Aug_Y2"=rgb(0,1,0,13/17),"Sep_Y2"=rgb(0,1,0,14/17),"Oct_Y2"=rgb(0,1,0,15/17),
-  #                               "Nov_Y2"=rgb(0,1,0,16/17),"Dec_Y2"=rgb(0,1,0,17/17))) +
+  geom_point(shape=15, aes(color=first_var, alpha=month_first_var), size=1) +
+  scale_color_manual(values = c("pr"="blue", "vpd"="green", "tmax"="red")) +
+  scale_alpha_manual(values = c("Aug_Y1"=(1/13), "Sep_Y1"=(2/13),"Oct_Y1"=(3/13), "Nov_Y1"=4/13,"Dec_Y1"=(5/13),"Jan_Y2"=(6/13),
+                                "Feb_Y2"=(7/13),"Mar_Y2"=(8/13),"Apr_Y2"=(9/13), "May_Y2"=(10/13),"Jun_Y2"=(11/13),
+                                "Jul_Y2"=(12/13), "Aug_Y2"=(13/13)),
+                    breaks = c("Aug_Y1", "Sep_Y1","Oct_Y1", "Nov_Y1","Dec_Y1","Jan_Y2", "Feb_Y2","Mar_Y2",
+                               "Apr_Y2", "May_Y2","Jun_Y2","Jul_Y2", "Aug_Y2")) +
   theme(panel.ontop = F, panel.grid = element_blank(),
-        panel.border = element_rect(colour = "black", fill = NA))+
+        panel.border = element_rect(colour = "black", fill = NA),
+        axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
+  ylab("Lat (°N)") +
+  xlab("Lon (°E)") +
   coord_fixed(xlim = c(-120, 135),
               ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
               ratio = 1.3)+
-  labs(color="1st var",
+  labs(color="1st var", alpha="Month",
        title = paste("Most important predictor: name and month, simple",model_name,"regression"),
        subtitle = paste("Bad yield threshold=", threshold, sep = ""))+
+  guides(color=guide_legend(order = 1), alpha=guide_legend(order = 2, ncol = 2))+
   theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
         legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
-  X11(width = 20, height = 7)
+  X11(width = 23, height = 7)
 
 
-  scale_color_manual(values = c("tmax"="red", "vpd"="green", "pr"="blue"))+
-  theme_void()+
-  coord_fixed(xlim = c(min(coord_subset[,1])-1, max(coord_subset[,1]+1)),
-              ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
-              ratio = 1.3)+
-  labs(color="1st var",
-       title = paste(model_name,"regression"),
-       subtitle = paste("Bad yield threshold=", threshold, sep = ""))+
-  X11(width = 20, height = 6)
-
-#Left to do: intensity according to month in the year
 
 #Then: Map of the number of important months
-  
-# Lasso: number of predictors kept.
+#Ratio nb pred
