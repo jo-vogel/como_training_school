@@ -184,15 +184,23 @@ clusterEvalQ(cl, {
 }) # parallelisation has own environment, therefore some packages and variables need be loaded again
 registerDoParallel(cl)
 
-set.seed(1994)
-# cv_fit <- foreach (i=1:dim(Model_data)[1],.multicombine=TRUE) %dopar% {
-cv_fit <- foreach (i=1:5,.multicombine=TRUE) %dopar% {
-  # for (i in 1:dim(Model_data)[1][1:3]){
-  glinternet.cv(x1_train_list[[i]], y1_train_list[[i]], numLevels_list[[i]],family = "binomial")
-  try(glinternet.cv(x1_train_list[[i]], y1_train_list[[i]], numLevels_list[[i]],family = "binomial"),silent=F)
-  # tryCatch(glinternet.cv(x1_train_list[[i]], y1_train_list[[i]], numLevels_list[[i]],family = "binomial"), error=function(e) paste0("Error in iteration ",i))
-  # cv_fit <- glinternet.cv(X1_train, y1_train, numLevels,family = "binomial")
-  # cv_fit_list[[i]] <- cv_fit
+# set.seed(1994)
+set.seed(100)
+cv_fit <- foreach (i=1:dim(Model_data)[1],.multicombine=TRUE) %dopar% {
+# cv_fit <- foreach (i=1:5,.multicombine=TRUE) %dopar% {
+# for (i in (84:85)){
+# for (i in 592:dim(Model_data)[1]){
+    # glinternet.cv(x1_train_list[[i]], y1_train_list[[i]], numLevels_list[[i]],family = "binomial")
+    # try(glinternet.cv(x1_train_list[[i]], y1_train_list[[i]], numLevels_list[[i]],family = "binomial"))
+    tryCatch(glinternet.cv(x1_train_list[[i]], y1_train_list[[i]], numLevels_list[[i]],family = "binomial"), error=function(e) paste0("Error in iteration ",i))
+    # cv_fit <- try(glinternet.cv(x1_train_list[[i]], y1_train_list[[i]], numLevels_list[[i]],family = "binomial"))
+    # if(class(cv_fit)=="try-error"){
+      # return(NA)
+      # cv_fit_list[[i]] <- cv_fit
+    # } else {
+      # return(cv_fit)
+      # cv_fit_list[[i]] <- cv_fit
+    # }#end ifelse error
 }
 stopCluster(cl)
 toc()
@@ -200,20 +208,20 @@ toc()
 
 # Suggestion of Pauline ####
 
-set.seed(1994)
-
-cv_fit <- foreach (i=1:dim(Model_data)[1],.multicombine=TRUE) %dopar% {
-
-  RES <- try(glinternet.cv(x1_train_list[[i]], y1_train_list[[i]], numLevels_list[[i]],family = "binomial"),
-             silent=T)
-  
-  if(class(RES)=="try-error"){
-    return(NA)
-  } else {
-    return(RES)
-  }#end ifelse error
-
-} #end foreach
+# set.seed(1994)
+# 
+# cv_fit <- foreach (i=1:dim(Model_data)[1],.multicombine=TRUE) %dopar% {
+# 
+#   RES <- try(glinternet.cv(x1_train_list[[i]], y1_train_list[[i]], numLevels_list[[i]],family = "binomial"),
+#              silent=T)
+#   
+#   if(class(RES)=="try-error"){
+#     return(NA)
+#   } else {
+#     return(RES)
+#   }#end ifelse error
+# 
+# } #end foreach
 
 
 
