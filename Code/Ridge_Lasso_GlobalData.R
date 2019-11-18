@@ -294,9 +294,9 @@ mis_clas_err <- sapply(1:test_length, function(x){misClassError(actuals = as.mat
                                                                 predictedScores=mypred[[x]],
                                                                 threshold = segreg_th)})
 
-# con_tab <-  lapply(1:test_length, function(x){InformationValue::confusionMatrix(as.matrix(y1_test_list[[x]]),
-#                                                                                 fitted.results_model[[x]],
-#                                                                                 threshold = segreg_th)})
+con_tab <-  lapply(1:test_length, function(x){InformationValue::confusionMatrix(as.matrix(y1_test_list[[x]]),
+                                                                                fitted.results_model[[x]],
+                                                                                threshold = segreg_th)})
 # sensi <- sapply(1:test_length, function(x){InformationValue::sensitivity(as.matrix(y1_test_list[[x]]),
 #                                                                          fitted.results_model[[x]],
 #                                                                          threshold = segreg_th)})
@@ -304,7 +304,14 @@ speci <- sapply(1:test_length, function(x){InformationValue::specificity(as.matr
                                                                          fitted.results_model[[x]],
                                                                          threshold = segreg_th)})
 
-
+# CSI #
+csi <- numeric()
+for(pix in 1:length(coefs)){
+  csi[pix] <- con_tab[[pix]]["0","0"]/(con_tab[[pix]]["0","0"] + con_tab[[pix]]["1","0"] + con_tab[[pix]]["0","1"])
+  if(is.na(con_tab[[pix]]["0","0"])){
+    csi[pix] <- 0
+  }
+}#end for pix
 
 # Plot miscla error ####
 
@@ -336,7 +343,7 @@ ggplot(data = DF_miscla, aes(x=lon, y=lat)) +
 
 # Plot specificity error ####
 
-DF_speci <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], miscla = speci)
+DF_speci <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], speci = speci)
 
 ggplot(data = DF_speci, aes(x=lon, y=lat)) +
   geom_polygon(data = world, aes(long, lat, group=group),
@@ -361,6 +368,30 @@ ggplot(data = DF_speci, aes(x=lon, y=lat)) +
   X11(width = 20, height = 7)
 
 
+# plot CSI=(hits)/(hits + misses + false alarm) ###
+DF_sci <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], csi = csi)
+
+ggplot(data = DF_sci, aes(x=lon, y=lat)) +
+  geom_polygon(data = world, aes(long, lat, group=group),
+               fill="white", color="black", size=0.3) +
+  geom_point(shape=15, aes(color=speci)) +
+  scale_color_gradient2(limits=c(0,1), midpoint = 0.5,
+                        low = "black", mid = "red3", high = "yellow") +
+  theme(panel.ontop = F, panel.grid = element_blank(),
+        panel.border = element_rect(colour = "black", fill = NA),
+        axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
+  ylab("Lat (°N)") +
+  xlab("Lon (°E)") +
+  coord_fixed(xlim = c(-120, 135),
+              ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
+              ratio = 1.3)+
+  labs(color="csi",
+       title = paste("Critical success index, simple",model_name,"regression"),
+       subtitle = paste("Bad yield threshold=", threshold,
+                        ", segregation threshold=", segreg_th, sep = ""))+
+  theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
+        legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
+  X11(width = 20, height = 7)
 
 
 
@@ -371,13 +402,17 @@ plot(mean_yield, mis_clas_err,
      xlab="Mean Yield (kg/yr)", ylab="Miss-classification error",
      main=paste("Scatterplot mean yield, miss-classification error\nbad yield threshold=", threshold,
                 "\nsegregation threshold=", segreg_th, sep = ""))
+plot(mean_yield, csi,
+     xlab="Mean Yield (kg/yr)", ylab="CSI",
+     main=paste("Scatterplot mean yield, CSI\nbad yield threshold=", threshold,
+                "\nsegregation threshold=", segreg_th, sep = ""))
 plot(mean_yield, speci,
      xlab="Mean Yield (kg/yr)", ylab="Specificity",
      main=paste("Scatterplot mean yield, Specificity\nbad yield threshold=", threshold,
                 "\nsegregation threshold=", segreg_th, sep = ""))
 
 
-pairs(cbind(mean_yield, mis_clas_err, speci),
+pairs(cbind(mean_yield, mis_clas_err, speci, csi),
       main=paste(model_name, " regression, bad yield thr.=", threshold,
                  "\nsegreg. thr.=", segreg_th, sep = ""))
 
@@ -394,7 +429,7 @@ if(model_name=="Lasso"){
     # coeff_kep[pix] <- sum(coefs[[pix]][row.names(coefs[[pix]])!="(Intercept)"]!=0)
   }#end for pix
   
-  # Plot specificity error ####
+  # Plot 
   
   DF_numbcoeff <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], coeff_kep = coeff_kep)
   
@@ -484,9 +519,6 @@ ggplot(data = DF_1var, aes(x=lon, y=lat)) +
 
 
 
-#Then: Map of the number of important months
-#Ratio nb pred month compared to growing season length
-
 
 # Plot number of different month in N first variables ####
 N_var <- 10
@@ -527,3 +559,8 @@ ggplot(data = DF_numbcoeff, aes(x=lon, y=lat)) +
   theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
         legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
   X11(width = 20, height = 7)
+
+
+
+
+#Ratio nb pred month compared to growing season length: Take into account that pixels don't haev the same nb of month!!
