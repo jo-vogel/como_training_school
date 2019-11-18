@@ -286,7 +286,7 @@ mypred <- lapply(1:test_length, function(x){predict(model_cv_fitting[[x]],
                                                     as.matrix(x1_test_list[[x]]),type="response")})
 
 #which segregation threshold for the model?
-segreg_th <- 0.9
+segreg_th <- 0.5
 
 fitted.results_model <- lapply(1:test_length, function(x){ifelse(mypred[[x]] > segreg_th,1,0)})
 
@@ -397,7 +397,7 @@ if(model_name=="Lasso"){
   
   DF_numbcoeff <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], coeff_kep = coeff_kep)
   
-  ggplot(data = DF_speci, aes(x=lon, y=lat)) +
+  ggplot(data = DF_numbcoeff, aes(x=lon, y=lat)) +
     geom_polygon(data = world, aes(long, lat, group=group),
                  fill="white", color="black", size=0.3) +
     geom_point(shape=15, aes(color=coeff_kep)) +
@@ -442,13 +442,15 @@ if(model_name=="Lasso"){
 
 source("get_first_coeff_function.R")
 
+coef_to_plot <- 3 #between 1 and coeff to keep
 first_var <- numeric()
 month_first_var <- numeric()
 
 for (pix in 1:length(coefs)) {
-  first_var[pix] <- get_firstcoeffs(coefs[[pix]])[,1]
-  month_first_var[pix] <- get_firstcoeffs(coefs[[pix]])[,2]
+  first_var[pix] <- get_firstcoeffs(coefs[[pix]], nb_of_coeff = coef_to_plot)[coef_to_plot,1]
+  month_first_var[pix] <- get_firstcoeffs(coefs[[pix]], nb_of_coeff = coef_to_plot)[coef_to_plot,2]
 }#end for pix
+
 
 DF_1var <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2],
                        first_var = first_var, month_first_var=month_first_var)
@@ -458,11 +460,11 @@ ggplot(data = DF_1var, aes(x=lon, y=lat)) +
                fill="white", color="black", size=0.3) +
   geom_point(shape=15, aes(color=first_var, alpha=month_first_var), size=1) +
   scale_color_manual(values = c("pr"="blue", "vpd"="green", "tmax"="red")) +
-  scale_alpha_manual(values = c("Aug_Y1"=(1/13), "Sep_Y1"=(2/13),"Oct_Y1"=(3/13), "Nov_Y1"=4/13,"Dec_Y1"=(5/13),"Jan_Y2"=(6/13),
-                                "Feb_Y2"=(7/13),"Mar_Y2"=(8/13),"Apr_Y2"=(9/13), "May_Y2"=(10/13),"Jun_Y2"=(11/13),
-                                "Jul_Y2"=(12/13), "Aug_Y2"=(13/13)),
+  scale_alpha_manual(values = c("Aug_Y1"=(1/14), "Sep_Y1"=(2/14),"Oct_Y1"=(3/14), "Nov_Y1"=4/14,"Dec_Y1"=(5/14),"Jan_Y2"=(6/14),
+                                "Feb_Y2"=(7/14),"Mar_Y2"=(8/14),"Apr_Y2"=(9/14), "May_Y2"=(10/14),"Jun_Y2"=(11/14),
+                                "Jul_Y2"=(12/14), "Aug_Y2"=(13/14), "Sep_Y2"=(14/14)),
                     breaks = c("Aug_Y1", "Sep_Y1","Oct_Y1", "Nov_Y1","Dec_Y1","Jan_Y2", "Feb_Y2","Mar_Y2",
-                               "Apr_Y2", "May_Y2","Jun_Y2","Jul_Y2", "Aug_Y2")) +
+                               "Apr_Y2", "May_Y2","Jun_Y2","Jul_Y2", "Aug_Y2", "Sep_Y2")) +
   theme(panel.ontop = F, panel.grid = element_blank(),
         panel.border = element_rect(colour = "black", fill = NA),
         axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
@@ -471,8 +473,8 @@ ggplot(data = DF_1var, aes(x=lon, y=lat)) +
   coord_fixed(xlim = c(-120, 135),
               ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
               ratio = 1.3)+
-  labs(color="1st var", alpha="Month",
-       title = paste("Most important predictor: name and month, simple",model_name,"regression"),
+  labs(color="3rd var", alpha="Month",
+       title = paste("3rd most important predictor: name and month, simple",model_name,"regression"),
        subtitle = paste("Bad yield threshold=", threshold, sep = ""))+
   guides(color=guide_legend(order = 1), alpha=guide_legend(order = 2, ncol = 2))+
   theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
@@ -482,4 +484,45 @@ ggplot(data = DF_1var, aes(x=lon, y=lat)) +
 
 
 #Then: Map of the number of important months
-#Ratio nb pred
+#Ratio nb pred month compared to growing season length
+
+
+# Plot number of different month in N first variables ####
+N_var <- 10
+nb_months <- numeric()
+
+for (pix in 1:length(coefs)) {
+  if(model_name=="Lasso" & coeff_kep[pix]<N_var){
+    nb_months[pix] <- NA
+  } else {
+    Q <- try(get_firstcoeffs(coefs[[pix]], nb_of_coeff = N_var)[,2], silent = T)
+    if(class(Q)=="try-error"){
+      nb_months[pix] <- NA
+    } else {
+    nb_months[pix] <- length(unique(Q))
+    }
+  }#end if Lasso not enough coeff
+}#end for pix
+
+
+DF_nbdiffmonths <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], nb_months = nb_months)
+
+ggplot(data = DF_numbcoeff, aes(x=lon, y=lat)) +
+  geom_polygon(data = world, aes(long, lat, group=group),
+               fill="white", color="black", size=0.3) +
+  geom_point(shape=15, aes(color=nb_months)) +
+  scale_color_gradient(low = rgb(1,0.7,0.7), high = rgb(0.1,0,0)) +
+  theme(panel.ontop = F, panel.grid = element_blank(),
+        panel.border = element_rect(colour = "black", fill = NA),
+        axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
+  ylab("Lat (°N)") +
+  xlab("Lon (°E)") +
+  coord_fixed(xlim = c(-120, 135),
+              ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
+              ratio = 1.3)+
+  labs(color="Nb of \ndifferent months",
+       title = paste("Number of different months in the ",N_var," first variables, simple",model_name,"regression"),
+       subtitle = paste("Bad yield threshold=", threshold, sep = ""))+
+  theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
+        legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
+  X11(width = 20, height = 7)
