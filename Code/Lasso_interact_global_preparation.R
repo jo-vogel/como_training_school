@@ -1,5 +1,9 @@
 # Lasso with interactions for northern hemisphere
 
+# This file is intended to quickly obtain all needed objects for the visualisation
+# without having to run the model (which takes 3 hours). The model output can be separately
+# loaded using load('./Code/Workspaces/cv_fit_complete.RData ')
+
 library(ncdf4)
 library(glinternet)
 library(abind)
@@ -165,106 +169,5 @@ for (i in 1:pix_num){
 # pix_with_NA <- which(apply(cy,1,anyNA))
 # final_pix <- 1:965;
 # final_pix <- final_pix[-pix_with_NA]
-
-
-
-
-# Lasso model ####
-##################
-
-
-
-tic()
-# cv_fit_list <- vector("list",length=dim(Model_data)[1])
-
-no_cores <- detectCores() / 2 - 1
-cl<-makeCluster(no_cores)
-clusterEvalQ(cl, {
-  library(glinternet)
-  library(dplyr)
-}) # parallelisation has own environment, therefore some packages and variables need be loaded again
-registerDoParallel(cl)
-
-
-set.seed(100)
-cv_fit <- foreach (i=1:dim(Model_data)[1],.multicombine=TRUE) %dopar% {
-# for (i in 1:dim(Model_data)[1]){
-    tryCatch(glinternet.cv(x1_train_list[[i]], y1_train_list[[i]], numLevels_list[[i]],family = "binomial"), error=function(e) paste0("Error in iteration ",i))
-    # cv_fit <- try(glinternet.cv(x1_train_list[[i]], y1_train_list[[i]], numLevels_list[[i]],family = "binomial"))
-    # cv_fit_list[[i]] <- cv_fit
-}
-stopCluster(cl)
-toc()
-
-
-
-
-# Model performance assessment ####
-###################################
-
-# Identify pixels with failed runs
-failed_pixels <- which(sapply(1:965, function(x) {is.character(cv_fit[[x]])})==1)
-work_pix <- pix_in[-failed_pixels] # working pixels
-
-
-i_1Std <- sapply(work_pix, function(x){ which(cv_fit[[x]]$lambdaHat1Std == cv_fit[[x]]$lambda)}) # the preferential lambda (tuning parameter)
-i_1Std_all_pix <- rep(NA,965)
-i_1Std_all_pix[work_pix] <- i_1Std # needed as a workaround (to have an object of lenght=965)
-
-coefs <- vector("list",length=965)
-coefs[work_pix] <- lapply(work_pix, function(x){coef(cv_fit[[x]]$glinternetFit)[[i_1Std_all_pix[[x]]]]})
-
-# coefs$mainEffects # model part without interactions
-# names(numLevels)[coefs$mainEffects$cont] # Main effect variables (without interactions)
-# 
-# coefs$interactions # model part with interactions pairs
-# names(numLevels)[coefs$interactions$contcont] # Main effect variables (with interactions)
-
-
-#which segregation threshold for the model?
-segreg_th <- 0.5
-mypred <- lapply(work_pix, function(x){predict(cv_fit[[x]],x1_test_list[[x]],type="response")}) 
-fitted.results_model <- lapply(seq_along(work_pix), function(x){ifelse(mypred[[x]] > segreg_th,1,0)})
-
-y1_test_list_red <- lapply(work_pix,function(work_pix){y1_test_list[[work_pix]]})
-mis_clas_err <- rep(NA,965)
-# mis_clas_err[work_pix] <- sapply(seq_along(work_pix), function(x){misClassError(y1_test_list_red[[x]],mypred[[x]])})
-mis_clas_err[work_pix] <- sapply(seq_along(work_pix), function(x){misClassError(actuals = y1_test_list_red[[x]],
-                                                                predictedScores=mypred[[x]],
-                                                                threshold = segreg_th)})
-
-
-
-con_tab <-  lapply(seq_along(work_pix), function(x){InformationValue::confusionMatrix(y1_test_list_red[[x]],fitted.results_model[[x]])})
-sensi <- rep(NA,965)
-speci <- rep(NA,965)
-sensi[work_pix] <- sapply(seq_along(work_pix), function(x){InformationValue::sensitivity(y1_test_list_red[[x]],fitted.results_model[[x]],
-                                                                                         threshold = segreg_th)})
-speci[work_pix] <- sapply(seq_along(work_pix), function(x){InformationValue::specificity(y1_test_list_red[[x]],fitted.results_model[[x]],
-                                                                                         threshold = segreg_th)})
-
-
-
-# Plot specificity and sensitivity on a map ####
-
-# Workaround: bind lat and lon to one object, so that you have to look for just one object, and not lat-/lon-pairs
-coord_subset_temp <- cbind(coord_subset,paste(coord_subset[,1],coord_subset[,2]))
-coord_all_temp <- cbind(coord_all,paste(coord_all[,1],coord_all[,2]))
-loc_pix <- which(coord_all_temp[,3] %in% coord_subset_temp [,3]) # locations of our pixels in the whole coordinate set
-loc_pix <- loc_pix[-failed_pixels]
-
-coord_all <- cbind(coord_all,rep(NA,24320))
-for (i in seq_along(work_pix)){
-  coord_all[loc_pix[i],3] <- speci[i]
-}
-
-spec_mat <- matrix(as.numeric(coord_all[,3]),nrow=320,ncol=76)
-
-border <- readOGR('D:/user/vogelj/Data/ne_50m_admin_0_countries/ne_50m_admin_0_countries.shp')	
-spec_ras <- raster(t(spec_mat[,76:1]), xmn=min(lon_all), xmx=max(lon_all), ymn=min(lat_all), ymx=max(lat_all), crs=CRS(projection(border)))
-
-x11()
-plot(spec_ras,asp=1);plot(border,add=T)
-
 
 

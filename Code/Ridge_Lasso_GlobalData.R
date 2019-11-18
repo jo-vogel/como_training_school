@@ -390,7 +390,8 @@ if(model_name=="Lasso"){
   coeff_kep <- numeric()
   
   for (pix in 1:pix_num) {
-    coeff_kep[pix] <- sum(coefs[[pix]][row.names(coefs[[pix]])!="(Intercept)"]!=0)
+    coeff_kep[pix] <- length(coefs[[pix]]$mainEffects$cont)
+    # coeff_kep[pix] <- sum(coefs[[pix]][row.names(coefs[[pix]])!="(Intercept)"]!=0)
   }#end for pix
   
   # Plot specificity error ####
@@ -440,7 +441,7 @@ if(model_name=="Lasso"){
 
 # Map of the most important coefficient ####
 
-source("get_first_coeff_function.R")
+source("./Code/get_first_coeff_function.R")
 
 coef_to_plot <- 3 #between 1 and coeff to keep
 first_var <- numeric()
