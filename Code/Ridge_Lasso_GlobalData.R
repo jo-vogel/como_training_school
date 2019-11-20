@@ -9,7 +9,7 @@ print("Are you sure you want to run the next line? ;) everything in the environm
 rm(list=ls(all=TRUE))
 
 # which method? model_name in c("Ridge", "Lasso)
-model_name <- "Lasso"
+model_name <- "Ridge"
 stopifnot(model_name %in% c("Ridge", "Lasso"))
 
 if(model_name=="Lasso"){
@@ -421,12 +421,16 @@ cor(mean_yield, speci)
 
 
 # Map of the number of coefficients kept (Lasso) #####
+
+
+source("./Code/get_first_coeff_function.R")
+
 if(model_name=="Lasso"){
   coeff_kep <- numeric()
   
   for (pix in 1:pix_num) {
-    coeff_kep[pix] <- length(coefs[[pix]]$mainEffects$cont)
-    # coeff_kep[pix] <- sum(coefs[[pix]][row.names(coefs[[pix]])!="(Intercept)"]!=0)
+    # coeff_kep[pix] <- length(coefs[[pix]]$mainEffects$cont)
+    coeff_kep[pix] <- sum(coefs[[pix]][row.names(coefs[[pix]])!="(Intercept)"]!=0)
   }#end for pix
   
   # Plot 
@@ -455,6 +459,62 @@ if(model_name=="Lasso"){
     X11(width = 20, height = 7)
   
   
+  
+  
+  
+  # Plot nb of var kept in every season
+  nb_in_aug1 <- numeric()
+  nb_in_fall1 <- numeric()
+  nb_in_winter1 <- numeric()
+  nb_in_spring1 <- numeric()
+  nb_in_summer1 <- numeric()
+  nb_in_fall2 <- numeric()
+  nb_in_dec2 <- numeric()
+  
+  for (pix in 1:pix_num) {
+    all_month_coeff_kept <- get_firstcoeffs(coefs[[pix]], nb_of_coeff = coeff_kep[pix])[,2]
+    nb_in_aug1[pix] <- length(which(all_month_coeff_kept=="Aug_Y1"))
+    nb_in_fall1[pix] <- length(which(all_month_coeff_kept=="Sep_Y1" | all_month_coeff_kept=="Oct_Y1" 
+                                       | all_month_coeff_kept=="Nov_Y1"))
+    nb_in_winter1[pix] <- length(which(all_month_coeff_kept=="Dec_Y1" | all_month_coeff_kept=="Jan_Y2" 
+                                         | all_month_coeff_kept=="Feb_Y2"))
+    nb_in_spring1[pix] <- length(which(all_month_coeff_kept=="Mar_Y2" | all_month_coeff_kept=="Apr_Y2" 
+                                         | all_month_coeff_kept=="May_Y2"))
+    nb_in_summer1[pix] <- length(which(all_month_coeff_kept=="Jun_Y2" | all_month_coeff_kept=="Jul_Y2" 
+                                         | all_month_coeff_kept=="Aug_Y2"))
+    nb_in_fall2[pix] <- length(which(all_month_coeff_kept=="Sep_Y2" | all_month_coeff_kept=="Oct_Y2" 
+                                       | all_month_coeff_kept=="Nov_Y2"))
+    nb_in_dec2[pix] <- length(which(all_month_coeff_kept=="Dec_Y2"))
+  }#end for pix
+  
+  # Plot 
+  
+  ALL_COL <- scales::seq_gradient_pal("pink", "darkblue", "Lab")(seq(0,1,length.out = 11))
+  
+  DF_numbcoeff_season <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], nb_var = nb_in_fall2)
+  DF_numbcoeff_season$nb_var <- as.factor(DF_numbcoeff_season$nb_var)
+  ggplot(data = DF_numbcoeff_season, aes(x=lon, y=lat)) +
+    geom_polygon(data = world, aes(long, lat, group=group),
+                 fill="white", color="black", size=0.3) +
+    geom_point(shape=15, aes(color=DF_numbcoeff_season$nb_var)) +
+    scale_color_manual(values = ALL_COL[(min(as.numeric(DF_numbcoeff_season$nb_var)):max(as.numeric(DF_numbcoeff_season$nb_var)))+1]) +
+    theme(panel.ontop = F, panel.grid = element_blank(),
+          panel.border = element_rect(colour = "black", fill = NA),
+          axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
+    ylab("Lat (°N)") +
+    xlab("Lon (°E)") +
+    coord_fixed(xlim = c(-120, 135),
+                ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
+                ratio = 1.3)+
+    labs(color="Nb of var. kept\nin Fall Y2",
+         title = paste("Number of variables kept in Fall Y2, simple",model_name,"regression"),
+         subtitle = paste("Bad yield threshold=", threshold, sep = ""))+
+    theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
+          legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
+    X11(width = 20, height = 7)
+  
+  
+  
   #plot ratio of nb of variable/nb of variables? because difference in growing season length!
   
   
@@ -469,6 +529,54 @@ if(model_name=="Lasso"){
   # 
   
 }#end if Lasso
+
+
+
+
+# Represent the importance of first coefficients Ridge
+
+if(model_name=="Ridge"){
+  max_coeff_val <- numeric()
+  for (pix in 1:pix_num) {
+    max_coeff_val[pix] <- sort(abs(coefs[[pix]][-which(rownames(coefs[[pix]])=="(Intercept)")]),decreasing = T)[1]
+  }#end for pix
+  
+  perc_first_coeffs <- function(coeffs, nb_first_coeff = 1){
+    return(round(100*sort(abs(coeffs[-which(rownames(coeffs)=="(Intercept)")]),
+                          decreasing = T)[1:nb_first_coeff]/sum(sort(abs(coeffs[-which(rownames(coeffs)=="(Intercept)")]),
+                                                                decreasing = T))))
+  }#end perc_first_coeffs
+  
+  coef_1_perc <- sapply(coefs, FUN = perc_first_coeffs)
+  coef_1_2_perc <- apply(sapply(coefs, FUN = perc_first_coeffs, nb_first_coeff = 2), FUN = sum, MARGIN = 2)
+  coef_1_3_perc <- apply(sapply(coefs, FUN = perc_first_coeffs, nb_first_coeff = 3), FUN = sum, MARGIN = 2)
+  coef_1_4_perc <- apply(sapply(coefs, FUN = perc_first_coeffs, nb_first_coeff = 4), FUN = sum, MARGIN = 2)
+  coef_1_5_perc <- apply(sapply(coefs, FUN = perc_first_coeffs, nb_first_coeff = 5), FUN = sum, MARGIN = 2)
+  
+
+  DF_perc_var <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], perc_coef = coef_1_5_perc)
+  ggplot(data = DF_perc_var, aes(x=lon, y=lat)) +
+    geom_polygon(data = world, aes(long, lat, group=group),
+                 fill="white", color="black", size=0.3) +
+    geom_point(shape=15, aes(color=DF_perc_var$perc_coef)) +
+    scale_color_gradientn(colours = rainbow(8)[-8], limits = c(5, 91)) +
+    # scale_color_gradient2(high = "chartreuse4",low = "darkblue",mid="skyblue",midpoint = 50,limits = c(5, 91))+
+    theme(panel.ontop = F, panel.grid = element_blank(),
+          panel.border = element_rect(colour = "black", fill = NA),
+          axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
+    ylab("Lat (°N)") +
+    xlab("Lon (°E)") +
+    coord_fixed(xlim = c(-120, 135),
+                ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
+                ratio = 1.3)+
+    labs(color="contribution\n(%)",
+         title = paste("Percentage of the 5 first coeff among sum of all coeff, simple",model_name,"regression"),
+         subtitle = paste("Bad yield threshold=", threshold, sep = ""))+
+    theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
+          legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
+    X11(width = 20, height = 7)
+  
+}#end if Ridge
 
 
 
