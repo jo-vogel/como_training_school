@@ -554,12 +554,12 @@ if(model_name=="Ridge"){
   coef_1_5_perc <- apply(sapply(coefs, FUN = perc_first_coeffs, nb_first_coeff = 5), FUN = sum, MARGIN = 2)
   
 
-  DF_perc_var <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], perc_coef = coef_1_5_perc)
+  DF_perc_var <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], perc_coef = coef_1_3_perc)
   ggplot(data = DF_perc_var, aes(x=lon, y=lat)) +
     geom_polygon(data = world, aes(long, lat, group=group),
                  fill="white", color="black", size=0.3) +
     geom_point(shape=15, aes(color=DF_perc_var$perc_coef)) +
-    scale_color_gradientn(colours = rainbow(8)[-8], limits = c(5, 91)) +
+    scale_color_gradientn(colours = rainbow(8)[-8], limits = c(13, 84)) +
     # scale_color_gradient2(high = "chartreuse4",low = "darkblue",mid="skyblue",midpoint = 50,limits = c(5, 91))+
     theme(panel.ontop = F, panel.grid = element_blank(),
           panel.border = element_rect(colour = "black", fill = NA),
@@ -570,7 +570,7 @@ if(model_name=="Ridge"){
                 ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
                 ratio = 1.3)+
     labs(color="contribution\n(%)",
-         title = paste("Percentage of the 5 first coeff among sum of all coeff, simple",model_name,"regression"),
+         title = paste("Percentage of the 3 first coeff among sum of all coeff, simple",model_name,"regression"),
          subtitle = paste("Bad yield threshold=", threshold, sep = ""))+
     theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
           legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
@@ -586,7 +586,7 @@ if(model_name=="Ridge"){
 
 source("./Code/get_first_coeff_function.R")
 
-coef_to_plot <- 3 #between 1 and coeff to keep
+coef_to_plot <- 1 #between 1 and coeff to keep
 first_var <- numeric()
 month_first_var <- numeric()
 
@@ -596,19 +596,21 @@ for (pix in 1:length(coefs)) {
 }#end for pix
 
 
+world <- map_data("world")
+
 DF_1var <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2],
                        first_var = first_var, month_first_var=month_first_var)
 
 ggplot(data = DF_1var, aes(x=lon, y=lat)) +
   geom_polygon(data = world, aes(long, lat, group=group),
                fill="white", color="black", size=0.3) +
-  geom_point(shape=15, aes(color=first_var, alpha=month_first_var), size=1) +
+  geom_point(shape=15, aes(color=first_var), size=1) +
   scale_color_manual(values = c("pr"="blue", "vpd"="green", "tmax"="red")) +
-  scale_alpha_manual(values = c("Aug_Y1"=(1/14), "Sep_Y1"=(2/14),"Oct_Y1"=(3/14), "Nov_Y1"=4/14,"Dec_Y1"=(5/14),"Jan_Y2"=(6/14),
-                                "Feb_Y2"=(7/14),"Mar_Y2"=(8/14),"Apr_Y2"=(9/14), "May_Y2"=(10/14),"Jun_Y2"=(11/14),
-                                "Jul_Y2"=(12/14), "Aug_Y2"=(13/14), "Sep_Y2"=(14/14)),
-                    breaks = c("Aug_Y1", "Sep_Y1","Oct_Y1", "Nov_Y1","Dec_Y1","Jan_Y2", "Feb_Y2","Mar_Y2",
-                               "Apr_Y2", "May_Y2","Jun_Y2","Jul_Y2", "Aug_Y2", "Sep_Y2")) +
+  # scale_alpha_manual(values = c("Aug_Y1"=(1/14), "Sep_Y1"=(2/14),"Oct_Y1"=(3/14), "Nov_Y1"=4/14,"Dec_Y1"=(5/14),"Jan_Y2"=(6/14),
+  #                               "Feb_Y2"=(7/14),"Mar_Y2"=(8/14),"Apr_Y2"=(9/14), "May_Y2"=(10/14),"Jun_Y2"=(11/14),
+  #                               "Jul_Y2"=(12/14), "Aug_Y2"=(13/14), "Sep_Y2"=(14/14)),
+  #                   breaks = c("Aug_Y1", "Sep_Y1","Oct_Y1", "Nov_Y1","Dec_Y1","Jan_Y2", "Feb_Y2","Mar_Y2",
+  #                              "Apr_Y2", "May_Y2","Jun_Y2","Jul_Y2", "Aug_Y2", "Sep_Y2")) +
   theme(panel.ontop = F, panel.grid = element_blank(),
         panel.border = element_rect(colour = "black", fill = NA),
         axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
@@ -617,13 +619,63 @@ ggplot(data = DF_1var, aes(x=lon, y=lat)) +
   coord_fixed(xlim = c(-120, 135),
               ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
               ratio = 1.3)+
-  labs(color="3rd var", alpha="Month",
-       title = paste("3rd most important predictor: name and month, simple",model_name,"regression"),
+  labs(color="1st var", alpha="Month",
+       title = paste("1st predictor, simple",model_name,"regression"),
        subtitle = paste("Bad yield threshold=", threshold, sep = ""))+
   guides(color=guide_legend(order = 1), alpha=guide_legend(order = 2, ncol = 2))+
   theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
         legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
   X11(width = 23, height = 7)
+
+
+
+
+
+# Plot total % of contribution of most important meteo var ####
+
+contribution_pr <- numeric()
+contribution_vpd <- numeric()
+contribution_tmax <- numeric()
+max_contribution_name <- numeric()
+max_contribution <- numeric()
+for (pix in 1:pix_num) {
+  coeff <- abs(coefs[[pix]])
+  coeff_names <- row.names(coeff)
+  n_coeff <- length(coeff)-1
+  
+  contribution_pr[pix] <- sum(coeff[which(substr(coeff_names, start = 1, stop = 1)=="p")])/sum(coeff[-1])
+  contribution_vpd[pix] <- sum(coeff[which(substr(coeff_names, start = 1, stop = 1)=="v")])/sum(coeff[-1])
+  contribution_tmax[pix] <- sum(coeff[which(substr(coeff_names, start = 1, stop = 1)=="t")])/sum(coeff[-1])
+  
+  max_contribution[pix] <- max(c(contribution_pr[pix],contribution_vpd[pix],contribution_tmax[pix]))
+  
+  max_contribution_name[pix] <- c("pr", "vpd", "tmax")[which.max(c(contribution_pr[pix],
+                                                                   contribution_vpd[pix],contribution_tmax[pix]))]
+  
+}#end for pix
+jet.colors <-
+  colorRampPalette(c("#00007F", "blue", "#007FFF", "cyan",
+                     "#7FFF7F", "yellow", "#FF7F00", "red", "#7F0000"))
+DF_perc_var1 <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], perc_coef = 100*max_contribution)
+ggplot(data = DF_perc_var1, aes(x=lon, y=lat)) +
+  geom_polygon(data = world, aes(long, lat, group=group),
+               fill="white", color="black", size=0.3) +
+  geom_point(shape=15, aes(color=DF_perc_var1$perc_coef)) +
+  scale_color_gradientn(colours = rev(viridis(6))) +
+  theme(panel.ontop = F, panel.grid = element_blank(),
+        panel.border = element_rect(colour = "black", fill = NA),
+        axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
+  ylab("Lat (°N)") +
+  xlab("Lon (°E)") +
+  coord_fixed(xlim = c(-120, 135),
+              ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
+              ratio = 1.3)+
+  labs(color="contribution\n(%)",
+       title = paste("Most important meteo variable: contribution among all coeff, simple",model_name,"regression"),
+       subtitle = paste("Bad yield threshold=", threshold, sep = ""))+
+  theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
+        legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
+  X11(width = 20, height = 7)
 
 
 
@@ -669,6 +721,66 @@ ggplot(data = DF_numbcoeff, aes(x=lon, y=lat)) +
   X11(width = 20, height = 7)
 
 
+
+
+# Plot number of different month in N first variables ####
+N_var <- 10
+nb_months <- numeric()
+
+for (pix in 1:length(coefs)) {
+  if(model_name=="Lasso" & coeff_kep[pix]<N_var){
+    nb_months[pix] <- NA
+  } else {
+    Q <- try(get_firstcoeffs(coefs[[pix]], nb_of_coeff = N_var)[,2], silent = T)
+    if(class(Q)=="try-error"){
+      nb_months[pix] <- NA
+    } else {
+      nb_months[pix] <- length(unique(Q))
+    }
+  }#end if Lasso not enough coeff
+}#end for pix
+
+
+# Plot nb of different meteo variables in 3 first coeff ####
+N_var <- 3
+nb_meteo <- numeric()
+
+for (pix in 1:length(coefs)) {
+  if(model_name=="Lasso" & coeff_kep[pix]<N_var){
+    nb_meteo[pix] <- NA
+  } else {
+    Q <- try(get_firstcoeffs(coefs[[pix]], nb_of_coeff = N_var)[,1], silent = T)
+    if(class(Q)=="try-error"){
+      nb_meteo[pix] <- NA
+    } else {
+      nb_meteo[pix] <- length(unique(Q))
+    }
+  }#end if Lasso not enough coeff
+}#end for pix
+
+
+DF_nbdiffmeteo <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], nb_meteo = nb_meteo)
+DF_nbdiffmeteo$nb_meteo <- as.factor(DF_nbdiffmeteo$nb_meteo)
+
+ggplot(data = DF_nbdiffmeteo, aes(x=lon, y=lat)) +
+  geom_polygon(data = world, aes(long, lat, group=group),
+               fill="white", color="black", size=0.3) +
+  geom_point(shape=15, aes(color=nb_meteo)) +
+  scale_color_manual(values = c("1"=viridis(3)[1], "2"=viridis(3)[2], "3"=viridis(3)[3])) +
+  theme(panel.ontop = F, panel.grid = element_blank(),
+        panel.border = element_rect(colour = "black", fill = NA),
+        axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
+  ylab("Lat (°N)") +
+  xlab("Lon (°E)") +
+  coord_fixed(xlim = c(-120, 135),
+              ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
+              ratio = 1.3)+
+  labs(color="Nb of different \nmeteo. variables",
+       title = paste("Number of different meteorological variables in the ",N_var," first variables, simple",model_name,"regression"),
+       subtitle = paste("Bad yield threshold=", threshold, sep = ""))+
+  theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
+        legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
+  X11(width = 20, height = 7)
 
 
 #Ratio nb pred month compared to growing season length: Take into account that pixels don't haev the same nb of month!!
