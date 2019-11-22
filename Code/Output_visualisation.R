@@ -3,6 +3,8 @@
 # by Pauline, partially edited by Johannes
 ##########################################
 
+library(ggplot2)
+
 
 # Load model output ####
 ########################
@@ -216,16 +218,15 @@ cor(mean_yield, speci)
     # coeff_kep[pix] <- sum(coefs[[pix]][row.names(coefs[[pix]])!="(Intercept)"]!=0)
   }#end for pix
   
-  # Plot specificity error ####
-  
+
   DF_numbcoeff <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], coeff_kep = coeff_kep)
   
   ggplot(data = DF_numbcoeff, aes(x=lon, y=lat)) +
     geom_polygon(data = world, aes(long, lat, group=group),
                  fill="white", color="black", size=0.3) +
-    geom_point(shape=15, aes(color=coeff_kep)) +
-    scale_color_gradient(limits=c(3,33),
-                         low = "pink", high = "darkblue") +
+    geom_point(shape=15, aes(color=coeff_kep),size=0.7) +
+    scale_color_gradient2(limits=c(0,max(DF_numbcoeff[,3])),midpoint=max(DF_numbcoeff[,3]/2),
+                         low = "blue", mid = "yellow", high = "red3") +
     theme(panel.ontop = F, panel.grid = element_blank(),
           panel.border = element_rect(colour = "black", fill = NA),
           axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
@@ -240,4 +241,45 @@ cor(mean_yield, speci)
     theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
           legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
     X11(width = 20, height = 7)
+  ggsave(file="D:/user/vogelj/Group project/Output/Plots/Number_of_variables_lasso_interact_map.png")
 # }
+  
+
+# Map of number of interactions ####
+  
+  num_interact <- numeric()
+  
+  for (pix in 1:pix_num) {
+    if (is.null(dim(coefs[[pix]]$interactions$contcont)[1])){
+      num_interact[pix] <- 0
+    } else {
+      
+    num_interact[pix] <-  dim(coefs[[pix]]$interactions$contcont)[1]
+    }
+  }
+  
+
+  DF_numb_interact <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], num_interact = num_interact)
+  
+  ggplot(data = DF_numb_interact, aes(x=lon, y=lat)) +
+    geom_polygon(data = world, aes(long, lat, group=group),
+                 fill="white", color="black", size=0.3) +
+    geom_point(shape=15, aes(color=num_interact),size=0.7) +
+    scale_color_gradient2(limits=c(0,max(DF_numb_interact[,3])),midpoint=max(DF_numb_interact[,3]/2),
+                          low = "blue", mid = "yellow", high = "red3") +
+    theme(panel.ontop = F, panel.grid = element_blank(),
+          panel.border = element_rect(colour = "black", fill = NA),
+          axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
+    ylab("Lat (°N)") +
+    xlab("Lon (°E)") +
+    coord_fixed(xlim = c(-120, 135),
+                ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
+                ratio = 1.3)+
+    labs(color="Nb of int.",
+         title = paste("Number of variable interactions from",model_name,"regression"),
+         subtitle = paste("Bad yield threshold=", threshold, sep = ""))+
+    theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
+          legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
+    X11(width = 20, height = 7)
+  ggsave(file="D:/user/vogelj/Group project/Output/Plots/Number_of_variable_interactions_lasso_interact_map.png")
+  
