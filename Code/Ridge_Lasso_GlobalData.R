@@ -9,7 +9,7 @@ print("Are you sure you want to run the next line? ;) everything in the environm
 rm(list=ls(all=TRUE))
 
 # which method? model_name in c("Ridge", "Lasso)
-model_name <- "Ridge"
+model_name <- "Lasso"
 stopifnot(model_name %in% c("Ridge", "Lasso"))
 
 if(model_name=="Lasso"){
@@ -431,7 +431,10 @@ if(model_name=="Lasso"){
   for (pix in 1:pix_num) {
     # coeff_kep[pix] <- length(coefs[[pix]]$mainEffects$cont)
     coeff_kep[pix] <- sum(coefs[[pix]][row.names(coefs[[pix]])!="(Intercept)"]!=0)
+    
   }#end for pix
+  
+  
   
   # Plot 
   
@@ -783,4 +786,107 @@ ggplot(data = DF_nbdiffmeteo, aes(x=lon, y=lat)) +
   X11(width = 20, height = 7)
 
 
+
+set.seed(2)
+sample_try <- sample(1:pix_num, size = 10)
+for (pix in sample_try) {
+  plot(sort(coefs[[pix]][-1], decreasing = T), main=paste(model_name, "coeff, pixel", pix))
+  abline(h=0)
+}#end for pix
+
+
+
 #Ratio nb pred month compared to growing season length: Take into account that pixels don't haev the same nb of month!!
+
+
+
+
+
+
+
+list_coeff <- list()
+nb_season_var <- matrix(data = NA, ncol=2)
+for (pix in 1:pix_num) {
+  list_coeff[[pix]] <- get_firstcoeffs(coefs[[pix]],length(coefs[[pix]]@i)-1)
+}
+
+
+count_seans_and_var <- function(coeff){
+  coeff_kept <- get_firstcoeffs(coeff,length(coeff@i)-1)
+  nb_var <- length(unique(coeff_kept[,1]))
+  nb_of_seas <- 0
+  
+  if(sum(substr(coeff_kept[,2], start = 1, stop = 3) %in% c("Feb", "Dec", "Jan"))){
+    nb_of_seas <- nb_of_seas + 1
+  }
+  
+  if(sum(substr(coeff_kept[,2], start = 1, stop = 3) %in% c("May", "Mar", "Apr"))){
+    nb_of_seas <- nb_of_seas + 1
+  }
+  
+  if(sum(substr(coeff_kept[,2], start = 1, stop = 3) %in% c("Jun", "Jul", "Aug"))){
+    nb_of_seas <- nb_of_seas + 1
+  }
+  
+  if(sum(substr(coeff_kept[,2], start = 1, stop = 3) %in% c("Sep", "Nov", "Oct"))){
+    nb_of_seas <- nb_of_seas + 1
+  }
+  
+  
+  return(data.frame("nb_of_seas" = nb_of_seas, "nb_of_var" = nb_var))
+  
+}
+
+nb_of_seas <- sapply(X=coefs, FUN = count_seans_and_var)[1,]
+nb_of_var <- sapply(X=coefs, FUN = count_seans_and_var)[2,]
+nb_of_seas <- unlist(nb_of_seas)
+nb_of_var <- unlist(nb_of_var)
+
+DF_nbdiffmeteo <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], nb_meteo = nb_of_var)
+DF_nbdiffmeteo$nb_meteo <- as.factor(DF_nbdiffmeteo$nb_meteo)
+
+ggplot(data = DF_nbdiffmeteo, aes(x=lon, y=lat)) +
+  geom_polygon(data = world, aes(long, lat, group=group),
+               fill="white", color="black", size=0.3) +
+  geom_point(shape=15, aes(color=DF_nbdiffmeteo$nb_meteo)) +
+  scale_color_manual(values = c("1"=viridis(3)[1], "2"=viridis(3)[2], "3"=viridis(3)[3])) +
+  theme(panel.ontop = F, panel.grid = element_blank(),
+        panel.border = element_rect(colour = "black", fill = NA),
+        axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
+  ylab("Lat (°N)") +
+  xlab("Lon (°E)") +
+  coord_fixed(xlim = c(-120, 135),
+              ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
+              ratio = 1.3)+
+  labs(color="Nb of different \nmeteo. variables",
+       title = paste("Number of different meteorological variables, simple",model_name,"regression"),
+       subtitle = paste("Bad yield threshold=", threshold, sep = ""))+
+  theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
+        legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
+  X11(width = 20, height = 7)
+
+
+
+DF_nbdiffseason <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], nb_season = nb_of_seas)
+DF_nbdiffseason$nb_season <- as.factor(DF_nbdiffseason$nb_season)
+
+ggplot(data = DF_nbdiffseason, aes(x=lon, y=lat)) +
+  geom_polygon(data = world, aes(long, lat, group=group),
+               fill="white", color="black", size=0.3) +
+  geom_point(shape=15, aes(color=DF_nbdiffseason$nb_season)) +
+  scale_color_manual(values = c("1"=rainbow(4)[1], "2"=rainbow(4)[4], "3"=rainbow(4)[3], "4"=rainbow(4)[2])) +
+  theme(panel.ontop = F, panel.grid = element_blank(),
+        panel.border = element_rect(colour = "black", fill = NA),
+        axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
+  ylab("Lat (°N)") +
+  xlab("Lon (°E)") +
+  coord_fixed(xlim = c(-120, 135),
+              ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
+              ratio = 1.3)+
+  labs(color="Nb of different \nseasons",
+       title = paste("Number of different seasons, simple",model_name,"regression"),
+       subtitle = paste("Bad yield threshold=", threshold, sep = ""))+
+  theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
+        legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
+  X11(width = 20, height = 7)
+
