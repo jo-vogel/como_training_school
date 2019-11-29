@@ -3,20 +3,14 @@
 ##### Ridge and Lasso                 #####
 ###########################################
 
+# Clean everything
+print("Are you sure you want to run the next line? ;) everything in the environment will be removed")
+rm(list=ls(all=TRUE))
+
 #Coordinate of my village
 lon_maringes <- 4.3
 lat_maringes <- 45.7
 
-
-##############################################################################
-###########          Ridge and LASSO regression                    ###########
-###########   on global standardised crop model data               ###########
-##############################################################################
-
-
-# Clean everything
-print("Are you sure you want to run the next line? ;) everything in the environment will be removed")
-rm(list=ls(all=TRUE))
 
 # which method? model_name in c("Ridge", "Lasso)
 model_name <- "Lasso"
@@ -196,3 +190,18 @@ for (i in 1:pix_num){
 
 load(file = paste("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/",
                   model_name,"_thresoldbadyield", str_pad(threshold*100, 3, pad = "0"),".RData", sep = ""))
+
+
+studied_pix <- which.min((sqrt((coord_subset[,1]-lon_maringes)^2 + (coord_subset[,2]-lat_maringes)^2)))
+
+
+
+cbind(coef(model_cv_fitting[[studied_pix]], s=lambda_VALS[1]),
+      coef(model_cv_fitting[[studied_pix]], s=lambda_VALS[2]))
+
+
+predict(model_cv_fitting[[studied_pix]],
+        as.matrix(x1_test_list[[studied_pix]]),type="response")
+misClassError(actuals = as.matrix(y1_test_list[[studied_pix]]),
+              predictedScores=mypred[[studied_pix]],
+              threshold = segreg_th)
