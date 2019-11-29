@@ -8,17 +8,7 @@
 print("Are you sure you want to run the next line? ;) everything in the environment will be removed")
 rm(list=ls(all=TRUE))
 
-# which method? model_name in c("Ridge", "Lasso)
-model_name <- "Lasso"
-stopifnot(model_name %in% c("Ridge", "Lasso"))
-
-if(model_name=="Lasso"){
-  no_model <- 1
-}
-
-if(model_name=="Ridge"){
-  no_model <- 0
-}
+model_name <- "Elastic-net"
 
 #which lambda?
 lambda_VALS <- c("lambda.min", "lambda.1se")
@@ -188,21 +178,25 @@ for (i in 1:pix_num){
 a_to_test <- seq(0.1, 0.9, 0.05)
 
 #To parallelize on all the pixels
-pixel <- 1
+pixel <- 675
 
-search_list <- list()
+search_list <- matrix(data = NA, nrow = length(a_to_test), ncol = 3)
+colnames(search_list) <- c("cvm", "lambda.1se", "alpha")
 
+tic()
 for (a in a_to_test) {
   crossval <- cv.glmnet(x = as.matrix(x1_train_list[[pixel]]),
                         y = as.matrix(y1_train_list[[pixel]]),
                         family = "binomial", alpha = a, nfolds = 10)
-  search_list[[Which(a_to_test==a)]] <- data.frame(cvm = crossval$cvm[crossval$lambda == crossval$lambda.1se],
-                                                   lambda.1se = crossval$lambda.1se, alpha = i)
+  search_list[which(a_to_test==a),] <- c(crossval$cvm[crossval$lambda == crossval$lambda.1se],
+                                         crossval$lambda.1se, a)
 }#end for a
+toc()
 
 
-cv3 <- search[search$cvm == min(search$cvm), ]
+
+min_cvm <- search_list[which.min(search_list[,"cvm"]),]
 result <- glmnet(x = as.matrix(x1_train_list[[pixel]]),
                  y = as.matrix(y1_train_list[[pixel]]),
-                 family = "binomial", lambda = cv3$lambda.1se, alpha = cv3$alpha)
-coef(md3)
+                 family = "binomial", lambda = min_cvm["lambda.1se"], alpha = min_cvm["alpha"])
+coef(result)
