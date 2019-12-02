@@ -4,7 +4,8 @@
 ##########################################
 
 library(ggplot2)
-
+library(scales)
+library(viridis)
 
 # Load model output ####
 ########################
@@ -76,6 +77,7 @@ csi[work_pix] <- sapply(seq_along(work_pix), function(x){tn[x]/(tn[x]+fp[x]+fn[x
 ####################
 
 model_name <- "Lasso with interactions"
+
 
 # Plot miscla error ####
 
@@ -225,8 +227,18 @@ cor(mean_yield, speci)
     geom_polygon(data = world, aes(long, lat, group=group),
                  fill="white", color="black", size=0.3) +
     geom_point(shape=15, aes(color=coeff_kep),size=0.7) +
-    scale_color_gradient2(limits=c(0,max(DF_numbcoeff[,3])),midpoint=max(DF_numbcoeff[,3]/2),
-                         low = "blue", mid = "yellow", high = "red3") +
+    # scale_color_gradientn(limits=c(0,max(DF_numbcoeff[,3])), 
+    # colours=c(gray.colors(1),topo.colors(23)[-c(1,3,5,16:23)],rev(heat.colors(10))) ,values=rescale(0:22,c(0,1))) + # mixed visualisation
+    # colours=c(gray.colors(1),topo.colors(20)[-c(13:20)],rev(heat.colors(10))) ,values=rescale(0:22,c(0,1))) + # mixed visualisation v1
+    scale_color_gradientn(limits=c(0,15),
+    colours=c(gray.colors(1),topo.colors(9)[-c(8,9)],rev(heat.colors(7))) ,values=rescale(0:15,c(0,1))) + # mixed visualisation with cutoff
+    # scale_color_gradientn(limits=c(0,15), # cut off high values for better visualisation of the rest
+                          # colours=c(gray.colors(1),topo.colors(14)) ,values=rescale(0:15,c(0,1))) + # topo color scheme
+    #                      colours=c(gray.colors(1),rainbow(14)) ,values=rescale(0:15,c(0,1))) + # rainbow color scheme
+    # scale_color_gradient2(limits=c(0,15),midpoint=15/2, # cut off high values for better visualisation of the rest
+    #                      low = "blue", mid = "yellow", high = "red3") +
+    # scale_color_gradient2(limits=c(0,max(DF_numbcoeff[,3])),midpoint=max(DF_numbcoeff[,3])/2,
+                          # low = "blue", mid = "yellow", high = "red3") +
     theme(panel.ontop = F, panel.grid = element_blank(),
           panel.border = element_rect(colour = "black", fill = NA),
           axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
@@ -243,6 +255,7 @@ cor(mean_yield, speci)
     X11(width = 20, height = 7)
   ggsave(file="D:/user/vogelj/Group project/Output/Plots/Number_of_variables_lasso_interact_map.png")
 # }
+  plot(table(coeff_kep))  # overview of distribution of the number of coefficients
   
 
 # Map of number of interactions ####
@@ -265,8 +278,10 @@ cor(mean_yield, speci)
     geom_polygon(data = world, aes(long, lat, group=group),
                  fill="white", color="black", size=0.3) +
     geom_point(shape=15, aes(color=num_interact),size=0.7) +
-    scale_color_gradient2(limits=c(0,max(DF_numb_interact[,3])),midpoint=max(DF_numb_interact[,3]/2),
-                          low = "blue", mid = "yellow", high = "red3") +
+    # scale_color_gradient2(limits=c(0,max(DF_numb_interact[,3])),midpoint=max(DF_numb_interact[,3]/2),
+                          # low = "blue", mid = "yellow", high = "red3") +
+    scale_color_gradientn(limits=c(0,16),
+                          colours=c(gray.colors(1),topo.colors(10)[-c(9,10)],rev(heat.colors(7))) ,values=rescale(0:16,c(0,1))) + # mixed visualisation with cutoff
     theme(panel.ontop = F, panel.grid = element_blank(),
           panel.border = element_rect(colour = "black", fill = NA),
           axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
@@ -282,4 +297,110 @@ cor(mean_yield, speci)
           legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
     X11(width = 20, height = 7)
   ggsave(file="D:/user/vogelj/Group project/Output/Plots/Number_of_variable_interactions_lasso_interact_map.png")
+  plot(table(num_interact))  # overview of distribution of the number of interactions of coefficients
+
   
+  ####################
+  # Number of variables and seasons per pixel
+  ####################
+  
+  # number of variables: which are included
+  nb_of_var <- vector("numeric",length=length(coefs))
+  for (j in  1:length(coefs)){
+    coefs_str <- names(numLevels_list[[j]])[coefs[[j]]$mainEffects$cont]
+    str_var <- vector(mode="character",length=length(coefs_str))
+    for (i in seq_along(coefs_str)){
+      str_var[i] <- strsplit(coefs_str[i],split="_")[[1]][1]
+      nb_of_var[j] <- length(unique(str_var))
+    }
+  }
+  plot(table(nb_of_var))
+  
+  
+  # number of months: list of variables, select months
+  num_months <- vector("numeric",length=length(coefs))
+  months_all_pix <- vector("list",length=length(coefs))
+  for (j in  1:length(coefs)){
+    coefs_str <- names(numLevels_list[[j]])[coefs[[j]]$mainEffects$cont]
+    str_months <- vector(mode="character",length=length(coefs_str))
+    str_months_short <- vector("character",length(coefs_str))
+    for (i in seq_along(coefs_str)){
+      str_months[i] <- paste(strsplit(coefs_str[i],split="_")[[1]][2],strsplit(coefs_str[i],split="_")[[1]][3])
+      num_months[j] <- length(unique(str_months))
+      str_months_short[i] <- strsplit(coefs_str[i],split="_")[[1]][2]
+    }
+    months_all_pix[[j]] <- str_months_short
+  }
+  plot(table(num_months))
+  
+  
+  nb_of_seas <- vector("numeric",length=length(coefs))
+  for (i in 1:length(coefs)){
+    if(sum(months_all_pix[[i]] %in% c("Feb", "Dec", "Jan"))){
+      nb_of_seas[i] <- nb_of_seas[i] + 1
+    }
+    
+    if(sum(months_all_pix[[i]] %in% c("May", "Mar", "Apr"))){
+      nb_of_seas[i] <- nb_of_seas[i] + 1
+    }
+    
+    if(sum(months_all_pix[[i]] %in% c("Jun", "Jul", "Aug"))){
+      nb_of_seas[i] <- nb_of_seas[i] + 1
+    }
+    
+    if(sum(months_all_pix[[i]] %in% c("Sep", "Nov", "Oct"))){
+      nb_of_seas[i] <- nb_of_seas[i] + 1
+    }
+  }  
+  count_seans_and_var <- data.frame("nb_of_seas" = nb_of_seas, "nb_of_var" = nb_of_var)
+  
+  
+  # Plot number of variables
+  DF_nbdiffmeteo <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], nb_meteo = nb_of_var)
+  DF_nbdiffmeteo$nb_meteo <- as.factor(DF_nbdiffmeteo$nb_meteo)
+  
+  ggplot(data = DF_nbdiffmeteo, aes(x=lon, y=lat)) +
+    geom_polygon(data = world, aes(long, lat, group=group),
+                 fill="white", color="black", size=0.3) +
+    geom_point(shape=15, aes(color=DF_nbdiffmeteo$nb_meteo),size=0.7) +
+    scale_color_manual(values = c("0"=rainbow(4)[1],"1"=rainbow(4)[2], "2"=rainbow(4)[3], "3"=rainbow(4)[4])) +
+    theme(panel.ontop = F, panel.grid = element_blank(),
+          panel.border = element_rect(colour = "black", fill = NA),
+          axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
+    ylab("Lat (°N)") +
+    xlab("Lon (°E)") +
+    coord_fixed(xlim = c(-120, 135),
+                ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
+                ratio = 1.3)+
+    labs(color="Nb of different \nmeteo. variables",
+         title = paste("Number of different meteorological variables, simple",model_name,"regression"),
+         subtitle = paste("Bad yield threshold=", threshold, sep = ""))+
+    theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
+          legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
+    X11(width = 20, height = 7)
+  ggsave(file="D:/user/vogelj/Group project/Output/Plots/Number_of_variables_vpd_tmax_prec.png")
+  
+  # Plot number of months  
+  DF_nbdiffseason <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], nb_season = nb_of_seas)
+  DF_nbdiffseason$nb_season <- as.factor(DF_nbdiffseason$nb_season)
+  
+  ggplot(data = DF_nbdiffseason, aes(x=lon, y=lat)) +
+    geom_polygon(data = world, aes(long, lat, group=group),
+                 fill="white", color="black", size=0.3) +
+    geom_point(shape=15, aes(color=DF_nbdiffseason$nb_season),size=0.7) +
+    scale_color_manual(values = c("0"=rainbow(5)[1],"1"=rainbow(5)[2], "2"=rainbow(5)[3], "3"=rainbow(5)[4], "4"=rainbow(5)[5])) +
+    theme(panel.ontop = F, panel.grid = element_blank(),
+          panel.border = element_rect(colour = "black", fill = NA),
+          axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
+    ylab("Lat (°N)") +
+    xlab("Lon (°E)") +
+    coord_fixed(xlim = c(-120, 135),
+                ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
+                ratio = 1.3)+
+    labs(color="Nb of different \nseasons",
+         title = paste("Number of different seasons, simple",model_name,"regression"),
+         subtitle = paste("Bad yield threshold=", threshold, sep = ""))+
+    theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
+          legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
+    X11(width = 20, height = 7)
+  ggsave(file="D:/user/vogelj/Group project/Output/Plots/Number_of_seasons.png")
