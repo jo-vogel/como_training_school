@@ -6,13 +6,14 @@
 library(ggplot2)
 library(scales)
 library(viridis)
+library(maps)
 
 # Load model output ####
 ########################
 
 # source('./Code/Lasso_interact_global.R') # takes ca. 3 hours
 source('./Code/Lasso_interact_global_preparation.R')
-load('D:/user/vogelj/Group project/Code/Workspaces/cv_fit_complete.RData ')
+load("D:/user/vogelj/Group_project/Code/Workspaces/cv_fit_complete.RData")
 
 
 
@@ -77,11 +78,11 @@ csi[work_pix] <- sapply(seq_along(work_pix), function(x){tn[x]/(tn[x]+fp[x]+fn[x
 ####################
 
 model_name <- "Lasso with interactions"
+world <- map_data("world")
 
 
 # Plot miscla error ####
 
-world <- map_data("world")
 DF_miscla <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], miscla = mis_clas_err)
 
 ggplot(data = DF_miscla, aes(x=lon, y=lat)) +
@@ -404,3 +405,4 @@ cor(mean_yield, speci)
           legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
     X11(width = 20, height = 7)
   ggsave(file="D:/user/vogelj/Group project/Output/Plots/Number_of_seasons.png")
+  
