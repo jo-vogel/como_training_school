@@ -58,7 +58,7 @@
 
 
 
-# Load Model output for Lasso w/o interactions ####
+# Load Model output for Lasso w interactions ####
 ###################################################
 
 
@@ -66,7 +66,7 @@
 
 
 
-# Create specificity, CSI and EDI forLasso w/o interactions ####
+# Create specificity, CSI and EDI forLasso w interactions ####
 ################################################################
 
 
