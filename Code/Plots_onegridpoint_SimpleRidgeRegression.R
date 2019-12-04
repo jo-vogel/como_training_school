@@ -199,9 +199,34 @@ studied_pix <- which.min((sqrt((coord_subset[,1]-lon_maringes)^2 + (coord_subset
 cbind(coef(model_cv_fitting[[studied_pix]], s=lambda_VALS[1]),
       coef(model_cv_fitting[[studied_pix]], s=lambda_VALS[2]))
 
+if(lambda_val == "lambda.1se"){
+  MODEL_lambdaselected <- glmnet(x = as.matrix(x1_train_list[[studied_pix]]),
+                                 y = as.matrix(y1_train_list[[studied_pix]]),
+                                 family = "binomial",
+                                 lambda = model_cv_fitting[[studied_pix]]$lambda.1se)
+}
 
-predict(model_cv_fitting[[studied_pix]],
-        as.matrix(x1_test_list[[studied_pix]]),type="response")
+if(lambda_val == "lambda.min"){
+  MODEL_lambdaselected <- glmnet(x = as.matrix(x1_train_list[[studied_pix]]),
+                                 y = as.matrix(y1_train_list[[studied_pix]]),
+                                 family = "binomial",
+                                 lambda = model_cv_fitting[[studied_pix]]$lambda.min)
+}
+
+
+my_pred <- predict(MODEL_lambdaselected,
+                   as.matrix(x1_test_list[[studied_pix]]),type="response")
+
 misClassError(actuals = as.matrix(y1_test_list[[studied_pix]]),
-              predictedScores=mypred[[studied_pix]],
+              predictedScores=my_pred,
               threshold = segreg_th)
+
+
+InformationValue::specificity(as.matrix(y1_test_list[[studied_pix]]),
+                              my_pred,
+                              threshold = segreg_th)
+
+InformationValue::specificity(as.matrix(y1_test_list[[studied_pix]]),
+                              predict(model_cv_fitting[[studied_pix]],
+                                      as.matrix(x1_test_list[[studied_pix]]),type="response"),
+                              threshold = segreg_th)
