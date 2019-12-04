@@ -7,6 +7,7 @@ library(ggplot2)
 library(scales)
 library(viridis)
 library(maps)
+library(glmnet)
 
 # Load model output ####
 ########################
@@ -406,3 +407,19 @@ cor(mean_yield, speci)
     X11(width = 20, height = 7)
   ggsave(file="D:/user/vogelj/Group project/Output/Plots/Number_of_seasons.png")
   
+  
+  
+  
+  # ROC ####
+  ########## 
+  
+  pred <- sapply(seq_along(work_pix), function(x) prediction(mypred[[x]], y1_test_list_red[[x]]))
+  prf <- sapply(seq_along(work_pix), function(x) performance(pred[[x]], measure = "tpr", x.measure = "fpr"))
+  par(mfrow=c(5,5))
+  # plot(prf[[3]])
+  for (i in sample(1:963,25)) (plot(prf[[3]]))
+  ROCs <- sapply(seq_along(work_pix), function(x) plotROC(actuals=y1_test_list_red[[x]],predictedScores=fitted.results_model[[x]]))
+  for (i in sample(1:963,25)) (plot(ROCs[[3]]))
+  auc2 <- sapply(seq_along(work_pix), function(x) auc(y1_test_list_red[[x]],fitted.results_model[[x]]))
+  auc <- sapply(seq_along(work_pix), function(x) performance(pred[[x]], measure = "auc"))
+  # auc@y.values[[1]]
