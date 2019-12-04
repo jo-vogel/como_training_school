@@ -22,7 +22,7 @@ if(model_name=="Ridge"){
 
 #which lambda?
 lambda_VALS <- c("lambda.min", "lambda.1se")
-lambda_val <- lambda_VALS[1]
+lambda_val <- lambda_VALS[2]
 
 #threshold for bad yields in c(0.025,0.05,0.1)
 threshold <- 0.05
@@ -444,8 +444,8 @@ if(model_name=="Lasso"){
     geom_polygon(data = world, aes(long, lat, group=group),
                  fill="white", color="black", size=0.3) +
     geom_point(shape=15, aes(color=coeff_kep)) +
-    scale_color_gradient(limits=c(3,33),
-                          low = "pink", high = "darkblue") +
+    scale_color_gradient(limits=c(1,30),
+                         low = "pink", high = "darkblue") +
     theme(panel.ontop = F, panel.grid = element_blank(),
           panel.border = element_rect(colour = "black", fill = NA),
           axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
@@ -634,51 +634,52 @@ ggplot(data = DF_1var, aes(x=lon, y=lat)) +
 
 
 
-# Plot total % of contribution of most important meteo var ####
-
-contribution_pr <- numeric()
-contribution_vpd <- numeric()
-contribution_tmax <- numeric()
-max_contribution_name <- numeric()
-max_contribution <- numeric()
-for (pix in 1:pix_num) {
-  coeff <- abs(coefs[[pix]])
-  coeff_names <- row.names(coeff)
-  n_coeff <- length(coeff)-1
-  
-  contribution_pr[pix] <- sum(coeff[which(substr(coeff_names, start = 1, stop = 1)=="p")])/sum(coeff[-1])
-  contribution_vpd[pix] <- sum(coeff[which(substr(coeff_names, start = 1, stop = 1)=="v")])/sum(coeff[-1])
-  contribution_tmax[pix] <- sum(coeff[which(substr(coeff_names, start = 1, stop = 1)=="t")])/sum(coeff[-1])
-  
-  max_contribution[pix] <- max(c(contribution_pr[pix],contribution_vpd[pix],contribution_tmax[pix]))
-  
-  max_contribution_name[pix] <- c("pr", "vpd", "tmax")[which.max(c(contribution_pr[pix],
-                                                                   contribution_vpd[pix],contribution_tmax[pix]))]
-  
-}#end for pix
-jet.colors <-
-  colorRampPalette(c("#00007F", "blue", "#007FFF", "cyan",
-                     "#7FFF7F", "yellow", "#FF7F00", "red", "#7F0000"))
-DF_perc_var1 <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], perc_coef = 100*max_contribution)
-ggplot(data = DF_perc_var1, aes(x=lon, y=lat)) +
-  geom_polygon(data = world, aes(long, lat, group=group),
-               fill="white", color="black", size=0.3) +
-  geom_point(shape=15, aes(color=DF_perc_var1$perc_coef)) +
-  scale_color_gradientn(colours = rev(viridis(6))) +
-  theme(panel.ontop = F, panel.grid = element_blank(),
-        panel.border = element_rect(colour = "black", fill = NA),
-        axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
-  ylab("Lat (°N)") +
-  xlab("Lon (°E)") +
-  coord_fixed(xlim = c(-120, 135),
-              ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
-              ratio = 1.3)+
-  labs(color="contribution\n(%)",
-       title = paste("Most important meteo variable: contribution among all coeff, simple",model_name,"regression"),
-       subtitle = paste("Bad yield threshold=", threshold, sep = ""))+
-  theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
-        legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
-  X11(width = 20, height = 7)
+# # Plot total % of contribution of most important meteo var ####
+# /!\ not correct because variable are not orthogonal, I cannot just some the vaule of coeff to do a %
+# 
+# contribution_pr <- numeric()
+# contribution_vpd <- numeric()
+# contribution_tmax <- numeric()
+# max_contribution_name <- numeric()
+# max_contribution <- numeric()
+# for (pix in 1:pix_num) {
+#   coeff <- abs(coefs[[pix]])
+#   coeff_names <- row.names(coeff)
+#   n_coeff <- length(coeff)-1
+#   
+#   contribution_pr[pix] <- sum(coeff[which(substr(coeff_names, start = 1, stop = 1)=="p")])/sum(coeff[-1])
+#   contribution_vpd[pix] <- sum(coeff[which(substr(coeff_names, start = 1, stop = 1)=="v")])/sum(coeff[-1])
+#   contribution_tmax[pix] <- sum(coeff[which(substr(coeff_names, start = 1, stop = 1)=="t")])/sum(coeff[-1])
+#   
+#   max_contribution[pix] <- max(c(contribution_pr[pix],contribution_vpd[pix],contribution_tmax[pix]))
+#   
+#   max_contribution_name[pix] <- c("pr", "vpd", "tmax")[which.max(c(contribution_pr[pix],
+#                                                                    contribution_vpd[pix],contribution_tmax[pix]))]
+#   
+# }#end for pix
+# jet.colors <-
+#   colorRampPalette(c("#00007F", "blue", "#007FFF", "cyan",
+#                      "#7FFF7F", "yellow", "#FF7F00", "red", "#7F0000"))
+# DF_perc_var1 <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], perc_coef = 100*max_contribution)
+# ggplot(data = DF_perc_var1, aes(x=lon, y=lat)) +
+#   geom_polygon(data = world, aes(long, lat, group=group),
+#                fill="white", color="black", size=0.3) +
+#   geom_point(shape=15, aes(color=DF_perc_var1$perc_coef)) +
+#   scale_color_gradientn(colours = rev(viridis(6))) +
+#   theme(panel.ontop = F, panel.grid = element_blank(),
+#         panel.border = element_rect(colour = "black", fill = NA),
+#         axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
+#   ylab("Lat (°N)") +
+#   xlab("Lon (°E)") +
+#   coord_fixed(xlim = c(-120, 135),
+#               ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
+#               ratio = 1.3)+
+#   labs(color="contribution\n(%)",
+#        title = paste("Most important meteo variable: contribution among all coeff, simple",model_name,"regression"),
+#        subtitle = paste("Bad yield threshold=", threshold, sep = ""))+
+#   theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
+#         legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
+#   X11(width = 20, height = 7)
 
 
 
@@ -807,38 +808,46 @@ for (pix in sample_try) {
 list_coeff <- list()
 nb_season_var <- matrix(data = NA, ncol=2)
 for (pix in 1:pix_num) {
-  list_coeff[[pix]] <- get_firstcoeffs(coefs[[pix]],length(coefs[[pix]]@i)-1)
+  if(length(coefs[[pix]]@i)-1>0){
+    list_coeff[[pix]] <- get_firstcoeffs(coefs[[pix]],length(coefs[[pix]]@i)-1)
+  } else {
+    list_coeff[[pix]] <- NA
+  }
 }
 
 
-count_seans_and_var <- function(coeff){
-  coeff_kept <- get_firstcoeffs(coeff,length(coeff@i)-1)
-  nb_var <- length(unique(coeff_kept[,1]))
-  nb_of_seas <- 0
-  
-  if(sum(substr(coeff_kept[,2], start = 1, stop = 3) %in% c("Feb", "Dec", "Jan"))){
-    nb_of_seas <- nb_of_seas + 1
-  }
-  
-  if(sum(substr(coeff_kept[,2], start = 1, stop = 3) %in% c("May", "Mar", "Apr"))){
-    nb_of_seas <- nb_of_seas + 1
-  }
-  
-  if(sum(substr(coeff_kept[,2], start = 1, stop = 3) %in% c("Jun", "Jul", "Aug"))){
-    nb_of_seas <- nb_of_seas + 1
-  }
-  
-  if(sum(substr(coeff_kept[,2], start = 1, stop = 3) %in% c("Sep", "Nov", "Oct"))){
-    nb_of_seas <- nb_of_seas + 1
-  }
-  
-  
-  return(data.frame("nb_of_seas" = nb_of_seas, "nb_of_var" = nb_var))
+count_seas_and_var <- function(coeff){
+  if (length(coeff@i)-1) {
+    coeff_kept <- get_firstcoeffs(coeff,length(coeff@i)-1)
+    nb_var <- length(unique(coeff_kept[,1]))
+    nb_of_seas <- 0
+    
+    if(sum(substr(coeff_kept[,2], start = 1, stop = 3) %in% c("Feb", "Dec", "Jan"))){
+      nb_of_seas <- nb_of_seas + 1
+    }
+    
+    if(sum(substr(coeff_kept[,2], start = 1, stop = 3) %in% c("May", "Mar", "Apr"))){
+      nb_of_seas <- nb_of_seas + 1
+    }
+    
+    if(sum(substr(coeff_kept[,2], start = 1, stop = 3) %in% c("Jun", "Jul", "Aug"))){
+      nb_of_seas <- nb_of_seas + 1
+    }
+    
+    if(sum(substr(coeff_kept[,2], start = 1, stop = 3) %in% c("Sep", "Nov", "Oct"))){
+      nb_of_seas <- nb_of_seas + 1
+    }
+    
+    
+    return(data.frame("nb_of_seas" = nb_of_seas, "nb_of_var" = nb_var))
+  } else {
+    return(data.frame("nb_of_seas" = NA, "nb_of_var" = NA))
+  }#end if else
   
 }
 
-nb_of_seas <- sapply(X=coefs, FUN = count_seans_and_var)[1,]
-nb_of_var <- sapply(X=coefs, FUN = count_seans_and_var)[2,]
+nb_of_seas <- sapply(X=coefs, FUN = count_seas_and_var)[1,]
+nb_of_var <- sapply(X=coefs, FUN = count_seas_and_var)[2,]
 nb_of_seas <- unlist(nb_of_seas)
 nb_of_var <- unlist(nb_of_var)
 
