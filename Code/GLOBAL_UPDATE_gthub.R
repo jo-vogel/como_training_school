@@ -1,0 +1,505 @@
+###### GLOBAL BESTGLM #########
+## Version update: 21/11/19 ############
+
+### Author: Cristina Deidda ########
+#### Author main code for the plot: Pauline edited by Johannes #########
+
+
+
+library(ncdf4)
+library(glinternet)
+library(abind)
+library(foreach) 
+library(doParallel)
+library(InformationValue)
+library(ROCR)
+library(tictoc)
+
+# Get the data ####
+###################
+# path_to_NH_files <- "C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/Data/Global"
+
+path_to_NH_files <- "D:/PROJECTS/DAMOCLES/Data_global"
+
+nh_files <- list.files(path=path_to_NH_files,pattern="NH_yield*") # all files from northern hemisphere
+nh_data <- lapply(1:length(nh_files),
+                  FUN = function(x){nc_open(paste0(path_to_NH_files,"/",nh_files[x]))})
+yield <- ncvar_get(nh_data[[1]],"yield")
+tasmax <- ncvar_get(nh_data[[1]],"tasmax")
+vpd <- ncvar_get(nh_data[[1]],"vpd")
+pr <- ncvar_get(nh_data[[1]],"pr")
+lat_subset <- ncvar_get(nh_data[[1]],"lat")
+lon_subset <- ncvar_get(nh_data[[1]],"lon")
+yield_stand <- ncvar_get(nh_data[[2]],"yield")
+tasmax_stand <- ncvar_get(nh_data[[2]],"tasmax")
+vpd_stand <- ncvar_get(nh_data[[2]],"vpd")
+pr_stand <- ncvar_get(nh_data[[2]],"pr")
+lapply(1:length(nh_files),function(x){nc_close(nh_data[[x]])})
+coord_subset <- cbind(lon_subset,lat_subset)
+
+# load all coordinates of northern hemisphere
+nh_files <- list.files(path=path_to_NH_files,pattern="*NH.nc") # all files from northern hemisphere
+nh_data <- lapply(1:length(nh_files),function(x){nc_open(paste0(path_to_NH_files,"/",nh_files[x]))})
+
+lat_all <- ncvar_get(nh_data[[1]],"lat")
+lon_all <- ncvar_get(nh_data[[1]],"lon")
+lati_all <- rep(lat_all,each=length(lon_all))
+long_all <- rep(lon_all,length(lat_all)) # coordinates rearranged
+coord_all <- cbind(long_all,lati_all)
+
+
+
+Names<-c("Aug_1","Sep_1","Oct_1","Nov_1","Dec_1","Jan_2","Feb_2","March_2","April_2","May_2","June_2","July_2","Aug_2","Sep_2","Oct_2","Nov_2","Dec_2")
+
+
+
+Date<-is.na(tasmax[,,1])
+Yield<-t(yield)
+names(Yield)<-c("Yield")
+
+
+
+colnames(tasmax)<-paste("tasmax_",Names)
+colnames(pr)<-paste("pr_",Names)
+colnames(vpd)<-paste("vpd_",Names)
+
+
+# Process data ####
+###################
+
+yields_3dim <- array(yield,dim=c(965,1,1600));yields_stand_3dim <- array(yield,dim=c(965,1,1600))
+Model_data <- abind(yields_3dim,tasmax,vpd,pr,along=2)
+Model_data_stand <- abind(yields_stand_3dim,tasmax_stand,vpd_stand,pr_stand,along=2)
+pix_num <- dim(Model_data)[1]
+
+# Exclude NA variable columns
+
+na_col <- matrix(data=NA,nrow=pix_num,ncol=52)
+for (j in 1:pix_num){
+  for (i in 1:52){
+   na_col[j,i] <- all(is.na(Model_data[j,i,])) # TRUE if entire column is NA
+  }
+}
+non_na_col <- !na_col # columns without NAs
+#non_na_col[,1] <- FALSE # exclude yield (it is no predictor and should therefore be ignored)
+
+
+na_time <- vector("list",length=pix_num) # for each pixel, the positions of NAs over time
+for (j in 1:pix_num){
+  na_time[[j]] <- which(is.na(Model_data[j,1,])) # locations of years with NA values
+}
+
+
+
+Not_NA_col <- sapply(1:pix_num,function(x) {which(na_col[x,]==F)[2:length(which(na_col[x,]==F))]})   # False means entire column isnot NA
+   
+Model_v1<-  sapply(1:pix_num,function(x){ t( Model_data[x,Not_NA_col[[x]],])})
+
+
+
+
+ ########### CREATION SUMMARY ###########
+
+Multicollin<-list(Vif=c(), Tolerance=c(),Mean=c(), check=c())
+
+Summary<- list( misClasificError=c(), Auc=c(), Spec=c(),Sens=c(), Aic=c(), Bic=c(), Drivers=list(), Coeff=list())
+
+Data_All<-list()
+Predictors_final<-list() 
+
+                ###########LOOP#####################
+     ###### PRESELECTION LINEAR CORRELATION ##############
+
+
+
+for( xlx in 1:pix_num)
+{
+
+#Var<-list(tasmax=tasmax,pr=pr,vdp=vpd)
+  
+Dd<-which(is.na(tasmax[xlx,,1])==FALSE) 
+Names<-names(which(is.na(tasmax[xlx,,1])==FALSE))   
+
+Final_matrix<-cbind(Yield[,xlx],Model_v1[[xlx]]) 
+
+Data<-Final_matrix  
+prova<- which(is.na(Data[,1]))
+
+                           
+if(length(prova)>1){
+ Data<-Data[-prova,]
+}
+
+##########################   Correlation   #################################
+
+corr<-cor(Data)[,1]
+Correlation<-sort(abs(corr),decreasing=T)
+Final_variable<-Correlation[which(Correlation>0.30)]
+Final_variable<- Final_variable [-1]
+if(length(Final_variable)>14){Final_variable<-Final_variable[1:14]}
+
+
+#######################     Predictors matrix    ###########################
+
+Predictors<-names(Final_variable)
+
+if(length(Predictors)>0)
+{
+j<-1
+x<-c(NA)
+for(i in 1:length(Predictors))
+{
+x[i]<-which(colnames(Data)==Predictors[i])
+}
+ 
+Data2<-Data[,x]
+
+######################
+
+gg<-2
+quant<- c(0.025,0.05,0.1)
+
+threshold<-quant[gg]
+# transform yield data to binary data: severe loss, no severe loss
+low_yield <- quantile(Data[,1],quant[gg])
+cy<- ifelse(Data[,1]<low_yield,0,1)
+
+#Summary_m[1,gg]<- quantile(Data[,1],quant[gg])
+
+Data_test<-cbind(Data2,cy)
+
+
+Data_All[[xlx]]<-Data_test
+Predictors_final[[xlx]]<-Predictors}
+}
+
+############  end linear preselection part########################
+
+
+              ####### INITIAL PART OF MODEL CODE ################
+################## Training and Testing Dataset ##################################
+
+
+training_indices <- vector("list",length=pix_num)
+testing_indices <- vector("list",length=pix_num)
+
+set.seed(1994)
+for (x in 1:pix_num) {
+    
+    if( length(Predictors_final[[x]])>0){
+    training_indices[[x]] <- sort(sample(1:nrow(Data_All[[x]]), size = floor(nrow(Data_All[[x]])*0.6)))
+    testing_indices[[x]] <- (1:nrow(Data_All[[x]]))[-training_indices[[x]]]    
+  }
+}
+
+Training_Data <- lapply(1:pix_num,function(x){data.frame(Data_All[[x]][training_indices[[x]],])})
+Testing_Data <- lapply(1:pix_num,function(x){data.frame(Data_All[[x]][testing_indices[[x]],])})
+
+
+Px_ok<-c()
+for ( ii in 1:pix_num)
+{
+Px_ok[ii]<- ifelse(length(Training_Data[[ii]])<=2,0, 1) 
+}
+#Pixel ok: the pixel for which there are main drivers : 1 it is ok, 0 NO ##
+
+Pixel_ok<- which(Px_ok==1)
+
+
+
+
+
+#################### Model BestGLM #############################################
+
+ Model_list<-list()
+
+tic()
+no_cores <- detectCores() / 2 - 1
+cl<-makeCluster(no_cores)
+clusterEvalQ(cl, {
+  library(glinternet)
+  library(dplyr)
+}) # parallelisation has own environment, therefore some packages and variables need be loaded again
+registerDoParallel(cl)
+
+model_CV<- foreach (i=1:pix_num,.multicombine=TRUE,.packages="bestglm") %dopar% {
+  
+  if( Px_ok[i]!=0){         
+  bestglm(Xy = data.frame(Training_Data [[i]]), IC = "CV", CVArgs = list(Method = "HTF", K = 10, REP =1000), 
+        family=binomial)} else{0}
+   
+  } 
+    
+    
+stopCluster(cl)
+toc()
+
+y1_test_list <- lapply(1:pix_num, function(x){Testing_Data[[x]][,ncol(Testing_Data[[x]])]}) # predictand
+
+
+
+Best_model<- lapply(Pixel_ok, function(x){model_CV[[x]]$BestModel}) # predictand
+Coef_model<- lapply(Pixel_ok, function(x){names(Best_model[[x]]$coefficients)})
+
+Name<- lapply(Pixel_ok, function(x){names(model_CV[[x]]$BestModel$coefficients)})
+Coord_ok<-lapply(Pixel_ok, function(x){coord_subset[[Pixel_ok]]})
+First_Driver<- lapply(1:length(Pixel_ok), function(x){Name[[x]][2]})
+First_Driver<-data.frame(t(First_Driver))
+names(First_Driver)<-c("driver" )
+
+
+ 
+################## Model performance assessment ###########
+             ###################################
+           
+           
+test_length <- pix_num 
+
+#mypred <- lapply(Pixel_ok, function(x){if(length(model_CV[[x]]$BestModel$coefficients)>2){predict(model_CV[[x]]$BestModel,Testing_Data[[x]][,1:(ncol(Testing_Data[[x]])-1)],type='response')}else{ 0 }}) 
+
+mypred <- lapply(Pixel_ok, function(x){predict(model_CV[[x]]$BestModel,Testing_Data[[x]][,1:(ncol(Testing_Data[[x]])-1)],type='response')}) 
+
+
+work_pix<-Pixel_ok
+
+segreg_th <- 0.5
+
+fitted.results_model <- lapply(seq_along(work_pix), function(x){ifelse(mypred[[x]] > segreg_th,1,0)})
+
+
+
+y1_test_list_red <- lapply(work_pix,function(work_pix){y1_test_list[[work_pix]]})
+mis_clas_err <- rep(NA,965)
+# mis_clas_err[work_pix] <- sapply(seq_along(work_pix), function(x){misClassError(y1_test_list_red[[x]],mypred[[x]])})
+mis_clas_err[work_pix] <- sapply(seq_along(work_pix), function(x){misClassError(actuals = y1_test_list_red[[x]],
+                                                                                predictedScores=mypred[[x]],
+                                                                                threshold = segreg_th)})
+
+
+
+con_tab <-  lapply(seq_along(work_pix), function(x){InformationValue::confusionMatrix(y1_test_list_red[[x]],fitted.results_model[[x]])})
+sensi <- rep(NA,965)
+speci <- rep(NA,965)
+sensi[work_pix] <- sapply(seq_along(work_pix), function(x){InformationValue::sensitivity(y1_test_list_red[[x]],fitted.results_model[[x]],threshold = segreg_th)})
+
+speci[work_pix] <- sapply(seq_along(work_pix), function(x){InformationValue::specificity(y1_test_list_red[[x]],fitted.results_model[[x]], threshold = segreg_th)})
+
+obs_pred <- lapply(seq_along(work_pix), function(x){cbind(y1_test_list_red[[x]],fitted.results_model[[x]])})
+tp <- sapply(seq_along(work_pix), function(x){sum(rowSums(obs_pred[[x]])==2)})
+tn <- sapply(seq_along(work_pix), function(x){sum(rowSums(obs_pred[[x]])==0)})
+fp <- sapply(seq_along(work_pix), function(x){sum(obs_pred[[x]][,1]==0 & obs_pred[[x]][,2]==1)})
+fn <- sapply(seq_along(work_pix), function(x){sum(obs_pred[[x]][,1]==1 & obs_pred[[x]][,2]==0)})
+con_tab1 <- sapply(seq_along(work_pix), function(x){matrix(c(tp[x],fn[x],fp[x],tn[x]),nrow=2,ncol=2)})
+# spec <- tn/(tn+fp) 
+# sens <- tp/(tp+fn) 
+csi <- rep(NA,965)
+csi[work_pix] <- sapply(seq_along(work_pix), function(x){tn[x]/(tn[x]+fp[x]+fn[x])})
+
+
+
+################ Visualisation ###############
+
+
+model_name <- "Best Glm"
+
+
+######## Plot Main drivers ##################
+
+world <- map_data("world")
+DF_driver <- data.frame(lon=Coord_ok[,1], lat = Coord_ok[,2], driver= First_Driver )
+
+ggplot(data = DF_driver, aes(x=lon, y=lat)) +
+  geom_polygon(data = world, aes(long, lat, group=group),
+               fill="white", color="black", size=0.1) +
+  geom_point(shape=15, aes(color=driver),size=0.7) +
+  #scale_color_gradient2(limits=c(min(mis_clas_err,na.rm=T),max(mis_clas_err,na.rm=T)),midpoint=min(mis_clas_err,na.rm=T)+(max(mis_clas_err,na.rm=T)-min(mis_clas_err,na.rm=T))/2,
+                       # low = "yellow", mid = "red3", high = "black") +
+  theme(panel.ontop = F, panel.grid = element_blank(),
+        panel.border = element_rect(colour = "black", fill = NA),
+        axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
+  ylab("Lat (°N)") +
+  xlab("Lon (°E)") +
+  coord_fixed(xlim = c(-120, 135),
+              ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
+              ratio = 1.3)+
+  labs(color="Main Driver",
+       title = paste("Main Drivers, simple",model_name,"regression"),
+       subtitle = paste("Bad yield threshold=", threshold,
+                        ", segregation threshold=", segreg_th, sep = ""))+
+  theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
+        legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
+  X11(width = 20, height = 7)
+ggsave(file="D:/PROJECTS/DAMOCLES/GLOBAL RESULTS REP1000/Main_Drivers_Best_Glm_map.png")
+
+
+
+# Plot miscla error ####
+
+world <- map_data("world")
+DF_miscla <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], miscla = mis_clas_err)
+
+ggplot(data = DF_miscla, aes(x=lon, y=lat)) +
+  geom_polygon(data = world, aes(long, lat, group=group),
+               fill="white", color="black", size=0.1) +
+  geom_point(shape=15, aes(color=miscla),size=0.7) +
+  scale_color_gradient2(limits=c(min(mis_clas_err,na.rm=T),max(mis_clas_err,na.rm=T)),midpoint=min(mis_clas_err,na.rm=T)+(max(mis_clas_err,na.rm=T)-min(mis_clas_err,na.rm=T))/2,
+                        low = "yellow", mid = "red3", high = "black") +
+  theme(panel.ontop = F, panel.grid = element_blank(),
+        panel.border = element_rect(colour = "black", fill = NA),
+        axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
+  ylab("Lat (°N)") +
+  xlab("Lon (°E)") +
+  coord_fixed(xlim = c(-120, 135),
+              ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
+              ratio = 1.3)+
+  labs(color="Misclass.\nerror",
+       title = paste("Misclassification error, simple",model_name,"regression"),
+       subtitle = paste("Bad yield threshold=", threshold,
+                        ", segregation threshold=", segreg_th, sep = ""))+
+  theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
+        legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
+  X11(width = 20, height = 7)
+ggsave(file="D:/PROJECTS/DAMOCLES/GLOBAL RESULTS REP1000/Mis_class_error_Best_Glm_map.png")
+
+# Plot specificity ####
+
+DF_speci <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], specificity = speci)
+
+ggplot(data = DF_speci, aes(x=lon, y=lat)) +
+  geom_polygon(data = world, aes(long, lat, group=group),
+               fill="white", color="black", size=0.3) +
+  geom_point(shape=15, aes(color=speci),size=0.7) +
+  scale_color_gradient2(limits=c(min(speci,na.rm=T),max(speci,na.rm=T)),midpoint=min(speci,na.rm=T)+(max(speci,na.rm=T)-min(speci,na.rm=T))/2,
+                        low = "black", mid = "red3", high = "yellow") +
+  theme(panel.ontop = F, panel.grid = element_blank(),
+        panel.border = element_rect(colour = "black", fill = NA),
+        axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
+  ylab("Lat (°N)") +
+  xlab("Lon (°E)") +
+  coord_fixed(xlim = c(-120, 135),
+              ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
+              ratio = 1.3)+
+  labs(color="Specif.",
+       title = paste("Specificity, simple",model_name,"regression"),
+       subtitle = paste("Bad yield threshold=", threshold,
+                        ", segregation threshold=", segreg_th, sep = ""))+
+  theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
+        legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
+  X11(width = 20, height = 7)
+ggsave(file="D:/PROJECTS/DAMOCLES/GLOBAL RESULTS REP1000/Specificity_Best_Glm_map.png")
+
+# Plot sensitivity ####
+
+DF_sensi <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], sensitivity = sensi)
+
+ggplot(data = DF_sensi, aes(x=lon, y=lat)) +
+  geom_polygon(data = world, aes(long, lat, group=group),
+               fill="white", color="black", size=0.3) +
+  geom_point(shape=15, aes(color=sensi),size=0.7) +
+  scale_color_gradient2(limits=c(min(sensi,na.rm=T),max(sensi,na.rm=T)),midpoint=min(sensi,na.rm=T)+(max(sensi,na.rm=T)-min(sensi,na.rm=T))/2,
+                        low = "black", mid = "red3", high = "yellow") +
+  theme(panel.ontop = F, panel.grid = element_blank(),
+        panel.border = element_rect(colour = "black", fill = NA),
+        axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
+  ylab("Lat (°N)") +
+  xlab("Lon (°E)") +
+  coord_fixed(xlim = c(-120, 135),
+              ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
+              ratio = 1.3)+
+  labs(color="Sensi.",
+       title = paste("Sensitivity, simple",model_name,"regression"),
+       subtitle = paste("Bad yield threshold=", threshold,
+                        ", segregation threshold=", segreg_th, sep = ""))+
+  theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
+        legend.title = element_text(size = 15), legend.text = element_text(size = 14))  +
+  X11(width = 20, height = 7)
+ggsave(file="D:/PROJECTS/DAMOCLES/GLOBAL RESULTS REP1000/Sensitivity_Best_Glm_map.png")
+
+
+# Plot critical succes index (CSI) ####
+
+DF_csi <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], Critical_success_index = csi)
+
+ggplot(data = DF_csi, aes(x=lon, y=lat)) +
+  geom_polygon(data = world, aes(long, lat, group=group),
+               fill="white", color="black", size=0.3) +
+  geom_point(shape=15, aes(color=csi),size=0.7) +
+  scale_color_gradient2(limits=c(min(csi,na.rm=T),max(csi,na.rm=T)),midpoint=min(csi,na.rm=T)+(max(csi,na.rm=T)-min(csi,na.rm=T))/2,
+                        low = "black", mid = "red3", high = "yellow") +
+  theme(panel.ontop = F, panel.grid = element_blank(),
+        panel.border = element_rect(colour = "black", fill = NA),
+        axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
+  ylab("Lat (°N)") +
+  xlab("Lon (°E)") +
+  coord_fixed(xlim = c(-120, 135),
+              ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
+              ratio = 1.3)+
+  labs(color="CSI",
+       title = paste("Critical succes index, simple",model_name,"regression"),
+       subtitle = paste("Bad yield threshold=", threshold,
+                        ", segregation threshold=", segreg_th, sep = ""))+
+  theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
+        legend.title = element_text(size = 15), legend.text = element_text(size = 14))  +
+  X11(width = 20, height = 7)
+ggsave(file="D:/PROJECTS/DAMOCLES/GLOBAL RESULTS REP1000/CSI_Best_Glm_map.png")
+
+
+# Correlation between yield and specificity or miscla error ####
+
+mean_yield <- apply(X=yield, MARGIN = 1, FUN = mean, na.rm=T)
+plot(mean_yield, mis_clas_err,
+     xlab="Mean Yield (kg/yr)", ylab="Miss-classification error",
+     main=paste("Scatterplot mean yield, miss-classification error\nbad yield threshold=", threshold,
+                "\nsegregation threshold=", segreg_th, sep = ""))
+plot(mean_yield, speci,
+     xlab="Mean Yield (kg/yr)", ylab="Specificity",
+     main=paste("Scatterplot mean yield, Specificity\nbad yield threshold=", threshold,
+                "\nsegregation threshold=", segreg_th, sep = ""))
+
+
+pairs(cbind(mean_yield, mis_clas_err, speci),
+      main=paste(model_name, " regression, bad yield thr.=", threshold,
+                 "\nsegreg. thr.=", segreg_th, sep = ""))
+
+cor(mean_yield, mis_clas_err)
+cor(mean_yield, speci)
+
+
+# Map of the number of coefficients kept (Lasso) #####
+# if(model_name=="Lasso"){
+  coeff_kep <- numeric()
+  
+  for (pix in 1:pix_num) {
+    coeff_kep[pix] <- length(coefs[[pix]]$mainEffects$cont)
+    # coeff_kep[pix] <- sum(coefs[[pix]][row.names(coefs[[pix]])!="(Intercept)"]!=0)
+  }#end for pix
+  
+  # Plot specificity error ####
+  
+  DF_numbcoeff <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], coeff_kep = coeff_kep)
+  
+  ggplot(data = DF_numbcoeff, aes(x=lon, y=lat)) +
+    geom_polygon(data = world, aes(long, lat, group=group),
+                 fill="white", color="black", size=0.3) +
+    geom_point(shape=15, aes(color=coeff_kep)) +
+    scale_color_gradient(limits=c(3,33),
+                         low = "pink", high = "darkblue") +
+    theme(panel.ontop = F, panel.grid = element_blank(),
+          panel.border = element_rect(colour = "black", fill = NA),
+          axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
+    ylab("Lat (°N)") +
+    xlab("Lon (°E)") +
+    coord_fixed(xlim = c(-120, 135),
+                ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
+                ratio = 1.3)+
+    labs(color="Nb of var.",
+         title = paste("Number of variables kept, simple",model_name,"regression"),
+         subtitle = paste("Bad yield threshold=", threshold, sep = ""))+
+    theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
+          legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
+    X11(width = 20, height = 7)
+# }
+
+
+############################################################################
+
