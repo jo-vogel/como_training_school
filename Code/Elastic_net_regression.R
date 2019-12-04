@@ -26,7 +26,7 @@ library(ncdf4);library(rgdal);library(raster);library(RColorBrewer);library(viri
 library(maps);library(mapdata);library(ggplot2)
 library(glmnet);library(InformationValue);library(ROCR)
 library(abind);library(stringr)
-library(foreach);library(doParallel)
+library(foreach);library(iterators);library(parallel);library(doParallel)
 library(tictoc)
 
 
@@ -175,28 +175,94 @@ for (i in 1:pix_num){
 
 
 # ELASTIC NET WITH 0 < ALPHA < 1
-a_to_test <- seq(0.1, 0.9, 0.05)
 
-#To parallelize on all the pixels
-pixel <- 675
 
-search_list <- matrix(data = NA, nrow = length(a_to_test), ncol = 3)
-colnames(search_list) <- c("cvm", "lambda.1se", "alpha")
+no_cores <- detectCores() / 2 - 1
+
+# registerDoParallel(cores = no_cores)
+
+cl<-makeCluster(no_cores)
+clusterEvalQ(cl, {
+  library(glmnet)
+  library(dplyr)
+}) # parallelisation has own environment, therefore some packages and variables need be loaded again
+registerDoParallel(cl)
 
 tic()
-for (a in a_to_test) {
-  crossval <- cv.glmnet(x = as.matrix(x1_train_list[[pixel]]),
-                        y = as.matrix(y1_train_list[[pixel]]),
-                        family = "binomial", alpha = a, nfolds = 10)
-  search_list[which(a_to_test==a),] <- c(crossval$cvm[crossval$lambda == crossval$lambda.1se],
-                                         crossval$lambda.1se, a)
-}#end for a
+
+
+# cv_elastic_model_select <- foreach (pixel=1:dim(Model_data_stand)[1]) %dopar% {
+set.seed(2019)
+cv_elastic_model_select5<- foreach (pixel=757) %dopar% {
+  
+  a_to_test <- seq(0.1, 0.9, 0.05)
+  search_list_1se <- matrix(data = NA, nrow = length(a_to_test), ncol = 3)
+  search_list_min <- matrix(data = NA, nrow = length(a_to_test), ncol = 3)
+  colnames(search_list_1se) <- c("cvm", "lambda.1se", "alpha")
+  colnames(search_list_min) <- c("cvm", "lambda.min", "alpha")
+
+  
+  for (a in a_to_test) {
+    crossval <- cv.glmnet(x = as.matrix(x1_train_list[[pixel]]),
+                          y = as.matrix(y1_train_list[[pixel]]),
+                          family = "binomial", alpha = a, nfolds = 10)
+    search_list_1se[which(a_to_test==a),] <- c(crossval$cvm[crossval$lambda == crossval$lambda.1se],
+                                               crossval$lambda.1se, a)
+    search_list_min[which(a_to_test==a),] <- c(crossval$cvm[crossval$lambda == crossval$lambda.min],
+                                               crossval$lambda.min, a)
+  }#end for a
+  
+  min_cvm_lamda.1se <- search_list_1se[which.min(search_list_1se[,"cvm"]),]
+  min_cvm_lamda.min <- search_list_min[which.min(search_list_min[,"cvm"]),]
+  return(list(lambda1se = list(fit = glmnet(x = as.matrix(x1_train_list[[pixel]]),
+                                            y = as.matrix(y1_train_list[[pixel]]),
+                                            family = "binomial", lambda = min_cvm_lamda.1se["lambda.1se"],
+                                            alpha = min_cvm_lamda.1se["alpha"]),
+                               alph = min_cvm_lamda.1se["alpha"]),
+              lambdamin = list(fit = glmnet(x = as.matrix(x1_train_list[[pixel]]),
+                                            y = as.matrix(y1_train_list[[pixel]]),
+                                            family = "binomial", lambda = min_cvm_lamda.min["lambda.min"],
+                                            alpha = min_cvm_lamda.min["alpha"]),
+                               alph = min_cvm_lamda.min["alpha"])))
+}
+cbind("lambda1se"=c(cv_elastic_model_select1[[1]]$lambda1se$alph,
+                    cv_elastic_model_select2[[1]]$lambda1se$alph,
+                    cv_elastic_model_select3[[1]]$lambda1se$alph,
+                    cv_elastic_model_select4[[1]]$lambda1se$alph,
+                    cv_elastic_model_select5[[1]]$lambda1se$alph),
+      "lambdamin"=c(cv_elastic_model_select1[[1]]$lambdamin$alph,
+                    cv_elastic_model_select2[[1]]$lambdamin$alph,
+                    cv_elastic_model_select3[[1]]$lambdamin$alph,
+                    cv_elastic_model_select4[[1]]$lambdamin$alph,
+                    cv_elastic_model_select5[[1]]$lambdamin$alph))
+
 toc()
 
 
 
-min_cvm <- search_list[which.min(search_list[,"cvm"]),]
-result <- glmnet(x = as.matrix(x1_train_list[[pixel]]),
-                 y = as.matrix(y1_train_list[[pixel]]),
-                 family = "binomial", lambda = min_cvm["lambda.1se"], alpha = min_cvm["alpha"])
-coef(result)
+
+
+# a_to_test <- seq(0.1, 0.9, 0.05)
+# 
+# 
+# search_list <- matrix(data = NA, nrow = length(a_to_test), ncol = 3)
+# colnames(search_list) <- c("cvm", "lambda.1se", "alpha")
+# 
+# tic()
+# 
+# for (a in a_to_test) {
+#   crossval <- cv.glmnet(x = as.matrix(x1_train_list[[pixel]]),
+#                         y = as.matrix(y1_train_list[[pixel]]),
+#                         family = "binomial", alpha = a, nfolds = 10)
+#   search_list[which(a_to_test==a),] <- c(crossval$cvm[crossval$lambda == crossval$lambda.1se],
+#                                          crossval$lambda.1se, a)
+# }#end for a
+# toc()
+# 
+# 
+# 
+# min_cvm <- search_list[which.min(search_list[,"cvm"]),]
+# result <- glmnet(x = as.matrix(x1_train_list[[pixel]]),
+#                  y = as.matrix(y1_train_list[[pixel]]),
+#                  family = "binomial", lambda = min_cvm["lambda.1se"], alpha = min_cvm["alpha"])
+# coef(result)
