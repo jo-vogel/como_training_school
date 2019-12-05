@@ -172,7 +172,14 @@ for (i in 1:pix_num){
 
 load(file = "C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/Ridge_lambdamin_threshbadyield005.RData")
 
+nb_pix_ridge <- length(ridge_model_lambdamin)
 
+coefs_ridge <- lapply(1:nb_pix_ridge, function(x){coef(ridge_model_lambdamin[[x]])})
+
+
+
+pred_ridge <- lapply(1:nb_pix_ridge, function(x){predict(ridge_model_lambdamin[[x]],
+                                                         as.matrix(x1_test_list[[x]]),type="response")})
 
 
 
