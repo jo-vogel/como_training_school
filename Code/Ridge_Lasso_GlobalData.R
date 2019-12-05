@@ -8,12 +8,10 @@
 print("Are you sure you want to run the next line? ;) everything in the environment will be removed")
 rm(list=ls(all=TRUE))
 
-##Hello I changed That
-
 # which method? model_name in c("Ridge", "Lasso)
 model_name <- "Lasso"
-# stopifnot(model_name %in% c("Ridge", "Lasso"))
-# An I also changed that
+stopifnot(model_name %in% c("Ridge", "Lasso"))
+
 if(model_name=="Lasso"){
   no_model <- 1
 }
