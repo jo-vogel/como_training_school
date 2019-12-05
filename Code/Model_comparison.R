@@ -197,20 +197,34 @@ con_tab_ridge <-  lapply(1:nb_pix_ridge, function(x){InformationValue::confusion
                                                                                        fitted_results_ridge[[x]],
                                                                                        threshold = segreg_th)})
 
-csi <- numeric()
+csi_ridge <- numeric()  #critical success index
+F_ridge <- numeric()    #False alarm rate
+H_ridge <- numeric()    #Hit rate
+
 for(pix in 1:nb_pix_ridge){
-  csi[pix] <- con_tab_ridge[[pix]]["0","0"]/(con_tab_ridge[[pix]]["0","0"] +
-                                               con_tab_ridge[[pix]]["1","0"] + con_tab_ridge[[pix]]["0","1"])
+  csi_ridge[pix] <- con_tab_ridge[[pix]]["0","0"]/(con_tab_ridge[[pix]]["0","0"] +
+                                                     con_tab_ridge[[pix]]["1","0"] +
+                                                     con_tab_ridge[[pix]]["0","1"])
+  
+  F_ridge[pix] <- con_tab_ridge[[pix]]["0","1"]/(con_tab_ridge[[pix]]["0","1"] +
+                                                     con_tab_ridge[[pix]]["1","1"])
+  
+  H_ridge[pix] <- con_tab_ridge[[pix]]["0","0"]/(con_tab_ridge[[pix]]["0","0"] +
+                                                   con_tab_ridge[[pix]]["1","0"])
+  
   if(is.na(con_tab_ridge[[pix]]["0","0"])){
-    csi[pix] <- 0
+    csi_ridge[pix] <- 0
+    H_ridge[pix] <- 0
+    F_ridge[pix] <- 0
   }
   if(is.na(con_tab_ridge[[pix]]["1","0"])){
-    csi[pix] <- NA
+    csi_ridge[pix] <- NA
+    H_ridge[pix] <- NA
+    F_ridge[pix] <- NA
   }
 }#end for pix
 
-
-
+EDI_ridge <- (log(F_ridge)-log(H_ridge))/(log(F_ridge)+log(H_ridge))
 
 
 # Load Model output for Lasso w/o interactions ####
