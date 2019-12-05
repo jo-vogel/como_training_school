@@ -172,6 +172,10 @@ for (i in 1:pix_num){
 
 load(file = "C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/Ridge_lambdamin_threshbadyield005.RData")
 
+
+
+# Create specificity, CSI and EDI for Ridge ####
+##################################################
 nb_pix_ridge <- length(ridge_model_lambdamin)
 
 coefs_ridge <- lapply(1:nb_pix_ridge, function(x){coef(ridge_model_lambdamin[[x]])})
@@ -180,13 +184,26 @@ coefs_ridge <- lapply(1:nb_pix_ridge, function(x){coef(ridge_model_lambdamin[[x]
 
 pred_ridge <- lapply(1:nb_pix_ridge, function(x){predict(ridge_model_lambdamin[[x]],
                                                          as.matrix(x1_test_list[[x]]),type="response")})
+#which segregation threshold for the model?
+segreg_th <- 0.5
 
+fitted_results_ridge <- lapply(1:nb_pix_ridge, function(x){ifelse(pred_ridge[[x]] > segreg_th,1,0)})
 
+speci_ridge <- sapply(1:nb_pix_ridge, function(x){InformationValue::specificity(as.matrix(y1_test_list[[x]]),
+                                                                         fitted_results_ridge[[x]],
+                                                                         threshold = segreg_th)})
+con_tab_ridge <-  lapply(1:nb_pix_ridge, function(x){InformationValue::confusionMatrix(as.matrix(y1_test_list[[x]]),
+                                                                                       fitted_results_ridge[[x]],
+                                                                                       threshold = segreg_th)})
 
-# Create specificity, CSI and EDI for Ridge ####
-##################################################
-
-
+csi <- numeric()
+for(pix in 1:length(coefs_ridge)){
+  csi[pix] <- con_tab_ridge[[pix]]["0","0"]/(con_tab_ridge[[pix]]["0","0"] +
+                                               con_tab_ridge[[pix]]["1","0"] + con_tab_ridge[[pix]]["0","1"])
+  if(is.na(con_tab_ridge[[pix]]["0","0"])){
+    csi[pix] <- 0
+  }
+}#end for pix
 
 
 
