@@ -9,15 +9,12 @@ print("Are you sure you want to run the next line? ;) everything in the environm
 rm(list=ls(all=TRUE))
 
 # which method? model_name in c("Ridge", "Lasso)
-<<<<<<< HEAD
 model_name <- "Lasso"
 stopifnot(model_name %in% c("Ridge", "Lasso"))
 
-=======
 model_name <- "Ridge"
 # stopifnot(model_name %in% c("Ridge", "Lasso"))
-# An I also changed that
->>>>>>> f36b2677a67e4f51a8e01baac3de1f4e21dd6d75
+
 if(model_name=="Lasso"){
   no_model <- 1
 }
@@ -328,11 +325,6 @@ test_length <- length(model_cv_fitting)
 
 coefs <- lapply(1:test_length, function(x){coef(model_cv_fitting[[x]], s=lambda_val)})
 
-# coefs$mainEffects # model part without interactions
-# names(numLevels)[coefs$mainEffects$cont] # Main effect variables (without interactions)
-# 
-# coefs$interactions # model part with interactions pairs
-# names(numLevels)[coefs$interactions$contcont] # Main effect variables (with interactions)
 
 
 mypred <- lapply(1:test_length, function(x){predict(model_cv_fitting[[x]],
