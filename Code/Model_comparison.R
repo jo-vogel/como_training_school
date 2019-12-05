@@ -22,7 +22,7 @@ library(tictoc)
 
 
 ##### Standardised data
-
+threshold <- 0.05
 
 # Get the data
 
@@ -202,6 +202,9 @@ for(pix in 1:length(coefs_ridge)){
                                                con_tab_ridge[[pix]]["1","0"] + con_tab_ridge[[pix]]["0","1"])
   if(is.na(con_tab_ridge[[pix]]["0","0"])){
     csi[pix] <- 0
+  }
+  if(is.na(con_tab_ridge[[pix]]["1","0"])){
+    csi[pix] <- NA
   }
 }#end for pix
 
