@@ -22,7 +22,8 @@ library(tictoc)
 
 
 ##### Standardised data
-threshold <- 0.05
+threshold <- 0.05 #threshold for bad yield
+segreg_th <- 0.5 #If the fitted proba from the model is below this threshold then it's a bad year
 
 # Get the data
 
@@ -184,8 +185,8 @@ coefs_ridge <- lapply(1:nb_pix_ridge, function(x){coef(ridge_model_lambdamin[[x]
 
 pred_ridge <- lapply(1:nb_pix_ridge, function(x){predict(ridge_model_lambdamin[[x]],
                                                          as.matrix(x1_test_list[[x]]),type="response")})
-#which segregation threshold for the model?
-segreg_th <- 0.5
+
+
 
 fitted_results_ridge <- lapply(1:nb_pix_ridge, function(x){ifelse(pred_ridge[[x]] > segreg_th,1,0)})
 
@@ -197,7 +198,7 @@ con_tab_ridge <-  lapply(1:nb_pix_ridge, function(x){InformationValue::confusion
                                                                                        threshold = segreg_th)})
 
 csi <- numeric()
-for(pix in 1:length(coefs_ridge)){
+for(pix in 1:nb_pix_ridge){
   csi[pix] <- con_tab_ridge[[pix]]["0","0"]/(con_tab_ridge[[pix]]["0","0"] +
                                                con_tab_ridge[[pix]]["1","0"] + con_tab_ridge[[pix]]["0","1"])
   if(is.na(con_tab_ridge[[pix]]["0","0"])){
@@ -207,6 +208,7 @@ for(pix in 1:length(coefs_ridge)){
     csi[pix] <- NA
   }
 }#end for pix
+
 
 
 
