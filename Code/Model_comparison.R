@@ -209,6 +209,10 @@ for(pix in 1:nb_pix_ridge){
 EDI_ridge <- (log(F_ridge)-log(H_ridge))/(log(F_ridge)+log(H_ridge))
 
 
+Result_matrix_Ridge <- cbind(speci_ridge, csi_ridge, EDI_ridge, coord_subset[,1],coord_subset[,2])
+colnames(Result_matrix_Ridge) = c("speci", "CSI", "EDI", "lon", "lat")
+
+
 # Load Model output for Lasso w/o interactions ####
 ##################################################
 # start with lambda.min
