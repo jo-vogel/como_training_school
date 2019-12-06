@@ -26,6 +26,10 @@ library(tictoc)
 # recreate the training and testing dataset ####
 ################################################
 
+message('Adjust the path accordingly.')
+# path_to_NH_files <- "C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/Data/Global"
+path_to_NH_files <- "D:/user/vogelj/Data/Group project Como"
+
 source('./Code/Lasso_interact_global_preparation.R') # load necessary files
 ##### Standardised data
 # threshold <- 0.05 #threshold for bad yield
