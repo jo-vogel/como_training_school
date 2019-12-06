@@ -297,45 +297,80 @@ load(file="D:/PROJECTS/DAMOCLES/BestGLM_rep1000_worksp/BestGLm_complete.RData")
 ##################################################
 pix_num<-965
 
-test_length <- pix_num 
-
-mypred <- lapply(Pixel_ok, function(x){predict(model_CV[[x]]$BestModel,Testing_Data[[x]][,1:(ncol(Testing_Data[[x]])-1)],type='response')}) 
+mypred <- lapply(Pixel_ok, function(x){predict(BestGlm_model[[x]]$BestModel,Testing_Data[[x]][,1:(ncol(Testing_Data[[x]])-1)],type='response')}) 
 
 
-work_pix<-Pixel_ok
+nb_pix_bestglm<-Pixel_ok
 
 segreg_th <- 0.5
 
-fitted.results_model <- lapply(seq_along(work_pix), function(x){ifelse(mypred[[x]] > segreg_th,1,0)})
+fitted.results_model <- lapply(seq_along(nb_pix_bestglm), function(x){ifelse(mypred[[x]] > segreg_th,1,0)})
 
 
 y1_test_list <- lapply(1:pix_num, function(x){Testing_Data[[x]][,ncol(Testing_Data[[x]])]}) # predictand
 
-y1_test_list_red <- lapply(work_pix,function(work_pix){y1_test_list[[work_pix]]})
+y1_test_list_red <- lapply(nb_pix_bestglm,function(work_pix){y1_test_list[[work_pix]]})
 
-mis_clas_err <- rep(NA,965)
+mis_clas_err_bestglm <- rep(NA,965)
 # mis_clas_err[work_pix] <- sapply(seq_along(work_pix), function(x){misClassError(y1_test_list_red[[x]],mypred[[x]])})
-mis_clas_err[work_pix] <- sapply(seq_along(work_pix), function(x){misClassError(actuals = y1_test_list_red[[x]],
-                                                                                predictedScores=mypred[[x]],
-                                                                                threshold = segreg_th)})
+mis_clas_err_bestglm[nb_pix_bestglm] <- sapply(seq_along(nb_pix_bestglm), function(x){misClassError(actuals = y1_test_list_red[[x]],
+                                                                                                    predictedScores=mypred[[x]],
+                                                                                                    threshold = segreg_th)})
 
-con_tab <-  lapply(seq_along(work_pix), function(x){InformationValue::confusionMatrix(y1_test_list_red[[x]],fitted.results_model[[x]])})
-sensi <- rep(NA,965)
-speci <- rep(NA,965)
-sensi[work_pix] <- sapply(seq_along(work_pix), function(x){InformationValue::sensitivity(y1_test_list_red[[x]],fitted.results_model[[x]],threshold = segreg_th)})
+sensi_bestglm <- rep(NA,965)
+speci_bestglm <- rep(NA,965)
+con_tab_bestglm<- rep(NA,965)
 
-speci[work_pix] <- sapply(seq_along(work_pix), function(x){InformationValue::specificity(y1_test_list_red[[x]],fitted.results_model[[x]], threshold = segreg_th)})
+con_tab_bestglm[nb_pix_bestglm]  <-  lapply(seq_along(nb_pix_bestglm), function(x){InformationValue::confusionMatrix(y1_test_list_red[[x]],fitted.results_model[[x]])})
 
-obs_pred <- lapply(seq_along(work_pix), function(x){cbind(y1_test_list_red[[x]],fitted.results_model[[x]])})
-tp <- sapply(seq_along(work_pix), function(x){sum(rowSums(obs_pred[[x]])==2)})
-tn <- sapply(seq_along(work_pix), function(x){sum(rowSums(obs_pred[[x]])==0)})
-fp <- sapply(seq_along(work_pix), function(x){sum(obs_pred[[x]][,1]==0 & obs_pred[[x]][,2]==1)})
-fn <- sapply(seq_along(work_pix), function(x){sum(obs_pred[[x]][,1]==1 & obs_pred[[x]][,2]==0)})
-con_tab1 <- sapply(seq_along(work_pix), function(x){matrix(c(tp[x],fn[x],fp[x],tn[x]),nrow=2,ncol=2)})
-# spec <- tn/(tn+fp) 
-# sens <- tp/(tp+fn) 
-csi <- rep(NA,965)
-csi[work_pix] <- sapply(seq_along(work_pix), function(x){tn[x]/(tn[x]+fp[x]+fn[x])})
+sensi_bestglm[nb_pix_bestglm] <- sapply(seq_along(nb_pix_bestglm), function(x){InformationValue::sensitivity(y1_test_list_red[[x]],fitted.results_model[[x]],threshold = segreg_th)})
+
+speci_bestglm[nb_pix_bestglm] <- sapply(seq_along(nb_pix_bestglm), function(x){InformationValue::specificity(y1_test_list_red[[x]],fitted.results_model[[x]], threshold = segreg_th)})
+
+obs_pred <- lapply(seq_along(nb_pix_bestglm), function(x){cbind(y1_test_list_red[[x]],fitted.results_model[[x]])})
+tp <- sapply(seq_along(nb_pix_bestglm), function(x){sum(rowSums(obs_pred[[x]])==2)})
+tn <- sapply(seq_along(nb_pix_bestglm), function(x){sum(rowSums(obs_pred[[x]])==0)})
+fp <- sapply(seq_along(nb_pix_bestglm), function(x){sum(obs_pred[[x]][,1]==0 & obs_pred[[x]][,2]==1)})
+fn <- sapply(seq_along(nb_pix_bestglm), function(x){sum(obs_pred[[x]][,1]==1 & obs_pred[[x]][,2]==0)})
+
+
+csi_bestglm <- rep(NA,965)
+csi_bestglm[nb_pix_bestglm] <- sapply(seq_along(nb_pix_bestglm), function(x){tn[x]/(tn[x]+fp[x]+fn[x])})
+
+csi_bestglm <- rep(NA,965)  #critical success index
+F_bestglm <- rep(NA,965)   #False alarm rate
+H_bestglm <- rep(NA,965)   #Hit rate
+
+for(pix in nb_pix_bestglm){
+  
+  csi_bestglm[pix] <- con_tab_bestglm[[pix]]["0","0"]/(con_tab_bestglm[[pix]]["0","0"] +
+                                                         con_tab_bestglm[[pix]]["1","0"] +
+                                                         con_tab_bestglm[[pix]]["0","1"])
+  
+  F_bestglm[pix] <- con_tab_bestglm[[pix]]["0","1"]/(con_tab_bestglm[[pix]]["0","1"] +
+                                                       con_tab_bestglm[[pix]]["1","1"])
+  
+  H_bestglm[pix] <- con_tab_bestglm[[pix]]["0","0"]/(con_tab_bestglm[[pix]]["0","0"] +
+                                                       con_tab_bestglm[[pix]]["1","0"])
+  
+  if(is.na(con_tab_bestglm[[pix]]["0","0"])){ #no extreme event forecasted => no first line in contengency table
+    csi_bestglm[pix] <- 0
+    H_bestglm[pix] <- 0
+    F_bestglm[pix] <- 0
+  }
+  if(is.na(con_tab_bestglm[[pix]]["1","0"])){ #No good year forecasted. Problematic pixels for this model
+    csi_bestglm[pix] <- NA
+    H_bestglm[pix] <- NA
+    F_bestglm[pix] <- NA
+  }
+}#end for pix
+
+
+EDI_bestglm <- (log(F_bestglm)-log(H_bestglm))/(log(F_bestglm)+log(H_bestglm))
+
+
+Result_matrix_bestglm<- cbind(speci_bestglm, csi_bestglm, EDI_bestglm, coord_subset[,1],coord_subset[,2])
+colnames(Result_matrix_bestglm) = c("speci", "CSI", "EDI", "lon", "lat")
 
 
 
