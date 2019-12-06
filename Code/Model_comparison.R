@@ -225,13 +225,13 @@ load(file = "C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject
 
 # Create specificity, CSI and EDI for Lasso w/o interactions ####
 #################################################################
-nb_pix_simplelasso <- length(simplelasso_model_lambdamin)
+nb_pix_simplelasso <- length(lasso_model_lambdamin)
 
 coefs_simplelasso <- lapply(1:nb_pix_simplelasso, function(x){coef(lasso_model_lambdamin[[x]])})
 
 
 
-pred_simplelasso <- lapply(1:nb_pix_simplelasso, function(x){predict(simplelasso_model_lambdamin[[x]],
+pred_simplelasso <- lapply(1:nb_pix_simplelasso, function(x){predict(lasso_model_lambdamin[[x]],
                                                          as.matrix(x1_test_list[[x]]),type="response")})
 
 
