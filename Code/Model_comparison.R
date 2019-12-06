@@ -297,6 +297,9 @@ colnames(Result_matrix_simplelasso) = c("speci", "CSI", "EDI", "lon", "lat")
 # Load Model output for bestglm ####
 ####################################
 
+# On the Drive you can find my data in:
+# Models/BestGlm/BestGlm_complete.RData
+
 load(file="D:/PROJECTS/DAMOCLES/BestGLM_rep1000_worksp/BestGLm_complete.RData")
 
 
