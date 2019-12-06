@@ -15,6 +15,10 @@ library(tictoc)
 library(rgdal)
 library(raster)
 
+##### Standardised data
+threshold <- 0.05 #threshold for bad yield
+segreg_th <- 0.5 #If the fitted proba from the model is below this threshold then it's a bad year
+
 # Get the data ####
 ###################
 # path_to_NH_files <- "C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/Data/Global"
@@ -43,7 +47,7 @@ lon_all <- ncvar_get(nh_data[[1]],"lon")
 lati_all <- rep(lat_all,each=length(lon_all))
 long_all <- rep(lon_all,length(lat_all)) # coordinates rearranged
 coord_all <- cbind(long_all,lati_all)
-
+lapply(1:length(nh_files),function(x){nc_close(nh_data[[x]])})
 
 # Process data ####
 ###################
@@ -53,7 +57,7 @@ Model_data <- abind(yields_3dim,tasmax,vpd,pr,along=2)
 Model_data_stand <- abind(yields_stand_3dim,tasmax_stand,vpd_stand,pr_stand,along=2)
 
 
-threshold <- 0.05
+# threshold <- 0.05
 pix_num <- dim(Model_data)[1]
 low_yield <- sapply(1:pix_num,function(x) {quantile(yield[x,],threshold,na.rm=T)})
 cy <- t(sapply(1:pix_num,function(x){ifelse(yield[x,]<low_yield[x],0,1)})) # identical for standardised and non-standardised yield
@@ -117,19 +121,12 @@ for (x in 1:pix_num) {
     testing_indices[[x]] <- (1:1600)[-training_indices[[x]]]    
   }
 }
-# training_indices2 <- sapply(1:pix_num, function(x) {sort(sample(x=vec[-na_time[[x]]], size = floor((1600-length(na_time[[x]]))*0.6)))})
-# testing_indices2 <- sapply(1:pix_num, function(x) {vec[-na_time[[x]]][-training_indices[[x]]]})
-# training_indices2 <- sapply(1:pix_num, function(x) {sort(sample(1:(1600-length(na_time[[x]])), size = floor((1600-length(na_time[[x]]))*0.6)))})
-# testing_indices2 <- sapply(1:pix_num, function(x) {(1:(1600-length(na_time[[x]])))[-training_indices2[[x]]]})
 
 Training_Data <- lapply(1:pix_num,function(x){Model_data_stand[x,,training_indices[[x]]]})
 Testing_Data <- lapply(1:pix_num,function(x){Model_data_stand[x,,testing_indices[[x]]]})
 
 pix_in <- 1:pix_num
-# x1_train_list <- lapply(seq_along(pix_in), function(x){ as.data.frame(t(Training_Data[x,non_na_col[x,],]))}) # predictors
-# y1_train_list <- lapply(seq_along(pix_in), function(x){ Training_Data[x,1,]}) # predictand
-# x1_test_list <- lapply(seq_along(pix_in), function(x){ as.data.frame(t(Testing_Data[x,non_na_col[x,],]))}) # predictors
-# y1_test_list <- lapply(seq_along(pix_in), function(x){Testing_Data[x,1,]}) # predictand
+
 
 x1_train_list <- lapply(seq_along(pix_in), function(x){ as.data.frame(t(Training_Data[[x]][non_na_col[x,],]))}) # predictors
 y1_train_list <- lapply(seq_along(pix_in), function(x){ Training_Data[[x]][1,]}) # predictand
