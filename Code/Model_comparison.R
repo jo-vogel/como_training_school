@@ -164,7 +164,7 @@ load(file = "C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject
 
 
 # Create specificity, CSI and EDI for Ridge ####
-##################################################
+################################################
 nb_pix_ridge <- length(ridge_model_lambdamin)
 
 coefs_ridge <- lapply(1:nb_pix_ridge, function(x){coef(ridge_model_lambdamin[[x]])})
@@ -200,12 +200,12 @@ for(pix in 1:nb_pix_ridge){
   H_ridge[pix] <- con_tab_ridge[[pix]]["0","0"]/(con_tab_ridge[[pix]]["0","0"] +
                                                    con_tab_ridge[[pix]]["1","0"])
   
-  if(is.na(con_tab_ridge[[pix]]["0","0"])){
+  if(is.na(con_tab_ridge[[pix]]["0","0"])){ #no extreme event forecasted => no first line in contengency table
     csi_ridge[pix] <- 0
     H_ridge[pix] <- 0
     F_ridge[pix] <- 0
   }
-  if(is.na(con_tab_ridge[[pix]]["1","0"])){
+  if(is.na(con_tab_ridge[[pix]]["1","0"])){ #No good year forecasted. Problematic pixels for this model
     csi_ridge[pix] <- NA
     H_ridge[pix] <- NA
     F_ridge[pix] <- NA
@@ -213,6 +213,77 @@ for(pix in 1:nb_pix_ridge){
 }#end for pix
 
 EDI_ridge <- (log(F_ridge)-log(H_ridge))/(log(F_ridge)+log(H_ridge))
+
+
+Result_matrix_Ridge <- cbind(speci_ridge, csi_ridge, EDI_ridge, coord_subset[,1],coord_subset[,2])
+colnames(Result_matrix_Ridge) = c("speci", "CSI", "EDI", "lon", "lat")
+
+
+# Load Model output for Lasso w/o interactions ####
+##################################################
+# start with lambda.min
+
+# On the Drive you can find my data in:
+# Models/LASSO-Ridge regression/regression_results_Global_wo_interactions/Lasso_lambdamin_threshbadyield005.RData
+
+load(file = "C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/Lasso_lambdamin_threshbadyield005.RData")
+
+
+# Create specificity, CSI and EDI for Lasso w/o interactions ####
+#################################################################
+nb_pix_simplelasso <- length(lasso_model_lambdamin)
+
+coefs_simplelasso <- lapply(1:nb_pix_simplelasso, function(x){coef(lasso_model_lambdamin[[x]])})
+
+
+
+pred_simplelasso <- lapply(1:nb_pix_simplelasso, function(x){predict(lasso_model_lambdamin[[x]],
+                                                         as.matrix(x1_test_list[[x]]),type="response")})
+
+
+
+fitted_results_simplelasso <- lapply(1:nb_pix_simplelasso, function(x){ifelse(pred_simplelasso[[x]] > segreg_th,1,0)})
+
+speci_simplelasso <- sapply(1:nb_pix_simplelasso, function(x){InformationValue::specificity(as.matrix(y1_test_list[[x]]),
+                                                                                fitted_results_simplelasso[[x]],
+                                                                                threshold = segreg_th)})
+con_tab_simplelasso <-  lapply(1:nb_pix_simplelasso, function(x){InformationValue::confusionMatrix(as.matrix(y1_test_list[[x]]),
+                                                                                       fitted_results_simplelasso[[x]],
+                                                                                       threshold = segreg_th)})
+
+csi_simplelasso <- numeric()  #critical success index
+F_simplelasso <- numeric()    #False alarm rate
+H_simplelasso <- numeric()    #Hit rate
+
+for(pix in 1:nb_pix_simplelasso){
+  csi_simplelasso[pix] <- con_tab_simplelasso[[pix]]["0","0"]/(con_tab_simplelasso[[pix]]["0","0"] +
+                                                     con_tab_simplelasso[[pix]]["1","0"] +
+                                                     con_tab_simplelasso[[pix]]["0","1"])
+  
+  F_simplelasso[pix] <- con_tab_simplelasso[[pix]]["0","1"]/(con_tab_simplelasso[[pix]]["0","1"] +
+                                                   con_tab_simplelasso[[pix]]["1","1"])
+  
+  H_simplelasso[pix] <- con_tab_simplelasso[[pix]]["0","0"]/(con_tab_simplelasso[[pix]]["0","0"] +
+                                                   con_tab_simplelasso[[pix]]["1","0"])
+  
+  if(is.na(con_tab_simplelasso[[pix]]["0","0"])){ #no extreme event forecasted => no first line in contengency table
+    csi_simplelasso[pix] <- 0
+    H_simplelasso[pix] <- 0
+    F_simplelasso[pix] <- 0
+  }
+  if(is.na(con_tab_simplelasso[[pix]]["1","0"])){ #No good year forecasted. Problematic pixels for this model
+    csi_simplelasso[pix] <- NA
+    H_simplelasso[pix] <- NA
+    F_simplelasso[pix] <- NA
+  }
+}#end for pix
+
+EDI_simplelasso <- (log(F_simplelasso)-log(H_simplelasso))/(log(F_simplelasso)+log(H_simplelasso))
+
+
+Result_matrix_simplelasso <- cbind(speci_simplelasso, csi_simplelasso, EDI_simplelasso, coord_subset[,1],coord_subset[,2])
+colnames(Result_matrix_simplelasso) = c("speci", "CSI", "EDI", "lon", "lat")
+
 
 
 
@@ -265,24 +336,6 @@ con_tab1 <- sapply(seq_along(work_pix), function(x){matrix(c(tp[x],fn[x],fp[x],t
 # sens <- tp/(tp+fn) 
 csi <- rep(NA,965)
 csi[work_pix] <- sapply(seq_along(work_pix), function(x){tn[x]/(tn[x]+fp[x]+fn[x])})
-
-
-
-# Load Model output for Lasso w/o interactions ####
-##################################################
-# start with lambda.min
-
-# On the Drive you can find my data in:
-# Models/LASSO-Ridge regression/regression_results_Global_wo_interactions/Lasso_lambdamin_threshbadyield005.RData
-
-load(file = "C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/Lasso_lambdamin_threshbadyield005.RData")
-
-
-
-# Create specificity, CSI and EDI for Lasso w/o interactions ####
-#################################################################
-
-
 
 
 
