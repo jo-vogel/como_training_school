@@ -368,9 +368,9 @@ fitted.results_model_lwi <- lapply(seq_along(work_pix_lwi), function(x){ifelse(m
 y1_test_list_red_lwi <- lapply(work_pix_lwi,function(work_pix_lwi){y1_test_list[[work_pix_lwi]]})
 
 obs_pred_lwi <- lapply(seq_along(work_pix_lwi), function(x){cbind(y1_test_list_red_lwi[[x]],fitted.results_model_lwi[[x]])})
-# tp <- sapply(seq_along(work_pix), function(x){sum(rowSums(obs_pred[[x]])==2)}) # Correct rejections
+tp_lwi <- sapply(seq_along(work_pix_lwi), function(x){sum(rowSums(obs_pred_lwi[[x]])==2)}) # Correct rejections
 tn_lwi <- sapply(seq_along(work_pix_lwi), function(x){sum(rowSums(obs_pred_lwi[[x]])==0)}) # Hits
-fp_lwi <- sapply(seq_along(work_pix_lwi), function(x){sum(obs_pred_lwi[[x]][,1]==0 & obs_pred_lwi[[x]][,2]==1)}) # Miss
+fp_lwi <- sapply(seq_along(work_pix_lwi), function(x){sum(obs_pred_lwi[[x]][,1]==0 & obs_pred_lwi[[x]][,2]==1)}) # Misses
 fn_lwi <- sapply(seq_along(work_pix_lwi), function(x){sum(obs_pred_lwi[[x]][,1]==1 & obs_pred_lwi[[x]][,2]==0)}) # False alarm
 # con_tab <- sapply(seq_along(work_pix), function(x){matrix(c(tp[x],fn[x],fp[x],tn[x]),nrow=2,ncol=2)})
 
@@ -384,9 +384,13 @@ csi_lwi <- rep(NA,965)
 csi_lwi[work_pix_lwi] <- sapply(seq_along(work_pix_lwi), function(x){tn_lwi[x]/(tn_lwi[x]+fn_lwi[x]+fp_lwi[x])})
 
 # Calculate EDI 
+hr_lwi <- rep(NA,965)
+hr_lwi[work_pix_lwi] <- sapply(seq_along(work_pix_lwi), function(x) tn_lwi[x]/(tn_lwi[x]+fp_lwi[x])) # hit rate
+far_lwi <- rep(NA,965)
+far_lwi[work_pix_lwi] <- sapply(seq_along(work_pix_lwi), function(x) fn_lwi[x]/(fn_lwi[x]+tp_lwi[x])) # false alarm rate
 EDI_lwi <- rep(NA,965)
-EDI_lwi[work_pix_lwi] <- sapply(seq_along(work_pix_lwi), function(x) (log(fn_lwi[x])-log(tn_lwi[x]))/(log(fn_lwi[x])+log(tn_lwi[x])))
-
+# EDI_lwi[work_pix_lwi] <- sapply(seq_along(work_pix_lwi), function(x) (log(fn_lwi[x]/(fn_lwi[x]+tp_lwi[x]))-log(tn_lwi[x]/(tn_lwi[x]+fp_lwi[x])))/(log(fn_lwi[x]/(fn_lwi[x]+tp_lwi[x]))+log(tn_lwi[x]/(tn_lwi[x]+fp_lwi[x]))))
+EDI_lwi[work_pix_lwi] <- sapply(seq_along(work_pix_lwi), function(x) (log(far_lwi[x])-log(hr_lwi[x]))/(log(far_lwi[x])+log(hr_lwi[x])))
 
 
 
