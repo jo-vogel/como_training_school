@@ -303,6 +303,9 @@ colnames(Result_matrix_simplelasso) = c("speci", "CSI", "EDI", "lon", "lat")
 load(file="D:/PROJECTS/DAMOCLES/BestGLM_rep1000_worksp/BestGLm_complete.RData")
 
 
+#location Pauline's Laptop
+# load("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/OtherModels/BestGLm_complete.RData")
+
 # Create specificity, CSI and EDI for bestglm ####
 ##################################################
 pix_num<-965
@@ -393,7 +396,7 @@ colnames(Result_matrix_bestglm) = c("speci", "CSI", "EDI", "lon", "lat")
 # Models/LASSO_with_interactions/cv_fit_complete.RData.RData
 load("D:/user/vogelj/Group_project/Code/Workspaces/cv_fit_complete.RData") # load model output
 
-#location Pauline's Laptop
+#location on Pauline's Laptop
 # load("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/OtherModels/cv_fit_complete.Rdata")
 
 # Identify pixels with failed runs
@@ -437,22 +440,99 @@ EDI_lwi[work_pix_lwi] <- sapply(seq_along(work_pix_lwi), function(x) (log(far_lw
 
 # Create comparison maps ####
 #############################
-
-
+world <- map_data("world")
+substract_score_plot <- function(score_name, score_1, model1_name, score_2, model2_name){#score name in c("speci","csi", EDI")
+  sub_score <- score_1 - score_2
+  DF_sub <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], sub_score = sub_score)
+  
+  ggplot(data = DF_sub, aes(x=DF_sub$lon, y=DF_sub$lat)) +
+    geom_polygon(data = world, aes(long, lat, group=group),
+                 fill="white", color="black", size=0.3) +
+    geom_point(shape=15, aes(color=DF_sub$sub_score)) +
+    scale_color_gradient2(low = "blue", high = "red") +
+    theme(panel.ontop = F, panel.grid = element_blank(),
+          panel.border = element_rect(colour = "black", fill = NA),
+          axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
+    ylab("Lat (°N)") +
+    xlab("Lon (°E)") +
+    coord_fixed(xlim = c(-120, 135),
+                ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
+                ratio = 1.3)+
+    labs(color=paste("Diff in", score_name),
+         title = paste("Difference",score_name,model1_name, "-", model2_name),
+         subtitle = paste("Bad yield threshold=", threshold, sep = ""))+
+    theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
+          legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
+    X11(width = 20, height = 7)
+  
+}
 
 # Specificity map #####
 #######################
+pairs(cbind(speci_bestglm, speci_lwi, speci_ridge, speci_simplelasso))
 
 
 
+possible_pairs <- c("Best GLM-Ridge",
+                    "Lasso with interact-Ridge",
+                    "Lasso simple-Ridge",
+                    "Best GLM-Lasso with interact",
+                    "Best GLM-Lasso simple",
+                    "Lasso with intersact-Lasso simple")
 
+score <- "Specificity"
+model_1 <- "Best GLM"
+score_1 <- speci_bestglm
+model_2 <- "Ridge"
+score_2 <- speci_ridge
+
+substract_score_plot(score_name = score,
+                     score_1 = score_1, model1_name = model_1,
+                     score_2 = score_2, model2_name = model_2)
+
+ggsave(paste("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/Images/Model_Comparison/",
+             score,"_",model_1,"VS",model_2,".png", sep = ""), width = 18, height = 6)
 
 # CSI map ####
 ##############
+pairs(cbind(csi_bestglm, csi_lwi, csi_ridge, csi_simplelasso))
 
+score <- "CSI"
+model_1 <- "Lasso with interact"
+score_1 <- csi_lwi
+model_2 <- "Lasso simple"
+score_2 <- csi_simplelasso
 
+substract_score_plot(score_name = score,
+                     score_1 = score_1, model1_name = model_1,
+                     score_2 = score_2, model2_name = model_2)
+
+ggsave(paste("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/Images/Model_Comparison/",
+             score,"_",model_1,"VS",model_2,".png", sep = ""), width = 18, height = 6)
 
 
 
 # EDI map ####
 ##############
+pairs(cbind(EDI_bestglm, EDI_lwi, EDI_ridge, EDI_simplelasso))
+
+
+possible_pairs <- c("Best GLM-Ridge",
+                    "Lasso with interact-Ridge",
+                    "Lasso simple-Ridge",
+                    "Best GLM-Lasso with interact",
+                    "Best GLM-Lasso simple",
+                    "Lasso with intersact-Lasso simple")
+
+score <- "EDI"
+model_1 <- "Lasso with interact"
+score_1 <- EDI_lwi
+model_2 <- "Lasso simple"
+score_2 <- EDI_simplelasso
+
+substract_score_plot(score_name = score,
+                     score_1 = score_1, model1_name = model_1,
+                     score_2 = score_2, model2_name = model_2)
+
+ggsave(paste("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/Images/Model_Comparison/",
+             score,"_",model_1,"VS",model_2,".png", sep = ""), width = 18, height = 6)
