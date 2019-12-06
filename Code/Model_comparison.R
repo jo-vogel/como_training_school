@@ -194,12 +194,12 @@ for(pix in 1:nb_pix_ridge){
   H_ridge[pix] <- con_tab_ridge[[pix]]["0","0"]/(con_tab_ridge[[pix]]["0","0"] +
                                                    con_tab_ridge[[pix]]["1","0"])
   
-  if(is.na(con_tab_ridge[[pix]]["0","0"])){
+  if(is.na(con_tab_ridge[[pix]]["0","0"])){ #no extreme event forecasted => no first line in contengency table
     csi_ridge[pix] <- 0
     H_ridge[pix] <- 0
     F_ridge[pix] <- 0
   }
-  if(is.na(con_tab_ridge[[pix]]["1","0"])){
+  if(is.na(con_tab_ridge[[pix]]["1","0"])){ #No good year forecasted. Problematic pixels for this model
     csi_ridge[pix] <- NA
     H_ridge[pix] <- NA
     F_ridge[pix] <- NA
@@ -260,12 +260,12 @@ for(pix in 1:nb_pix_simplelasso){
   H_simplelasso[pix] <- con_tab_simplelasso[[pix]]["0","0"]/(con_tab_simplelasso[[pix]]["0","0"] +
                                                    con_tab_simplelasso[[pix]]["1","0"])
   
-  if(is.na(con_tab_simplelasso[[pix]]["0","0"])){
+  if(is.na(con_tab_simplelasso[[pix]]["0","0"])){ #no extreme event forecasted => no first line in contengency table
     csi_simplelasso[pix] <- 0
     H_simplelasso[pix] <- 0
     F_simplelasso[pix] <- 0
   }
-  if(is.na(con_tab_simplelasso[[pix]]["1","0"])){
+  if(is.na(con_tab_simplelasso[[pix]]["1","0"])){ #No good year forecasted. Problematic pixels for this model
     csi_simplelasso[pix] <- NA
     H_simplelasso[pix] <- NA
     F_simplelasso[pix] <- NA
