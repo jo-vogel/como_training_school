@@ -352,6 +352,9 @@ csi[work_pix] <- sapply(seq_along(work_pix), function(x){tn[x]/(tn[x]+fp[x]+fn[x
 # Models/LASSO_with_interactions/cv_fit_complete.RData.RData
 load("D:/user/vogelj/Group_project/Code/Workspaces/cv_fit_complete.RData") # load model output
 
+#location Pauline's Laptop
+# load("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/OtherModels/cv_fit_complete.Rdata")
+
 # Identify pixels with failed runs
 failed_pixels_lwi <- which(sapply(1:965, function(x) {is.character(cv_fit[[x]])})==1)
 work_pix_lwi <- pix_in[-failed_pixels_lwi] # working pixels
