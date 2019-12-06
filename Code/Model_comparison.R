@@ -333,13 +333,6 @@ csi <- rep(NA,965)
 csi[work_pix] <- sapply(seq_along(work_pix), function(x){tn[x]/(tn[x]+fp[x]+fn[x])})
 
 
-# Create specificity, CSI and EDI for Lasso w/o interactions ####
-#################################################################
-
-
-
-
-
 
 # Load Model output for Lasso w interactions ####
 ###################################################
