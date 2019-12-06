@@ -158,7 +158,7 @@ load(file = "C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject
 
 
 # Create specificity, CSI and EDI for Ridge ####
-##################################################
+################################################
 nb_pix_ridge <- length(ridge_model_lambdamin)
 
 coefs_ridge <- lapply(1:nb_pix_ridge, function(x){coef(ridge_model_lambdamin[[x]])})
@@ -221,6 +221,63 @@ colnames(Result_matrix_Ridge) = c("speci", "CSI", "EDI", "lon", "lat")
 # Models/LASSO-Ridge regression/regression_results_Global_wo_interactions/Lasso_lambdamin_threshbadyield005.RData
 
 load(file = "C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/Lasso_lambdamin_threshbadyield005.RData")
+
+
+# Create specificity, CSI and EDI for Lasso w/o interactions ####
+#################################################################
+nb_pix_simplelasso <- length(simplelasso_model_lambdamin)
+
+coefs_simplelasso <- lapply(1:nb_pix_simplelasso, function(x){coef(lasso_model_lambdamin[[x]])})
+
+
+
+pred_simplelasso <- lapply(1:nb_pix_simplelasso, function(x){predict(simplelasso_model_lambdamin[[x]],
+                                                         as.matrix(x1_test_list[[x]]),type="response")})
+
+
+
+fitted_results_simplelasso <- lapply(1:nb_pix_simplelasso, function(x){ifelse(pred_simplelasso[[x]] > segreg_th,1,0)})
+
+speci_simplelasso <- sapply(1:nb_pix_simplelasso, function(x){InformationValue::specificity(as.matrix(y1_test_list[[x]]),
+                                                                                fitted_results_simplelasso[[x]],
+                                                                                threshold = segreg_th)})
+con_tab_simplelasso <-  lapply(1:nb_pix_simplelasso, function(x){InformationValue::confusionMatrix(as.matrix(y1_test_list[[x]]),
+                                                                                       fitted_results_simplelasso[[x]],
+                                                                                       threshold = segreg_th)})
+
+csi_simplelasso <- numeric()  #critical success index
+F_simplelasso <- numeric()    #False alarm rate
+H_simplelasso <- numeric()    #Hit rate
+
+for(pix in 1:nb_pix_simplelasso){
+  csi_simplelasso[pix] <- con_tab_simplelasso[[pix]]["0","0"]/(con_tab_simplelasso[[pix]]["0","0"] +
+                                                     con_tab_simplelasso[[pix]]["1","0"] +
+                                                     con_tab_simplelasso[[pix]]["0","1"])
+  
+  F_simplelasso[pix] <- con_tab_simplelasso[[pix]]["0","1"]/(con_tab_simplelasso[[pix]]["0","1"] +
+                                                   con_tab_simplelasso[[pix]]["1","1"])
+  
+  H_simplelasso[pix] <- con_tab_simplelasso[[pix]]["0","0"]/(con_tab_simplelasso[[pix]]["0","0"] +
+                                                   con_tab_simplelasso[[pix]]["1","0"])
+  
+  if(is.na(con_tab_simplelasso[[pix]]["0","0"])){
+    csi_simplelasso[pix] <- 0
+    H_simplelasso[pix] <- 0
+    F_simplelasso[pix] <- 0
+  }
+  if(is.na(con_tab_simplelasso[[pix]]["1","0"])){
+    csi_simplelasso[pix] <- NA
+    H_simplelasso[pix] <- NA
+    F_simplelasso[pix] <- NA
+  }
+}#end for pix
+
+EDI_simplelasso <- (log(F_simplelasso)-log(H_simplelasso))/(log(F_simplelasso)+log(H_simplelasso))
+
+
+Result_matrix_simplelasso <- cbind(speci_simplelasso, csi_simplelasso, EDI_simplelasso, coord_subset[,1],coord_subset[,2])
+colnames(Result_matrix_simplelasso) = c("speci", "CSI", "EDI", "lon", "lat")
+
 
 
 
