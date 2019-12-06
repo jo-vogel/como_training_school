@@ -146,24 +146,6 @@ for (i in 1:pix_num){
 }
 
 
-
-
-# Load Model output for bestglm ####
-####################################
-
-
-
-
-
-
-# Create specificity, CSI and EDI for bestglm ####
-##################################################
-
-
-
-
-
-
 # Load Model output for Ridge ####
 ####################################
 # start with lambda.min
@@ -239,7 +221,55 @@ load(file = "C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject
 
 
 
+# Load Model output for bestglm ####
+####################################
 
+load(file="D:/PROJECTS/DAMOCLES/BestGLM_rep1000_worksp/BestGLm_complete.RData")
+
+
+# Create specificity, CSI and EDI for bestglm ####
+##################################################
+pix_num<-965
+
+test_length <- pix_num 
+
+mypred <- lapply(Pixel_ok, function(x){predict(model_CV[[x]]$BestModel,Testing_Data[[x]][,1:(ncol(Testing_Data[[x]])-1)],type='response')}) 
+
+
+work_pix<-Pixel_ok
+
+segreg_th <- 0.5
+
+fitted.results_model <- lapply(seq_along(work_pix), function(x){ifelse(mypred[[x]] > segreg_th,1,0)})
+
+
+y1_test_list <- lapply(1:pix_num, function(x){Testing_Data[[x]][,ncol(Testing_Data[[x]])]}) # predictand
+
+y1_test_list_red <- lapply(work_pix,function(work_pix){y1_test_list[[work_pix]]})
+
+mis_clas_err <- rep(NA,965)
+# mis_clas_err[work_pix] <- sapply(seq_along(work_pix), function(x){misClassError(y1_test_list_red[[x]],mypred[[x]])})
+mis_clas_err[work_pix] <- sapply(seq_along(work_pix), function(x){misClassError(actuals = y1_test_list_red[[x]],
+                                                                                predictedScores=mypred[[x]],
+                                                                                threshold = segreg_th)})
+
+con_tab <-  lapply(seq_along(work_pix), function(x){InformationValue::confusionMatrix(y1_test_list_red[[x]],fitted.results_model[[x]])})
+sensi <- rep(NA,965)
+speci <- rep(NA,965)
+sensi[work_pix] <- sapply(seq_along(work_pix), function(x){InformationValue::sensitivity(y1_test_list_red[[x]],fitted.results_model[[x]],threshold = segreg_th)})
+
+speci[work_pix] <- sapply(seq_along(work_pix), function(x){InformationValue::specificity(y1_test_list_red[[x]],fitted.results_model[[x]], threshold = segreg_th)})
+
+obs_pred <- lapply(seq_along(work_pix), function(x){cbind(y1_test_list_red[[x]],fitted.results_model[[x]])})
+tp <- sapply(seq_along(work_pix), function(x){sum(rowSums(obs_pred[[x]])==2)})
+tn <- sapply(seq_along(work_pix), function(x){sum(rowSums(obs_pred[[x]])==0)})
+fp <- sapply(seq_along(work_pix), function(x){sum(obs_pred[[x]][,1]==0 & obs_pred[[x]][,2]==1)})
+fn <- sapply(seq_along(work_pix), function(x){sum(obs_pred[[x]][,1]==1 & obs_pred[[x]][,2]==0)})
+con_tab1 <- sapply(seq_along(work_pix), function(x){matrix(c(tp[x],fn[x],fp[x],tn[x]),nrow=2,ncol=2)})
+# spec <- tn/(tn+fp) 
+# sens <- tp/(tp+fn) 
+csi <- rep(NA,965)
+csi[work_pix] <- sapply(seq_along(work_pix), function(x){tn[x]/(tn[x]+fp[x]+fn[x])})
 
 
 # Create specificity, CSI and EDI for Lasso w/o interactions ####
