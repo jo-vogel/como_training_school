@@ -109,6 +109,7 @@ ggplot(data = DF_miscla, aes(x=lon, y=lat)) +
   X11(width = 20, height = 7)
 ggsave(file="D:/user/vogelj/Group project/Output/Plots/Mis_class_error_lasso_interact_map.png")
 
+
 # Plot specificity ####
 
 DF_speci <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], specificity = speci)
@@ -135,6 +136,7 @@ ggplot(data = DF_speci, aes(x=lon, y=lat)) +
         legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
   X11(width = 20, height = 7)
 ggsave(file="D:/user/vogelj/Group project/Output/Plots/Specificity_lasso_interact_map.png")
+
 
 # Plot sensitivity ####
 
@@ -233,7 +235,8 @@ cor(mean_yield, speci)
     # colours=c(gray.colors(1),topo.colors(23)[-c(1,3,5,16:23)],rev(heat.colors(10))) ,values=rescale(0:22,c(0,1))) + # mixed visualisation
     # colours=c(gray.colors(1),topo.colors(20)[-c(13:20)],rev(heat.colors(10))) ,values=rescale(0:22,c(0,1))) + # mixed visualisation v1
     scale_color_gradientn(limits=c(0,15),
-    colours=c(gray.colors(1),topo.colors(9)[-c(8,9)],rev(heat.colors(7))) ,values=rescale(0:15,c(0,1))) + # mixed visualisation with cutoff
+    colours=c(gray.colors(1),topo.colors(9)[-c(8,9)],rev(heat.colors(7))) ,values=rescale(0:15,c(0,1)),
+    breaks=c(0,3,6,9,12,15),labels=c("0","3","6","9","12",">=15")) + # mixed visualisation with cutoff
     # scale_color_gradientn(limits=c(0,15), # cut off high values for better visualisation of the rest
                           # colours=c(gray.colors(1),topo.colors(14)) ,values=rescale(0:15,c(0,1))) + # topo color scheme
     #                      colours=c(gray.colors(1),rainbow(14)) ,values=rescale(0:15,c(0,1))) + # rainbow color scheme
@@ -249,13 +252,15 @@ cor(mean_yield, speci)
     coord_fixed(xlim = c(-120, 135),
                 ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
                 ratio = 1.3)+
-    labs(color="Nb of var.",
-         title = paste("Number of variables kept, simple",model_name,"regression"),
+    labs(color="Nb of coefficients",
+         title = paste("Number of coefficients kept, simple",model_name,"regression"),
          subtitle = paste("Bad yield threshold=", threshold, sep = ""))+
     theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
           legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
     X11(width = 20, height = 7)
-  ggsave(file="D:/user/vogelj/Group project/Output/Plots/Number_of_variables_lasso_interact_map.png")
+    # d + scale_fill_discrete(breaks=c(2,4,6,8,10), labels = c("A", "B", "C", "D", "E"))
+
+  ggsave(file="D:/user/vogelj/Group_project/Output/Plots/Number_of_coefficients_lasso_interact_map.png")
 # }
   plot(table(coeff_kep))  # overview of distribution of the number of coefficients
   
@@ -282,7 +287,7 @@ cor(mean_yield, speci)
     geom_point(shape=15, aes(color=num_interact),size=0.7) +
     # scale_color_gradient2(limits=c(0,max(DF_numb_interact[,3])),midpoint=max(DF_numb_interact[,3]/2),
                           # low = "blue", mid = "yellow", high = "red3") +
-    scale_color_gradientn(limits=c(0,16),
+    scale_color_gradientn(limits=c(0,16), breaks=c(0,4,8,12,16),labels=c("0","4","8","12",">=16"),
                           colours=c(gray.colors(1),topo.colors(10)[-c(9,10)],rev(heat.colors(7))) ,values=rescale(0:16,c(0,1))) + # mixed visualisation with cutoff
     theme(panel.ontop = F, panel.grid = element_blank(),
           panel.border = element_rect(colour = "black", fill = NA),
@@ -293,12 +298,12 @@ cor(mean_yield, speci)
                 ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
                 ratio = 1.3)+
     labs(color="Nb of int.",
-         title = paste("Number of variable interactions from",model_name,"regression"),
+         title = paste("Number of coefficient interactions from",model_name,"regression"),
          subtitle = paste("Bad yield threshold=", threshold, sep = ""))+
     theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
           legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
     X11(width = 20, height = 7)
-  ggsave(file="D:/user/vogelj/Group project/Output/Plots/Number_of_variable_interactions_lasso_interact_map.png")
+  ggsave(file="D:/user/vogelj/Group_project/Output/Plots/Number_of_coefficient_interactions_lasso_interact_map.png")
   plot(table(num_interact))  # overview of distribution of the number of interactions of coefficients
 
   

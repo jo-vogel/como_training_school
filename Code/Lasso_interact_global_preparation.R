@@ -21,8 +21,6 @@ segreg_th <- 0.5 #If the fitted proba from the model is below this threshold the
 
 # Get the data ####
 ###################
-# path_to_NH_files <- "C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/Data/Global"
-path_to_NH_files <- "D:/user/vogelj/Data/Group project Como"
 nh_files <- list.files(path=path_to_NH_files,pattern="NH_yield*") # all files from northern hemisphere
 nh_data <- lapply(1:length(nh_files),
                   FUN = function(x){nc_open(paste0(path_to_NH_files,"/",nh_files[x]))})
