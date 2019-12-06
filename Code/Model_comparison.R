@@ -27,7 +27,10 @@ library(tictoc)
 ################################################
 
 message('Adjust the path accordingly.')
+# Pauline:
 # path_to_NH_files <- "C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/Data/Global"
+
+# Johannes:
 path_to_NH_files <- "D:/user/vogelj/Data/Group project Como"
 
 source('./Code/Lasso_interact_global_preparation.R') # load necessary files
