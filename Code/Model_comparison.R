@@ -291,6 +291,8 @@ load(file = "C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject
 
 # source('./Code/Lasso_interact_global.R') # takes ca. 3 hours: load necessary files, calculate model
 # source('./Code/Lasso_interact_global_preparation.R') # load necessary files
+# On the Drive you can find my data in:
+# Models/LASSO_with_interactions/cv_fit_complete.RData.RData
 load("D:/user/vogelj/Group_project/Code/Workspaces/cv_fit_complete.RData") # load model output
 
 # Identify pixels with failed runs
