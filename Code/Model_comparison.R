@@ -478,18 +478,18 @@ pairs(cbind(speci_bestglm, speci_lwi, speci_ridge, speci_simplelasso))
 
 
 
-possible_pairs <- c("Best GLM-Ridge",
-                    "Lasso with interact-Ridge",
-                    "Lasso simple-Ridge",
-                    "Best GLM-Lasso with interact",
-                    "Best GLM-Lasso simple",
-                    "Lasso with intersact-Lasso simple")
+possible_pairs <- c("BestGLM-Ridge",
+                    "Lasso_with_interact-Ridge",
+                    "LassoSimple-Ridge",
+                    "Best GLM-Lasso_with_interact",
+                    "Best GLM-LassoSimple",
+                    "Lasso_with_interact-LassoSimple")
 
 score <- "Specificity"
-model_1 <- "Best GLM"
-score_1 <- speci_bestglm
-model_2 <- "Ridge"
-score_2 <- speci_ridge
+model_1 <- "Lasso_with_interact"
+score_1 <- speci_lwi
+model_2 <- "LassoSimple"
+score_2 <- speci_simplelasso
 
 substract_score_plot(score_name = score,
                      score_1 = score_1, model1_name = model_1,
@@ -502,10 +502,10 @@ ggsave(paste(output_path, score,"_",model_1,"VS",model_2,".png", sep = ""), widt
 pairs(cbind(csi_bestglm, csi_lwi, csi_ridge, csi_simplelasso))
 
 score <- "CSI"
-model_1 <- "Lasso with interact"
-score_1 <- csi_lwi
-model_2 <- "Lasso simple"
-score_2 <- csi_simplelasso
+model_1 <- "BestGLM"
+score_1 <- csi_bestglm
+model_2 <- "Lasso_with_interact"
+score_2 <- csi_lwi
 
 substract_score_plot(score_name = score,
                      score_1 = score_1, model1_name = model_1,
@@ -520,24 +520,25 @@ ggsave(paste(output_path, score,"_",model_1,"VS",model_2,".png", sep = ""), widt
 pairs(cbind(EDI_bestglm, EDI_lwi, EDI_ridge, EDI_simplelasso))
 
 
-possible_pairs <- c("Best GLM-Ridge",
-                    "Lasso with interact-Ridge",
-                    "Lasso simple-Ridge",
-                    "Best GLM-Lasso with interact",
-                    "Best GLM-Lasso simple",
-                    "Lasso with intersact-Lasso simple")
+possible_pairs <- c("BestGLM-Ridge",
+                    "Lasso_with_interact-Ridge",
+                    "LassoSimple-Ridge",
+                    "Best GLM-Lasso_with_interact",
+                    "Best GLM-LassoSimple",
+                    "Lasso_with_interact-LassoSimple")
 
 score <- "EDI"
-model_1 <- "Lasso with interact"
-score_1 <- EDI_lwi
-model_2 <- "Lasso simple"
-score_2 <- EDI_simplelasso
+model_1 <- "BestGLM"
+score_1 <- EDI_bestglm
+model_2 <- "Lasso_with_interact"
+score_2 <- EDI_lwi
 
 substract_score_plot(score_name = score,
                      score_1 = score_1, model1_name = model_1,
                      score_2 = score_2, model2_name = model_2)
 
 ggsave(paste(output_path, score,"_",model_1,"VS",model_2,".png", sep = ""), width = 18, height = 6)
+<<<<<<< HEAD
 
 
 # Boxplots ####
@@ -549,3 +550,6 @@ boxplot(cbind(speci_bestglm, speci_lwi, speci_ridge, speci_simplelasso),main="Sp
 boxplot(cbind(csi_bestglm, csi_lwi, csi_ridge, csi_simplelasso),main="CSI",names=box_names, col='lightblue')
 boxplot(cbind(EDI_bestglm, EDI_lwi, EDI_ridge, EDI_simplelasso),main="EDI",names=box_names, col='lightblue')
 dev.off()
+=======
+  
+>>>>>>> 17732e876abc90a0cb864215c87f2fa1c7590784
