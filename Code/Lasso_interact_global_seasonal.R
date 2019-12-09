@@ -183,12 +183,12 @@ for (i in 1:pix_num){
 # Lasso model ####
 ##################
 
-message('This small section if meant for reruns with the preferential lambda')
-load("D:/user/vogelj/Group_project/Code/Workspaces/cv_fit_complete.RData") # load model output (if you want to recalculate it based on the preferential lambda)
-failed_pixels <- which(sapply(1:965, function(x) {is.character(cv_fit[[x]])})==1)
-work_pix <- pix_in[-failed_pixels] # working pixels
-pref_lam <- rep(NA,965)
-pref_lam <- sapply(work_pix, function(x) cv_fit[[x]]$lambdaHat1Std)
+# message('This small section if meant for reruns with the preferential lambda')
+# load("D:/user/vogelj/Group_project/Code/Workspaces/cv_fit_complete.RData") # load model output (if you want to recalculate it based on the preferential lambda)
+# failed_pixels <- which(sapply(1:965, function(x) {is.character(cv_fit[[x]])})==1)
+# work_pix <- pix_in[-failed_pixels] # working pixels
+# pref_lam <- rep(NA,965)
+# pref_lam <- sapply(work_pix, function(x) cv_fit[[x]]$lambdaHat1Std)
 
 
 tic()
@@ -207,10 +207,10 @@ set.seed(100)
 cv_fit <- foreach (i=1:dim(Model_data)[1],.multicombine=TRUE) %dopar% {
   # for (i in 1:dim(Model_data)[1]){
   # normal run
-  # tryCatch(glinternet.cv(x1_train_list[[i]], y1_train_list[[i]], numLevels_list[[i]],family = "binomial"), error=function(e) paste0("Error in iteration ",i))
+  tryCatch(glinternet.cv(x1_train_list[[i]], y1_train_list[[i]], numLevels_list[[i]],family = "binomial"), error=function(e) paste0("Error in iteration ",i))
   
   # run with the preferential lambda from the normal run
-  tryCatch(glinternet.cv(x1_train_list[[i]], y1_train_list[[i]], numLevels_list[[i]],family = "binomial",lambda=pref_lam[i]), error=function(e) paste0("Error in iteration ",i))
+  # tryCatch(glinternet.cv(x1_train_list[[i]], y1_train_list[[i]], numLevels_list[[i]],family = "binomial",lambda=pref_lam[i]), error=function(e) paste0("Error in iteration ",i))
   
   # cv_fit <- try(glinternet.cv(x1_train_list[[i]], y1_train_list[[i]], numLevels_list[[i]],family = "binomial"))
   # cv_fit_list[[i]] <- cv_fit
