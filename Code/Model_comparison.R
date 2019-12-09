@@ -29,9 +29,11 @@ library(tictoc)
 message('Adjust the path accordingly.')
 # Pauline:
 # path_to_NH_files <- "C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/Data/Global"
+# output_path <- "C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/Images/Model_Comparison/"
 
 # Johannes:
 path_to_NH_files <- "D:/user/vogelj/Data/Group project Como"
+output_path <- "D:/user/vogelj/Group_project/Output/Plots"
 
 source('./Code/Lasso_interact_global_preparation.R') # load necessary files
 ##### Standardised data
@@ -166,8 +168,8 @@ source('./Code/Lasso_interact_global_preparation.R') # load necessary files
 # On the Drive you can find my data in:
 # Models/LASSO-Ridge regression/regression_results_Global_wo_interactions/Ridge_lambdamin_threshbadyield005.RData
 
-load(file = "C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/Ridge_lambdamin_threshbadyield005.RData")
-
+# load(file = "C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/Ridge_lambdamin_threshbadyield005.RData")
+load(file = "D:/user/vogelj/Group_project/Code/Workspaces/Ridge_lambdamin_threshbadyield005.RData")
 
 
 # Create specificity, CSI and EDI for Ridge ####
@@ -233,7 +235,8 @@ colnames(Result_matrix_Ridge) = c("speci", "CSI", "EDI", "lon", "lat")
 # On the Drive you can find my data in:
 # Models/LASSO-Ridge regression/regression_results_Global_wo_interactions/Lasso_lambdamin_threshbadyield005.RData
 
-load(file = "C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/Lasso_lambdamin_threshbadyield005.RData")
+# load(file = "C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/Lasso_lambdamin_threshbadyield005.RData")
+load(file = "D:/user/vogelj/Group_project/Code/Workspaces/Lasso_lambdamin_threshbadyield005.RData")
 
 
 # Create specificity, CSI and EDI for Lasso w/o interactions ####
@@ -300,7 +303,8 @@ colnames(Result_matrix_simplelasso) = c("speci", "CSI", "EDI", "lon", "lat")
 # On the Drive you can find my data in:
 # Models/BestGlm/BestGlm_complete.RData
 
-load(file="D:/PROJECTS/DAMOCLES/BestGLM_rep1000_worksp/BestGLm_complete.RData")
+# load(file="D:/PROJECTS/DAMOCLES/BestGLM_rep1000_worksp/BestGLm_complete.RData")
+load(file = "D:/user/vogelj/Group_project/Code/Workspaces/BestGLm_complete.RData")
 
 
 #location Pauline's Laptop
@@ -317,12 +321,12 @@ nb_pix_bestglm<-Pixel_ok
 
 segreg_th <- 0.5
 
-fitted.results_model <- lapply(seq_along(nb_pix_bestglm), function(x){ifelse(mypred[[x]] > segreg_th,1,0)})
+fitted.results_model_bestglm <- lapply(seq_along(nb_pix_bestglm), function(x){ifelse(mypred[[x]] > segreg_th,1,0)})
 
 
-y1_test_list <- lapply(1:pix_num, function(x){Testing_Data[[x]][,ncol(Testing_Data[[x]])]}) # predictand
+y1_test_list_bestglm <- lapply(1:pix_num, function(x){Testing_Data[[x]][,ncol(Testing_Data[[x]])]}) # predictand
 
-y1_test_list_red <- lapply(nb_pix_bestglm,function(work_pix){y1_test_list[[work_pix]]})
+y1_test_list_red <- lapply(nb_pix_bestglm,function(work_pix){y1_test_list_bestglm[[work_pix]]})
 
 mis_clas_err_bestglm <- rep(NA,965)
 # mis_clas_err[work_pix] <- sapply(seq_along(work_pix), function(x){misClassError(y1_test_list_red[[x]],mypred[[x]])})
@@ -334,13 +338,13 @@ sensi_bestglm <- rep(NA,965)
 speci_bestglm <- rep(NA,965)
 con_tab_bestglm<- rep(NA,965)
 
-con_tab_bestglm[nb_pix_bestglm]  <-  lapply(seq_along(nb_pix_bestglm), function(x){InformationValue::confusionMatrix(y1_test_list_red[[x]],fitted.results_model[[x]])})
+con_tab_bestglm[nb_pix_bestglm]  <-  lapply(seq_along(nb_pix_bestglm), function(x){InformationValue::confusionMatrix(y1_test_list_red[[x]],fitted.results_model_bestglm[[x]])})
 
-sensi_bestglm[nb_pix_bestglm] <- sapply(seq_along(nb_pix_bestglm), function(x){InformationValue::sensitivity(y1_test_list_red[[x]],fitted.results_model[[x]],threshold = segreg_th)})
+sensi_bestglm[nb_pix_bestglm] <- sapply(seq_along(nb_pix_bestglm), function(x){InformationValue::sensitivity(y1_test_list_red[[x]],fitted.results_model_bestglm[[x]],threshold = segreg_th)})
 
-speci_bestglm[nb_pix_bestglm] <- sapply(seq_along(nb_pix_bestglm), function(x){InformationValue::specificity(y1_test_list_red[[x]],fitted.results_model[[x]], threshold = segreg_th)})
+speci_bestglm[nb_pix_bestglm] <- sapply(seq_along(nb_pix_bestglm), function(x){InformationValue::specificity(y1_test_list_red[[x]],fitted.results_model_bestglm[[x]], threshold = segreg_th)})
 
-obs_pred <- lapply(seq_along(nb_pix_bestglm), function(x){cbind(y1_test_list_red[[x]],fitted.results_model[[x]])})
+obs_pred <- lapply(seq_along(nb_pix_bestglm), function(x){cbind(y1_test_list_red[[x]],fitted.results_model_bestglm[[x]])})
 tp <- sapply(seq_along(nb_pix_bestglm), function(x){sum(rowSums(obs_pred[[x]])==2)})
 tn <- sapply(seq_along(nb_pix_bestglm), function(x){sum(rowSums(obs_pred[[x]])==0)})
 fp <- sapply(seq_along(nb_pix_bestglm), function(x){sum(obs_pred[[x]][,1]==0 & obs_pred[[x]][,2]==1)})
@@ -467,6 +471,7 @@ substract_score_plot <- function(score_name, score_1, model1_name, score_2, mode
   
 }
 
+
 # Specificity map #####
 #######################
 pairs(cbind(speci_bestglm, speci_lwi, speci_ridge, speci_simplelasso))
@@ -490,8 +495,7 @@ substract_score_plot(score_name = score,
                      score_1 = score_1, model1_name = model_1,
                      score_2 = score_2, model2_name = model_2)
 
-ggsave(paste("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/Images/Model_Comparison/",
-             score,"_",model_1,"VS",model_2,".png", sep = ""), width = 18, height = 6)
+ggsave(paste(output_path, score,"_",model_1,"VS",model_2,".png", sep = ""), width = 18, height = 6)
 
 # CSI map ####
 ##############
@@ -507,8 +511,7 @@ substract_score_plot(score_name = score,
                      score_1 = score_1, model1_name = model_1,
                      score_2 = score_2, model2_name = model_2)
 
-ggsave(paste("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/Images/Model_Comparison/",
-             score,"_",model_1,"VS",model_2,".png", sep = ""), width = 18, height = 6)
+ggsave(paste(output_path, score,"_",model_1,"VS",model_2,".png", sep = ""), width = 18, height = 6)
 
 
 
@@ -534,5 +537,4 @@ substract_score_plot(score_name = score,
                      score_1 = score_1, model1_name = model_1,
                      score_2 = score_2, model2_name = model_2)
 
-ggsave(paste("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/Images/Model_Comparison/",
-             score,"_",model_1,"VS",model_2,".png", sep = ""), width = 18, height = 6)
+ggsave(paste(output_path, score,"_",model_1,"VS",model_2,".png", sep = ""), width = 18, height = 6)
