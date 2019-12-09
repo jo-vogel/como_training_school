@@ -538,3 +538,14 @@ substract_score_plot(score_name = score,
                      score_2 = score_2, model2_name = model_2)
 
 ggsave(paste(output_path, score,"_",model_1,"VS",model_2,".png", sep = ""), width = 18, height = 6)
+
+
+# Boxplots ####
+###############
+png(filename="D:/user/vogelj/Group_project/Output/Plots/Performance_boxplots.png",res=2000,units="cm",width=15,height=20)
+box_names <- c("Bestglm","Lasso with \n interactions","Ridge","Lasso w/o interactions")
+par(mfrow=c(3,1),mar=c(3, 4, 4, 2) + 0.1,oma=c(0,0,0,0))
+boxplot(cbind(speci_bestglm, speci_lwi, speci_ridge, speci_simplelasso),main="Specificity",names=box_names, col='lightblue')
+boxplot(cbind(csi_bestglm, csi_lwi, csi_ridge, csi_simplelasso),main="CSI",names=box_names, col='lightblue')
+boxplot(cbind(EDI_bestglm, EDI_lwi, EDI_ridge, EDI_simplelasso),main="EDI",names=box_names, col='lightblue')
+dev.off()

@@ -13,8 +13,11 @@ library(glmnet)
 ########################
 
 # source('./Code/Lasso_interact_global.R') # takes ca. 3 hours
-source('./Code/Lasso_interact_global_preparation.R')
-load("D:/user/vogelj/Group_project/Code/Workspaces/cv_fit_complete.RData")
+path_to_NH_files <- "D:/user/vogelj/Data/Group project Como"
+# source('./Code/Lasso_interact_global_preparation.R')
+# load("D:/user/vogelj/Group_project/Code/Workspaces/cv_fit_complete.RData") # monthly model
+source('./Code/Lasso_interact_seasonal_global_preparation.R')
+load("D:/user/vogelj/Group_project/Code/Workspaces/cv_fit_seasonal.RData") # seasonal model
 
 
 
@@ -107,7 +110,8 @@ ggplot(data = DF_miscla, aes(x=lon, y=lat)) +
   theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
         legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
   X11(width = 20, height = 7)
-ggsave(file="D:/user/vogelj/Group project/Output/Plots/Mis_class_error_lasso_interact_map.png")
+# ggsave(file="D:/user/vogelj/Group_project/Output/Plots/Mis_class_error_lasso_interact_map.png")
+ggsave(file="D:/user/vogelj/Group_project/Output/Plots/Mis_class_error_lasso_interact_seasonal_map.png")
 
 
 # Plot specificity ####
@@ -135,7 +139,9 @@ ggplot(data = DF_speci, aes(x=lon, y=lat)) +
   theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
         legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
   X11(width = 20, height = 7)
-ggsave(file="D:/user/vogelj/Group project/Output/Plots/Specificity_lasso_interact_map.png")
+# ggsave(file="D:/user/vogelj/Group_project/Output/Plots/Specificity_lasso_interact_map.png")
+ggsave(file="D:/user/vogelj/Group_project/Output/Plots/Specificity_lasso_interact_seasonal_map.png")
+
 
 
 # Plot sensitivity ####
@@ -163,7 +169,8 @@ ggplot(data = DF_sensi, aes(x=lon, y=lat)) +
   theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
         legend.title = element_text(size = 15), legend.text = element_text(size = 14))  +
   X11(width = 20, height = 7)
-ggsave(file="D:/user/vogelj/Group project/Output/Plots/Sensitivity_lasso_interact_map.png")
+# ggsave(file="D:/user/vogelj/Group_project/Output/Plots/Sensitivity_lasso_interact_map.png")
+ggsave(file="D:/user/vogelj/Group_project/Output/Plots/Sensitivity_lasso_interact_seasonal_map.png")
 
 
 # Plot critical succes index (CSI) ####
@@ -191,7 +198,8 @@ ggplot(data = DF_csi, aes(x=lon, y=lat)) +
   theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
         legend.title = element_text(size = 15), legend.text = element_text(size = 14))  +
   X11(width = 20, height = 7)
-ggsave(file="D:/user/vogelj/Group project/Output/Plots/CSI_lasso_interact_map.png")
+# ggsave(file="D:/user/vogelj/Group_project/Output/Plots/CSI_lasso_interact_map.png")
+ggsave(file="D:/user/vogelj/Group_project/Output/Plots/CSI_lasso_interact_seasonal_map.png")
 
 
 # Correlation between yield and specificity or miscla error ####
@@ -234,10 +242,12 @@ cor(mean_yield, speci)
     # scale_color_gradientn(limits=c(0,max(DF_numbcoeff[,3])), 
     # colours=c(gray.colors(1),topo.colors(23)[-c(1,3,5,16:23)],rev(heat.colors(10))) ,values=rescale(0:22,c(0,1))) + # mixed visualisation
     # colours=c(gray.colors(1),topo.colors(20)[-c(13:20)],rev(heat.colors(10))) ,values=rescale(0:22,c(0,1))) + # mixed visualisation v1
-    scale_color_gradientn(limits=c(0,15),
+   
+     scale_color_gradientn(limits=c(0,15),
     colours=c(gray.colors(1),topo.colors(9)[-c(8,9)],rev(heat.colors(7))) ,values=rescale(0:15,c(0,1)),
     breaks=c(0,3,6,9,12,15),labels=c("0","3","6","9","12",">=15")) + # mixed visualisation with cutoff
-    # scale_color_gradientn(limits=c(0,15), # cut off high values for better visualisation of the rest
+   
+     # scale_color_gradientn(limits=c(0,15), # cut off high values for better visualisation of the rest
                           # colours=c(gray.colors(1),topo.colors(14)) ,values=rescale(0:15,c(0,1))) + # topo color scheme
     #                      colours=c(gray.colors(1),rainbow(14)) ,values=rescale(0:15,c(0,1))) + # rainbow color scheme
     # scale_color_gradient2(limits=c(0,15),midpoint=15/2, # cut off high values for better visualisation of the rest
@@ -260,7 +270,8 @@ cor(mean_yield, speci)
     X11(width = 20, height = 7)
     # d + scale_fill_discrete(breaks=c(2,4,6,8,10), labels = c("A", "B", "C", "D", "E"))
 
-  ggsave(file="D:/user/vogelj/Group_project/Output/Plots/Number_of_coefficients_lasso_interact_map.png")
+  # ggsave(file="D:/user/vogelj/Group_project/Output/Plots/Number_of_coefficients_lasso_interact_map.png")
+  ggsave(file="D:/user/vogelj/Group_project/Output/Plots/Number_of_coefficients_lasso_interact_seasonal_map.png")
 # }
   plot(table(coeff_kep))  # overview of distribution of the number of coefficients
   
@@ -303,7 +314,8 @@ cor(mean_yield, speci)
     theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
           legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
     X11(width = 20, height = 7)
-  ggsave(file="D:/user/vogelj/Group_project/Output/Plots/Number_of_coefficient_interactions_lasso_interact_map.png")
+  # ggsave(file="D:/user/vogelj/Group_project/Output/Plots/Number_of_coefficient_interactions_lasso_interact_map.png")
+  ggsave(file="D:/user/vogelj/Group_project/Output/Plots/Number_of_coefficient_interactions_lasso_interact_seasonal_map.png")
   plot(table(num_interact))  # overview of distribution of the number of interactions of coefficients
 
   
@@ -343,19 +355,19 @@ cor(mean_yield, speci)
   
   nb_of_seas <- vector("numeric",length=length(coefs))
   for (i in 1:length(coefs)){
-    if(sum(months_all_pix[[i]] %in% c("Feb", "Dec", "Jan"))){
+    if(sum(months_all_pix[[i]] %in% c("Feb", "Dec", "Jan","win"))){
       nb_of_seas[i] <- nb_of_seas[i] + 1
     }
     
-    if(sum(months_all_pix[[i]] %in% c("May", "Mar", "Apr"))){
+    if(sum(months_all_pix[[i]] %in% c("May", "Mar", "Apr","spr"))){
       nb_of_seas[i] <- nb_of_seas[i] + 1
     }
     
-    if(sum(months_all_pix[[i]] %in% c("Jun", "Jul", "Aug"))){
+    if(sum(months_all_pix[[i]] %in% c("Jun", "Jul", "Aug","sum"))){
       nb_of_seas[i] <- nb_of_seas[i] + 1
     }
     
-    if(sum(months_all_pix[[i]] %in% c("Sep", "Nov", "Oct"))){
+    if(sum(months_all_pix[[i]] %in% c("Sep", "Nov", "Oct","aut"))){
       nb_of_seas[i] <- nb_of_seas[i] + 1
     }
   }  
@@ -385,7 +397,8 @@ cor(mean_yield, speci)
     theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
           legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
     X11(width = 20, height = 7)
-  ggsave(file="D:/user/vogelj/Group project/Output/Plots/Number_of_variables_vpd_tmax_prec.png")
+  # ggsave(file="D:/user/vogelj/Group_project/Output/Plots/Number_of_variables_vpd_tmax_prec.png")
+  ggsave(file="D:/user/vogelj/Group_project/Output/Plots/Number_of_variables_vpd_tmax_prec_seasonal.png")
   
   # Plot number of months  
   DF_nbdiffseason <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], nb_season = nb_of_seas)
@@ -410,7 +423,8 @@ cor(mean_yield, speci)
     theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
           legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
     X11(width = 20, height = 7)
-  ggsave(file="D:/user/vogelj/Group project/Output/Plots/Number_of_seasons.png")
+  # ggsave(file="D:/user/vogelj/Group_project/Output/Plots/Number_of_seasons.png")
+  ggsave(file="D:/user/vogelj/Group_project/Output/Plots/Number_of_seasons_seasonal.png")
   
   
   
@@ -428,3 +442,4 @@ cor(mean_yield, speci)
   auc2 <- sapply(seq_along(work_pix), function(x) auc(y1_test_list_red[[x]],fitted.results_model[[x]]))
   auc <- sapply(seq_along(work_pix), function(x) performance(pred[[x]], measure = "auc"))
   # auc@y.values[[1]]
+  
