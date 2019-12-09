@@ -33,7 +33,7 @@ message('Adjust the path accordingly.')
 
 # Johannes:
 path_to_NH_files <- "D:/user/vogelj/Data/Group project Como"
-output_path <- "D:/user/vogelj/Group_project/Output/Plots"
+output_path <- "D:/user/vogelj/Group_project/Output/Plots/"
 
 source('./Code/Lasso_interact_global_preparation.R') # load necessary files
 ##### Standardised data
