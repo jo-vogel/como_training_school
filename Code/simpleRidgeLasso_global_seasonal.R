@@ -10,7 +10,7 @@ print("Are you sure you want to run the next line? ;) everything in the environm
 rm(list=ls(all=TRUE))
 
 # which method? model_name in c("Ridge", "Lasso)
-model_name <- "Lasso"
+model_name <- "Ridge"
 stopifnot(model_name %in% c("Ridge", "Lasso"))
 
 
@@ -170,6 +170,9 @@ for (i in 1:pix_num){
 }
 
 
+# Run the model ####
+####################
+
 #without paralellizing
 tic()
 model_cv_fitting <- list()
@@ -187,4 +190,166 @@ toc()
 save(model_cv_fitting, file = paste("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/cvSeasonalData_",
                                     model_name,"_threshbadyield", str_pad(threshold*100, 3, pad = "0"),".RData", sep = ""))
 
+
+# Load the fitted model ####
+############################
+
+load(file = paste("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/cvSeasonalData_",
+                  model_name,"_threshbadyield", str_pad(threshold*100, 3, pad = "0"),".RData", sep = ""))
+
+
+# Keep the model just for lambda.min and lambda.1se ####
+########################################################
+if (model_name == "Ridge"){
+  ridge_model_lambdamin <- list()
+  ridge_model_lambda1se <- list()
+  
+  for (pixel in 1:pix_num) {
+    ridge_model_lambdamin[[pixel]] <- glmnet(x = as.matrix(x1_train_list[[pixel]]),
+                                             y = as.matrix(y1_train_list[[pixel]]),
+                                             family = "binomial", alpha = no_model,
+                                             lambda = model_cv_fitting[[pixel]]$lambda.min)
+    
+    ridge_model_lambda1se[[pixel]] <- glmnet(x = as.matrix(x1_train_list[[pixel]]),
+                                             y = as.matrix(y1_train_list[[pixel]]),
+                                             family = "binomial", alpha = no_model,
+                                             lambda = model_cv_fitting[[pixel]]$lambda.1se)
+  }#end for pixel
+  
+  
+  save(ridge_model_lambdamin, file = paste("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/seas_",
+                                           model_name,"_lambdamin_threshbadyield", str_pad(threshold*100, 3, pad = "0"),".RData", sep = ""))
+  save(ridge_model_lambda1se, file = paste("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/seas_",
+                                           model_name,"_lambda1se_threshbadyield", str_pad(threshold*100, 3, pad = "0"),".RData", sep = ""))
+  
+}#end if Ridge
+
+if (model_name == "Lasso"){
+  lasso_model_lambdamin <- list()
+  lasso_model_lambda1se <- list()
+  
+  for (pixel in 1:pix_num) {
+    lasso_model_lambdamin[[pixel]] <- glmnet(x = as.matrix(x1_train_list[[pixel]]),
+                                             y = as.matrix(y1_train_list[[pixel]]),
+                                             family = "binomial", alpha = no_model,
+                                             lambda = model_cv_fitting[[pixel]]$lambda.min)
+    
+    lasso_model_lambda1se[[pixel]] <- glmnet(x = as.matrix(x1_train_list[[pixel]]),
+                                             y = as.matrix(y1_train_list[[pixel]]),
+                                             family = "binomial", alpha = no_model,
+                                             lambda = model_cv_fitting[[pixel]]$lambda.1se)
+  }#end for pixel
+  
+  save(lasso_model_lambdamin, file = paste("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/seas_",
+                                           model_name,"_lambdamin_threshbadyield", str_pad(threshold*100, 3, pad = "0"),".RData", sep = ""))
+  save(lasso_model_lambda1se, file = paste("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/seas_",
+                                           model_name,"_lambda1se_threshbadyield", str_pad(threshold*100, 3, pad = "0"),".RData", sep = ""))
+  
+}#end if Lasso
+
+
+
+# Load the fitted model for one lambda ####
+###########################################
+
+load(file = paste("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/seas_",
+                  model_name,"_lambda1se_threshbadyield", str_pad(threshold*100, 3, pad = "0"),".RData", sep = ""))
+load(file = paste("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/seas_",
+                  model_name,"_lambdamin_threshbadyield", str_pad(threshold*100, 3, pad = "0"),".RData", sep = ""))
+
+# Model performance ###
+#######################
+#Start with Lambda min
+
+MODEL_chosen <- ridge_model_lambdamin
+
+test_length <- length(MODEL_chosen)
+
+coefs <- lapply(1:test_length, function(x){coef(MODEL_chosen[[x]])})
+
+
+
+mypred <- lapply(1:test_length, function(x){predict(MODEL_chosen[[x]],
+                                                    as.matrix(x1_test_list[[x]]),type="response")})
+
+#which segregation threshold for the model?
+segreg_th <- 0.5
+
+fitted.results_model <- lapply(1:test_length, function(x){ifelse(mypred[[x]] > segreg_th,1,0)})
+
+mis_clas_err <- sapply(1:test_length, function(x){misClassError(actuals = as.matrix(y1_test_list[[x]]),
+                                                                predictedScores=mypred[[x]],
+                                                                threshold = segreg_th)})
+
+con_tab <-  lapply(1:test_length, function(x){InformationValue::confusionMatrix(as.matrix(y1_test_list[[x]]),
+                                                                                fitted.results_model[[x]],
+                                                                                threshold = segreg_th)})
+
+speci <- sapply(1:test_length, function(x){InformationValue::specificity(as.matrix(y1_test_list[[x]]),
+                                                                         fitted.results_model[[x]],
+                                                                         threshold = segreg_th)})
+
+# CSI #
+csi <- numeric()
+for(pix in 1:length(coefs)){
+  csi[pix] <- con_tab[[pix]]["0","0"]/(con_tab[[pix]]["0","0"] + con_tab[[pix]]["1","0"] + con_tab[[pix]]["0","1"])
+  if(is.na(con_tab[[pix]]["0","0"])){
+    csi[pix] <- 0
+  }
+}#end for pix
+
+# Plots ####
+world <- map_data("world")
+
+# Plot specificity error ####
+
+DF_speci <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], speci = speci)
+
+ggplot(data = DF_speci, aes(x=lon, y=lat)) +
+  geom_polygon(data = world, aes(long, lat, group=group),
+               fill="white", color="black", size=0.3) +
+  geom_point(shape=15, aes(color=speci)) +
+  scale_color_gradient2(limits=c(0,1), midpoint = 0.5,
+                        low = "black", mid = "red3", high = "yellow") +
+  theme(panel.ontop = F, panel.grid = element_blank(),
+        panel.border = element_rect(colour = "black", fill = NA),
+        axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
+  ylab("Lat (°N)") +
+  xlab("Lon (°E)") +
+  coord_fixed(xlim = c(-120, 135),
+              ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
+              ratio = 1.3)+
+  labs(color="Specif.",
+       title = paste("Seasonal data: specificity, simple",model_name,"regression"),
+       subtitle = paste("Bad yield threshold=", threshold,
+                        ", segregation threshold=", segreg_th, sep = ""))+
+  theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
+        legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
+  X11(width = 20, height = 7)
+
+
+# plot CSI=(hits)/(hits + misses + false alarm) ###
+DF_csi <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], csi = csi)
+
+ggplot(data = DF_csi, aes(x=lon, y=lat)) +
+  geom_polygon(data = world, aes(long, lat, group=group),
+               fill="white", color="black", size=0.3) +
+  geom_point(shape=15, aes(color=csi)) +
+  scale_color_gradient2(limits=c(0,1), midpoint = 0.5,
+                        low = "black", mid = "red3", high = "yellow") +
+  theme(panel.ontop = F, panel.grid = element_blank(),
+        panel.border = element_rect(colour = "black", fill = NA),
+        axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
+  ylab("Lat (°N)") +
+  xlab("Lon (°E)") +
+  coord_fixed(xlim = c(-120, 135),
+              ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
+              ratio = 1.3)+
+  labs(color="csi",
+       title = paste("Seasonal data: critical success index, simple",model_name,"regression"),
+       subtitle = paste("Bad yield threshold=", threshold,
+                        ", segregation threshold=", segreg_th, sep = ""))+
+  theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
+        legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
+  X11(width = 20, height = 7)
 
