@@ -421,7 +421,7 @@ substract_score_plot <- function(score_name, score_1, model1_name, score_2, mode
 
 # Specificity map #####
 #######################
-pairs(cbind(speci_bestglm, speci_lwi, speci_ridge, speci_simplelasso))
+pairs(cbind(speci_bestglm, speci_lwi, speci_ridge, speci_simplelasso, speci_elastic))
 
 
 
@@ -430,13 +430,17 @@ possible_pairs <- c("BestGLM-Ridge",
                     "LassoSimple-Ridge",
                     "Best GLM-Lasso_with_interact",
                     "Best GLM-LassoSimple",
-                    "Lasso_with_interact-LassoSimple")
+                    "Lasso_with_interact-LassoSimple",
+                    "Elastic-BestGLM",
+                    "Elastic-Ridge",
+                    "Elastic-LassoSimple",
+                    "Elastic-Lasso_with_interact")
 
 score <- "Specificity"
-model_1 <- "Lasso_with_interact"
-score_1 <- speci_lwi
-model_2 <- "LassoSimple"
-score_2 <- speci_simplelasso
+model_1 <- "Elastic"
+score_1 <- speci_elastic
+model_2 <- "Lasso_with_interact"
+score_2 <- speci_lwi
 
 substract_score_plot(score_name = score,
                      score_1 = score_1, model1_name = model_1,
@@ -446,13 +450,13 @@ ggsave(paste(output_path, score,"_",model_1,"VS",model_2,".png", sep = ""), widt
 
 # CSI map ####
 ##############
-pairs(cbind(csi_bestglm, csi_lwi, csi_ridge, csi_simplelasso))
+pairs(cbind(csi_bestglm, csi_lwi, csi_ridge, csi_simplelasso, csi_elastic))
 
 score <- "CSI"
-model_1 <- "BestGLM"
-score_1 <- csi_bestglm
-model_2 <- "Lasso_with_interact"
-score_2 <- csi_lwi
+model_1 <- "Elastic"
+score_1 <- csi_elastic
+model_2 <- "BestGLM"
+score_2 <- csi_bestglm
 
 substract_score_plot(score_name = score,
                      score_1 = score_1, model1_name = model_1,
