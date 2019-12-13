@@ -10,7 +10,7 @@ print("Are you sure you want to run the next line? ;) everything in the environm
 rm(list=ls(all=TRUE))
 
 # which method? model_name in c("Ridge", "Lasso)
-model_name <- "Ridge"
+model_name <- "Lasso"
 stopifnot(model_name %in% c("Ridge", "Lasso"))
 
 
@@ -261,7 +261,7 @@ load(file = paste("C:/Users/admin/Documents/Damocles_training_school_Como/GroupP
 #######################
 #Start with Lambda min
 
-MODEL_chosen <- ridge_model_lambdamin
+MODEL_chosen <- lasso_model_lambda1se
 
 test_length <- length(MODEL_chosen)
 
@@ -353,3 +353,44 @@ ggplot(data = DF_csi, aes(x=lon, y=lat)) +
         legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
   X11(width = 20, height = 7)
 
+
+
+# Plot number of variables kept ###
+
+
+if(model_name=="Lasso"){
+  coeff_kep <- numeric()
+  
+  for (pix in 1:965) {
+    # coeff_kep[pix] <- length(coefs[[pix]]$mainEffects$cont)
+    coeff_kep[pix] <- sum(coefs[[pix]][row.names(coefs[[pix]])!="(Intercept)"]!=0)
+    
+  }#end for pix
+  
+  
+  
+  # Plot 
+  
+  DF_numbcoeff <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], coeff_kep = coeff_kep)
+  
+  ggplot(data = DF_numbcoeff, aes(x=lon, y=lat)) +
+    geom_polygon(data = world, aes(long, lat, group=group),
+                 fill="white", color="black", size=0.3) +
+    geom_point(shape=15, aes(color=coeff_kep)) +
+    scale_color_gradient(limits=c(1,15),
+                         low = "pink", high = "darkblue") +
+    theme(panel.ontop = F, panel.grid = element_blank(),
+          panel.border = element_rect(colour = "black", fill = NA),
+          axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
+    ylab("Lat (°N)") +
+    xlab("Lon (°E)") +
+    coord_fixed(xlim = c(-120, 135),
+                ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
+                ratio = 1.3)+
+    labs(color="Nb of var.",
+         title = paste("Number of variables kept, simple",model_name,"regression"),
+         subtitle = paste("Bad yield threshold=", threshold, sep = ""))+
+    theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
+          legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
+    X11(width = 20, height = 7)
+}#end if Lasso
