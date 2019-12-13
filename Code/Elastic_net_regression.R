@@ -212,9 +212,7 @@ if(lambda_val == "lambda.1se"){
 
 
 
-# Model performance ###
-#######################
-#Start with Lambda min
+#### Model performance ####
 
 test_length <- length(model_fit)
 
