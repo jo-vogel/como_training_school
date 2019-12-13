@@ -172,6 +172,76 @@ Result_matrix_simplelasso <- cbind(speci_simplelasso, csi_simplelasso, EDI_simpl
 colnames(Result_matrix_simplelasso) = c("speci", "CSI", "EDI", "lon", "lat")
 
 
+# Load Model output for ElasticNet 0.5 ####
+##################################################
+# start with lambda.min
+
+# On the Drive you can find my data in:
+# Models/LASSO-Ridge regression/regression_results_Global_wo_interactions/Elastic-net_lambdamin_alpha05_threshbadyield005.RData
+
+load(file = "C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/Elastic-net_lambdamin_alpha05_threshbadyield005.RData")
+elastic_model_lambdamin <- fit_pix_lambdamin
+rm(fit_pix_lambdamin)
+
+# Create specificity, CSI and EDI for ElasticNet 0.5 ####
+#################################################################
+nb_pix_elastic <- length(elastic_model_lambdamin)
+
+coefs_elastic <- lapply(1:nb_pix_elastic, function(x){coef(elastic_model_lambdamin[[x]])})
+
+
+
+pred_elastic <- lapply(1:nb_pix_elastic, function(x){predict(elastic_model_lambdamin[[x]],
+                                                                     as.matrix(x1_test_list[[x]]),type="response")})
+
+
+
+fitted_results_elastic <- lapply(1:nb_pix_elastic, function(x){ifelse(pred_elastic[[x]] > segreg_th,1,0)})
+
+speci_elastic <- sapply(1:nb_pix_elastic, function(x){InformationValue::specificity(as.matrix(y1_test_list[[x]]),
+                                                                                            fitted_results_elastic[[x]],
+                                                                                            threshold = segreg_th)})
+con_tab_elastic <-  lapply(1:nb_pix_elastic, function(x){InformationValue::confusionMatrix(as.matrix(y1_test_list[[x]]),
+                                                                                                   fitted_results_elastic[[x]],
+                                                                                                   threshold = segreg_th)})
+
+csi_elastic <- numeric()  #critical success index
+F_elastic <- numeric()    #False alarm rate
+H_elastic <- numeric()    #Hit rate
+
+for(pix in 1:nb_pix_elastic){
+  csi_elastic[pix] <- con_tab_elastic[[pix]]["0","0"]/(con_tab_elastic[[pix]]["0","0"] +
+                                                         con_tab_elastic[[pix]]["1","0"] +
+                                                         con_tab_elastic[[pix]]["0","1"])
+  
+  F_elastic[pix] <- con_tab_elastic[[pix]]["0","1"]/(con_tab_elastic[[pix]]["0","1"] +
+                                                       con_tab_elastic[[pix]]["1","1"])
+  
+  H_elastic[pix] <- con_tab_elastic[[pix]]["0","0"]/(con_tab_elastic[[pix]]["0","0"] +
+                                                       con_tab_elastic[[pix]]["1","0"])
+  
+  if(is.na(con_tab_elastic[[pix]]["0","0"])){ #no extreme event forecasted => no first line in contengency table
+    csi_elastic[pix] <- 0
+    H_elastic[pix] <- 0
+    F_elastic[pix] <- 0
+  }
+  if(is.na(con_tab_elastic[[pix]]["1","0"])){ #No good year forecasted. Problematic pixels for this model
+    csi_elastic[pix] <- NA
+    H_elastic[pix] <- NA
+    F_elastic[pix] <- NA
+  }
+}#end for pix
+
+EDI_elastic <- (log(F_elastic)-log(H_elastic))/(log(F_elastic)+log(H_elastic))
+
+
+Result_matrix_elastic <- cbind(speci_elastic, csi_elastic, EDI_elastic, coord_subset[,1],coord_subset[,2])
+colnames(Result_matrix_elastic) = c("speci", "CSI", "EDI", "lon", "lat")
+
+
+
+
+
 
 
 # Load Model output for bestglm ####
