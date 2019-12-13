@@ -10,9 +10,10 @@ print("Are you sure you want to run the next line? ;) everything in the environm
 rm(list=ls(all=TRUE))
 
 # which method? model_name in c("Ridge", "Lasso)
-model_name <- "Lasso"
-stopifnot(model_name %in% c("Ridge", "Lasso"))
+model_name <- "ElasticNet"
+# stopifnot(model_name %in% c("Ridge", "Lasso"))
 
+alpha_elastic <- 0.5
 
 if(model_name=="Lasso"){
   no_model <- 1
@@ -175,21 +176,38 @@ for (i in 1:pix_num){
 
 #without paralellizing
 tic()
-model_cv_fitting <- list()
+set.seed(2019)
+crossval <- list()
+
+fit_pix_lambdamin <- list()
+fit_pix_lambda1se <- list()
 for (pixel in 1:dim(Model_data_stand)[1]) {
-  # for (pixel in 1:5) {
-  model_cv_fitting[[pixel]] <- cv.glmnet(x = as.matrix(x1_train_list[[pixel]]),
-                                         y = as.matrix(y1_train_list[[pixel]]),
-                                         family = "binomial", alpha = no_model, nfolds = 10)
-  print(paste(pixel, "out of", dim(Model_data_stand)[1]))
+  print(paste("Pixel",pixel,"out of",dim(Model_data_stand)[1]))
+  crossval[[pixel]] <- cv.glmnet(x = as.matrix(x1_train_list[[pixel]]),
+                                 y = as.matrix(y1_train_list[[pixel]]),
+                                 family = "binomial", alpha = alpha_elastic, nfolds = 10)
+  fit_pix_lambdamin[[pixel]] <- glmnet(x = as.matrix(x1_train_list[[pixel]]),
+                                       y = as.matrix(y1_train_list[[pixel]]),
+                                       family = "binomial", alpha = alpha_elastic,
+                                       lambda = crossval[[pixel]]$lambda.min)
+  fit_pix_lambda1se[[pixel]] <- glmnet(x = as.matrix(x1_train_list[[pixel]]),
+                                       y = as.matrix(y1_train_list[[pixel]]),
+                                       family = "binomial", alpha = alpha_elastic,
+                                       lambda = crossval[[pixel]]$lambda.1se)
 }#end for pixel
 
 toc()
 
-#15 min for Ridge
-save(model_cv_fitting, file = paste("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/cvSeasonalData_",
-                                    model_name,"_threshbadyield", str_pad(threshold*100, 3, pad = "0"),".RData", sep = ""))
+save(crossval, file = paste("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/Seasonalcv",
+                            model_name,"_alpha",str_pad(alpha_elastic*10, 2, pad = "0"),"_threshbadyield",
+                            str_pad(threshold*100, 3, pad = "0"),".RData", sep = ""))
+save(fit_pix_lambdamin, file = paste("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/Seasonal",
+                                     model_name,"_lambdamin_alpha",str_pad(alpha_elastic*10, 2, pad = "0"),"_threshbadyield",
+                                     str_pad(threshold*100, 3, pad = "0"),".RData", sep = ""))
 
+save(fit_pix_lambda1se, file = paste("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/Seasonal",
+                                     model_name,"_lambda1se_alpha",str_pad(alpha_elastic*10, 2, pad = "0"),"_threshbadyield",
+                                     str_pad(threshold*100, 3, pad = "0"),".RData", sep = ""))
 
 # Load the fitted model ####
 ############################
