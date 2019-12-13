@@ -12,9 +12,6 @@ rm(list=ls(all=TRUE))
 model_name <- "Lasso"
 stopifnot(model_name %in% c("Ridge", "Lasso"))
 
-model_name <- "Ridge"
-# stopifnot(model_name %in% c("Ridge", "Lasso"))
-
 if(model_name=="Lasso"){
   no_model <- 1
 }
@@ -53,7 +50,7 @@ library(tictoc)
 # Get the data
 # path_to_NH_files <- "/scratch3/pauline/Damocles_training_school_Como2019/GroupProject1/Data/NH"
 path_to_NH_files <- "C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/Data/Global"
-path_to_NH_files <- "D:/user/vogelj/Data/Group project Como"
+# path_to_NH_files <- "D:/user/vogelj/Data/Group project Como"
 
 nh_files <- list.files(path=path_to_NH_files,pattern="NH_yield*") # all files from northern hemisphere
 nh_data <- lapply(1:length(nh_files),
@@ -157,19 +154,13 @@ for (x in 1:pix_num) {
     testing_indices[[x]] <- (1:1600)[-training_indices[[x]]]    
   }
 }
-# training_indices2 <- sapply(1:pix_num, function(x) {sort(sample(x=vec[-na_time[[x]]], size = floor((1600-length(na_time[[x]]))*0.6)))})
-# testing_indices2 <- sapply(1:pix_num, function(x) {vec[-na_time[[x]]][-training_indices[[x]]]})
-# training_indices2 <- sapply(1:pix_num, function(x) {sort(sample(1:(1600-length(na_time[[x]])), size = floor((1600-length(na_time[[x]]))*0.6)))})
-# testing_indices2 <- sapply(1:pix_num, function(x) {(1:(1600-length(na_time[[x]])))[-training_indices2[[x]]]})
+
 
 Training_Data <- lapply(1:pix_num,function(x){Model_data_stand[x,,training_indices[[x]]]})
 Testing_Data <- lapply(1:pix_num,function(x){Model_data_stand[x,,testing_indices[[x]]]})
 
 pix_in <- 1:pix_num
-# x1_train_list <- lapply(seq_along(pix_in), function(x){ as.data.frame(t(Training_Data[x,non_na_col[x,],]))}) # predictors
-# y1_train_list <- lapply(seq_along(pix_in), function(x){ Training_Data[x,1,]}) # predictand
-# x1_test_list <- lapply(seq_along(pix_in), function(x){ as.data.frame(t(Testing_Data[x,non_na_col[x,],]))}) # predictors
-# y1_test_list <- lapply(seq_along(pix_in), function(x){Testing_Data[x,1,]}) # predictand
+
 
 x1_train_list <- lapply(seq_along(pix_in), function(x){ as.data.frame(t(Training_Data[[x]][non_na_col[x,],]))}) # predictors
 y1_train_list <- lapply(seq_along(pix_in), function(x){ Training_Data[[x]][1,]}) # predictand
@@ -182,33 +173,6 @@ for (i in 1:pix_num){
   names(numLevels_list[[i]]) <-  colnames(x1_test_list[[i]])
 }
 
-
-# Alternative Option 2: exclude all pixels which have years with NA ####
-####################################################################
-
-# # Split data into training and testing data set
-# set.seed(1994)
-# training_indices <- sort(sample(1:1600, size = floor(1600*0.6)))
-# testing_indices <- (1:1600)[-training_indices]
-# Training_Data <- Model_data_stand[,,training_indices]
-# Testing_Data <- Model_data_stand[,,testing_indices]
-# 
-# pix_in <- 1:pix_num
-# x1_train_list <- lapply(seq_along(pix_in), function(x){ as.data.frame(t(Training_Data[x,non_na_col[x,],]))}) # predictors
-# y1_train_list <- lapply(seq_along(pix_in), function(x){ Training_Data[x,1,]}) # predictand
-# 
-# x1_test_list <- lapply(seq_along(pix_in), function(x){ as.data.frame(t(Testing_Data[x,non_na_col[x,],]))}) # predictors
-# y1_test_list <- lapply(seq_along(pix_in), function(x){Testing_Data[x,1,]}) # predictand
-# 
-# var_num <- apply(non_na_col,1,sum)
-# numLevels_list <- sapply(1:pix_num, function(x){ rep(1,times=var_num[x])})
-# for (i in 1:pix_num){
-#   names(numLevels_list[[i]]) <-  colnames(x1_test_list[[i]])
-# }
-
-# pix_with_NA <- which(apply(cy,1,anyNA))
-# final_pix <- 1:965;
-# final_pix <- final_pix[-pix_with_NA]
 
 
 
@@ -318,17 +282,29 @@ if (model_name == "Lasso"){
 }
 
 
+# Load the fitted model for one lambda ####
+###########################################
+
+load(file = paste("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/",
+                  model_name,"_lambdamin_threshbadyield", str_pad(threshold*100, 3, pad = "0"),".RData", sep = ""))
+load(file = paste("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/",
+                  model_name,"_lambda1se_threshbadyield", str_pad(threshold*100, 3, pad = "0"),".RData", sep = ""))
+
+
 
 
 # Model performance assessment ####
 ###################################
-test_length <- length(model_cv_fitting)
 
-coefs <- lapply(1:test_length, function(x){coef(model_cv_fitting[[x]], s=lambda_val)})
+MODEL_chosen <- lasso_model_lambdamin
+
+test_length <- length(MODEL_chosen)
+
+coefs <- lapply(1:test_length, function(x){coef(MODEL_chosen[[x]])})
 
 
 
-mypred <- lapply(1:test_length, function(x){predict(model_cv_fitting[[x]],
+mypred <- lapply(1:test_length, function(x){predict(MODEL_chosen[[x]],
                                                     as.matrix(x1_test_list[[x]]),type="response")})
 
 #which segregation threshold for the model?
@@ -420,7 +396,7 @@ DF_sci <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], csi = csi)
 ggplot(data = DF_sci, aes(x=lon, y=lat)) +
   geom_polygon(data = world, aes(long, lat, group=group),
                fill="white", color="black", size=0.3) +
-  geom_point(shape=15, aes(color=speci)) +
+  geom_point(shape=15, aes(color=csi)) +
   scale_color_gradient2(limits=c(0,1), midpoint = 0.5,
                         low = "black", mid = "red3", high = "yellow") +
   theme(panel.ontop = F, panel.grid = element_blank(),
@@ -490,7 +466,7 @@ if(model_name=="Lasso"){
     geom_polygon(data = world, aes(long, lat, group=group),
                  fill="white", color="black", size=0.3) +
     geom_point(shape=15, aes(color=coeff_kep)) +
-    scale_color_gradient(limits=c(1,30),
+    scale_color_gradient(limits=c(1,33),
                          low = "pink", high = "darkblue") +
     theme(panel.ontop = F, panel.grid = element_blank(),
           panel.border = element_rect(colour = "black", fill = NA),
