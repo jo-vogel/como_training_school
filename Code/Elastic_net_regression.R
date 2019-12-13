@@ -192,7 +192,7 @@ alpha_elastic <- 0.5
 
 #which lambda?
 lambda_VALS <- c("lambda.min", "lambda.1se")
-lambda_val <- lambda_VALS[2]
+lambda_val <- lambda_VALS[1]
 
 if(lambda_val == "lambda.min"){
   load(file = paste("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/",
