@@ -8,16 +8,17 @@ library(scales)
 library(viridis)
 library(maps)
 library(glmnet)
+library(pbapply)
 
 # Load model output ####
 ########################
 
 # source('./Code/Lasso_interact_global.R') # takes ca. 3 hours
 path_to_NH_files <- "D:/user/vogelj/Data/Group project Como"
-# source('./Code/Lasso_interact_global_preparation.R')
-# load("D:/user/vogelj/Group_project/Code/Workspaces/cv_fit_complete.RData") # monthly model
-source('./Code/Lasso_interact_seasonal_global_preparation.R')
-load("D:/user/vogelj/Group_project/Code/Workspaces/cv_fit_seasonal.RData") # seasonal model
+source('./Code/Lasso_interact_global_preparation.R')
+load("D:/user/vogelj/Group_project/Code/Workspaces/cv_fit_complete.RData") # monthly model
+# source('./Code/Lasso_interact_seasonal_global_preparation.R')
+# load("D:/user/vogelj/Group_project/Code/Workspaces/cv_fit_seasonal.RData") # seasonal model
 
 
 
@@ -66,10 +67,10 @@ speci[work_pix] <- sapply(seq_along(work_pix), function(x){InformationValue::spe
                                                                                          threshold = segreg_th)})
 
 obs_pred <- lapply(seq_along(work_pix), function(x){cbind(y1_test_list_red[[x]],fitted.results_model[[x]])})
-tp <- sapply(seq_along(work_pix), function(x){sum(rowSums(obs_pred[[x]])==2)})
-tn <- sapply(seq_along(work_pix), function(x){sum(rowSums(obs_pred[[x]])==0)})
-fp <- sapply(seq_along(work_pix), function(x){sum(obs_pred[[x]][,1]==0 & obs_pred[[x]][,2]==1)})
-fn <- sapply(seq_along(work_pix), function(x){sum(obs_pred[[x]][,1]==1 & obs_pred[[x]][,2]==0)})
+tp <- sapply(seq_along(work_pix), function(x){sum(rowSums(obs_pred[[x]])==2)}) # Correct rejections
+tn <- sapply(seq_along(work_pix), function(x){sum(rowSums(obs_pred[[x]])==0)}) # Hits
+fp <- sapply(seq_along(work_pix), function(x){sum(obs_pred[[x]][,1]==0 & obs_pred[[x]][,2]==1)}) # Misses
+fn <- sapply(seq_along(work_pix), function(x){sum(obs_pred[[x]][,1]==1 & obs_pred[[x]][,2]==0)}) # False alarm
 con_tab1 <- sapply(seq_along(work_pix), function(x){matrix(c(tp[x],fn[x],fp[x],tn[x]),nrow=2,ncol=2)})
 # spec <- tn/(tn+fp) 
 # sens <- tp/(tp+fn) 
@@ -110,8 +111,8 @@ ggplot(data = DF_miscla, aes(x=lon, y=lat)) +
   theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
         legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
   X11(width = 20, height = 7)
-# ggsave(file="D:/user/vogelj/Group_project/Output/Plots/Mis_class_error_lasso_interact_map.png")
-ggsave(file="D:/user/vogelj/Group_project/Output/Plots/Mis_class_error_lasso_interact_seasonal_map.png")
+ggsave(file="D:/user/vogelj/Group_project/Output/Plots/Mis_class_error_lasso_interact_map.png")
+# ggsave(file="D:/user/vogelj/Group_project/Output/Plots/Mis_class_error_lasso_interact_seasonal_map.png")
 
 
 # Plot specificity ####
@@ -139,8 +140,8 @@ ggplot(data = DF_speci, aes(x=lon, y=lat)) +
   theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
         legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
   X11(width = 20, height = 7)
-# ggsave(file="D:/user/vogelj/Group_project/Output/Plots/Specificity_lasso_interact_map.png")
-ggsave(file="D:/user/vogelj/Group_project/Output/Plots/Specificity_lasso_interact_seasonal_map.png")
+ggsave(file="D:/user/vogelj/Group_project/Output/Plots/Specificity_lasso_interact_map.png")
+# ggsave(file="D:/user/vogelj/Group_project/Output/Plots/Specificity_lasso_interact_seasonal_map.png")
 
 
 
@@ -169,8 +170,8 @@ ggplot(data = DF_sensi, aes(x=lon, y=lat)) +
   theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
         legend.title = element_text(size = 15), legend.text = element_text(size = 14))  +
   X11(width = 20, height = 7)
-# ggsave(file="D:/user/vogelj/Group_project/Output/Plots/Sensitivity_lasso_interact_map.png")
-ggsave(file="D:/user/vogelj/Group_project/Output/Plots/Sensitivity_lasso_interact_seasonal_map.png")
+ggsave(file="D:/user/vogelj/Group_project/Output/Plots/Sensitivity_lasso_interact_map.png")
+# ggsave(file="D:/user/vogelj/Group_project/Output/Plots/Sensitivity_lasso_interact_seasonal_map.png")
 
 
 # Plot critical succes index (CSI) ####
@@ -198,8 +199,8 @@ ggplot(data = DF_csi, aes(x=lon, y=lat)) +
   theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
         legend.title = element_text(size = 15), legend.text = element_text(size = 14))  +
   X11(width = 20, height = 7)
-# ggsave(file="D:/user/vogelj/Group_project/Output/Plots/CSI_lasso_interact_map.png")
-ggsave(file="D:/user/vogelj/Group_project/Output/Plots/CSI_lasso_interact_seasonal_map.png")
+ggsave(file="D:/user/vogelj/Group_project/Output/Plots/CSI_lasso_interact_map.png")
+# ggsave(file="D:/user/vogelj/Group_project/Output/Plots/CSI_lasso_interact_seasonal_map.png")
 
 
 # Correlation between yield and specificity or miscla error ####
@@ -270,8 +271,8 @@ cor(mean_yield, speci)
     X11(width = 20, height = 7)
     # d + scale_fill_discrete(breaks=c(2,4,6,8,10), labels = c("A", "B", "C", "D", "E"))
 
-  # ggsave(file="D:/user/vogelj/Group_project/Output/Plots/Number_of_coefficients_lasso_interact_map.png")
-  ggsave(file="D:/user/vogelj/Group_project/Output/Plots/Number_of_coefficients_lasso_interact_seasonal_map.png")
+  ggsave(file="D:/user/vogelj/Group_project/Output/Plots/Number_of_coefficients_lasso_interact_map.png")
+  # ggsave(file="D:/user/vogelj/Group_project/Output/Plots/Number_of_coefficients_lasso_interact_seasonal_map.png")
 # }
   plot(table(coeff_kep))  # overview of distribution of the number of coefficients
   
@@ -314,8 +315,8 @@ cor(mean_yield, speci)
     theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
           legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
     X11(width = 20, height = 7)
-  # ggsave(file="D:/user/vogelj/Group_project/Output/Plots/Number_of_coefficient_interactions_lasso_interact_map.png")
-  ggsave(file="D:/user/vogelj/Group_project/Output/Plots/Number_of_coefficient_interactions_lasso_interact_seasonal_map.png")
+  ggsave(file="D:/user/vogelj/Group_project/Output/Plots/Number_of_coefficient_interactions_lasso_interact_map.png")
+  # ggsave(file="D:/user/vogelj/Group_project/Output/Plots/Number_of_coefficient_interactions_lasso_interact_seasonal_map.png")
   plot(table(num_interact))  # overview of distribution of the number of interactions of coefficients
 
   
@@ -397,8 +398,8 @@ cor(mean_yield, speci)
     theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
           legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
     X11(width = 20, height = 7)
-  # ggsave(file="D:/user/vogelj/Group_project/Output/Plots/Number_of_variables_vpd_tmax_prec.png")
-  ggsave(file="D:/user/vogelj/Group_project/Output/Plots/Number_of_variables_vpd_tmax_prec_seasonal.png")
+  ggsave(file="D:/user/vogelj/Group_project/Output/Plots/Number_of_variables_vpd_tmax_prec.png")
+  # ggsave(file="D:/user/vogelj/Group_project/Output/Plots/Number_of_variables_vpd_tmax_prec_seasonal.png")
   
   # Plot number of months  
   DF_nbdiffseason <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], nb_season = nb_of_seas)
@@ -423,8 +424,8 @@ cor(mean_yield, speci)
     theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
           legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
     X11(width = 20, height = 7)
-  # ggsave(file="D:/user/vogelj/Group_project/Output/Plots/Number_of_seasons.png")
-  ggsave(file="D:/user/vogelj/Group_project/Output/Plots/Number_of_seasons_seasonal.png")
+  ggsave(file="D:/user/vogelj/Group_project/Output/Plots/Number_of_seasons.png")
+  # ggsave(file="D:/user/vogelj/Group_project/Output/Plots/Number_of_seasons_seasonal.png")
   
   
   
@@ -443,3 +444,36 @@ cor(mean_yield, speci)
   auc <- sapply(seq_along(work_pix), function(x) performance(pred[[x]], measure = "auc"))
   # auc@y.values[[1]]
   
+  
+  
+  
+  # Finding appropriate cutoff level ####
+  #######################################
+  
+  source("./Code/unbalanced_funtions.R") 
+  mypix <- 6 # decide by having a look at "con_tab" or see later in summary(cm_info$data$type)
+  mypix <- exam_pixels[4] # decide by having a look at "con_tab" or see later in summary(cm_info$data$type)
+  # data_test <- data.frame("Actuals"=y1_test_list_red[[mypix]], "Predictions"=fitted.results_model[[mypix]])
+  # data_test <- data.frame("Actuals"=as.factor(y1_test_list_red[[mypix]]), "Predictions"=as.factor(fitted.results_model[[mypix]]))
+  data_test <- data.frame("Actuals"=y1_test_list_red[[mypix]], "Predictions"=mypred[[mypix]])
+  cm_info <- ConfusionMatrixInfo( data = data_test, predict = "Predictions", 
+                                  actual = "Actuals", cutoff = .79 )
+  cm_info$plot
+  
+  cost_fp <- 200 # Misses: this should be associated with a higher cost, as it is more detrimental
+  cost_fn <- 100 # False alarms
+  roc_info <- ROCInfo( data = cm_info$data, predict = "predict", 
+                       actual = "actual", cost.fp = cost_fp, cost.fn = cost_fn )
+  x11()
+  grid.draw(roc_info$plot)
+  
+  
+
+data_test_all <- pblapply(1:length(work_pix), function(x){ data.frame("Actuals"=y1_test_list_red[[x]], "Predictions"=mypred[[x]])})
+cm_info_all <-  pblapply(1:length(work_pix), function(x){ConfusionMatrixInfo( data = data_test_all[[x]], predict = "Predictions", 
+                                                                               actual = "Actuals", cutoff = .5 )})
+roc_info_all <- pblapply(1:length(work_pix), function(x){ROCInfo( data = cm_info_all[[x]]$data, predict = "predict", 
+                     actual = "actual", cost.fp = cost_fp, cost.fn = cost_fn )})
+# x11()
+exam_pixels <- sample(963,10)
+pblapply(exam_pixels, function(x){x11();grid.draw(roc_info_all[[x]]$plot)})
