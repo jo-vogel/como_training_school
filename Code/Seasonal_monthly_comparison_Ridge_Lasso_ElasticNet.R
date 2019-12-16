@@ -9,7 +9,7 @@ print("Are you sure you want to run the next line? ;) everything in the environm
 rm(list=ls(all=TRUE))
 
 # which method? model_name in c("Ridge", "Lasso", "ElasticNet")
-model_name <- "ElasticNet"
+model_name <- "Lasso"
 stopifnot(model_name %in% c("Ridge", "Lasso", "ElasticNet"))
 
 
@@ -25,16 +25,16 @@ if(model_name=="ElasticNet"){
   no_model <- 0.5
 }
 
-
-#############################
-#### Load seasonal model ####
-#############################
-
 #threshold for bad yields in c(0.025,0.05,0.1)
 threshold <- 0.05
 
 #which segregation threshold for the model?
 segreg_th <- 0.5
+
+
+#############################
+#### Load seasonal model ####
+#############################
 
 ##### Initialisation, librairies, data #####
 
@@ -177,27 +177,46 @@ for (i in 1:pix_num){
 }
 
 
+if(model_name == "ElasticNet"){
+  load(file = paste("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/",
+                  "SeasonalElasticNet_lambdamin_alpha05_threshbadyield", str_pad(threshold*100, 3, pad = "0"),".RData", sep = ""))
+} else {
+  load(file = paste("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/seas_",
+                    model_name,"_lambdamin_threshbadyield", str_pad(threshold*100, 3, pad = "0"),".RData", sep = ""))
+} #end if else
 
 
-load(file = paste("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/seas_",
-                  model_name,"_lambda1se_threshbadyield", str_pad(threshold*100, 3, pad = "0"),".RData", sep = ""))
-load(file = paste("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/seas_",
-                  model_name,"_lambdamin_threshbadyield", str_pad(threshold*100, 3, pad = "0"),".RData", sep = ""))
-load(file = paste("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/Seasonal",
-                  model_name,"_lambdamin_alpha",str_pad(alpha_elastic*10, 2, pad = "0"),"_threshbadyield",
-                  str_pad(threshold*100, 3, pad = "0"),".RData", sep = ""))
+###########################
+#### Load monthly data ####
+###########################
+# Pauline:
+path_to_NH_files <- "C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/Data/Global"
+output_path <- "C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/Images/Model_Comparison/"
 
+# # Johannes:
+# path_to_NH_files <- "D:/user/vogelj/Data/Group project Como"
+# output_path <- "D:/user/vogelj/Group_project/Output/Plots/"
+
+source('./Code/Lasso_interact_global_preparation.R') # load necessary files
+
+if(model_name == "ElasticNet"){
+  load(file = paste("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/",
+                    "Elastic-net_lambdamin_alpha05_threshbadyield", str_pad(threshold*100, 3, pad = "0"),".RData", sep = ""))
+} else {
+  load(file = paste("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/",
+                    model_name,"_lambdamin_threshbadyield", str_pad(threshold*100, 3, pad = "0"),".RData", sep = ""))
+} #end if else
 
 
 #### Model performance ####
+message("Change model name accordingly!")
+test_length <- length(fit_pix_lambdamin)
 
-test_length <- length(model_fit)
-
-coefs <- lapply(1:test_length, function(x){coef(model_fit[[x]])})
+coefs <- lapply(1:test_length, function(x){coef(fit_pix_lambdamin[[x]])})
 
 
 
-mypred <- lapply(1:test_length, function(x){predict(model_fit[[x]],
+mypred <- lapply(1:test_length, function(x){predict(fit_pix_lambdamin[[x]],
                                                     as.matrix(x1_test_list[[x]]),type="response")})
 
 #which segregation threshold for the model?
@@ -226,18 +245,47 @@ for(pix in 1:length(coefs)){
   }
 }#end for pix
 
+monthly_performance <- data.frame(csi=csi, speci=speci, lon=lon_subset, lat=lat_subset)
+
+save(monthly_performance, file=paste("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/perf_month_",
+                                      model_name,"_lambdamin_threshbadyield", str_pad(threshold*100, 3, pad = "0"),".RData", sep = ""))
 
 
 
 
 
+################################
+#### Create comparison maps ####
+################################
 
-# Create comparison maps ####
-#############################
+# Clean everything
+print("Are you sure you want to run the next line? ;) everything in the environment will be removed")
+rm(list=ls(all=TRUE))
+
+# which method? model_name in c("Ridge", "Lasso", "ElasticNet")
+model_name <- "ElasticNet"
+stopifnot(model_name %in% c("Ridge", "Lasso", "ElasticNet"))
+
+output_path <- "C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/Images/Month_VS_Seas/"
+
+#threshold for bad yields in c(0.025,0.05,0.1)
+threshold <- 0.05
+
+#which segregation threshold for the model?
+segreg_th <- 0.5
+
+
+load(file=paste("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/perf_month_",
+                model_name,"_lambdamin_threshbadyield", str_pad(threshold*100, 3, pad = "0"),".RData", sep = ""))
+
+load(file=paste("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/perf_seas_",
+                model_name,"_lambdamin_threshbadyield", str_pad(threshold*100, 3, pad = "0"),".RData", sep = ""))
+
+
 world <- map_data("world")
 substract_score_plot <- function(score_name, score_1, model1_name, score_2, model2_name){#score name in c("speci","csi", EDI")
   sub_score <- score_1 - score_2
-  DF_sub <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], sub_score = sub_score)
+  DF_sub <- data.frame(lon=monthly_performance$lon, lat = monthly_performance$lat, sub_score = sub_score)
   
   ggplot(data = DF_sub, aes(x=DF_sub$lon, y=DF_sub$lat)) +
     geom_polygon(data = world, aes(long, lat, group=group),
@@ -250,7 +298,7 @@ substract_score_plot <- function(score_name, score_1, model1_name, score_2, mode
     ylab("Lat (°N)") +
     xlab("Lon (°E)") +
     coord_fixed(xlim = c(-120, 135),
-                ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
+                ylim = c(min(DF_sub$lat)-1, max(DF_sub$lat+1)),
                 ratio = 1.3)+
     labs(color=paste("Diff in", score_name),
          title = paste("Difference",score_name,model1_name, "-", model2_name),
@@ -264,26 +312,14 @@ substract_score_plot <- function(score_name, score_1, model1_name, score_2, mode
 
 # Specificity map #####
 #######################
-pairs(cbind(speci_bestglm, speci_lwi, speci_ridge, speci_simplelasso, speci_elastic))
+pairs(cbind(monthly_performance$speci, seasonal_performance$csi))
 
-
-
-possible_pairs <- c("BestGLM-Ridge",
-                    "Lasso_with_interact-Ridge",
-                    "LassoSimple-Ridge",
-                    "Best GLM-Lasso_with_interact",
-                    "Best GLM-LassoSimple",
-                    "Lasso_with_interact-LassoSimple",
-                    "Elastic-BestGLM",
-                    "Elastic-Ridge",
-                    "Elastic-LassoSimple",
-                    "Elastic-Lasso_with_interact")
 
 score <- "Specificity"
-model_1 <- "Elastic"
-score_1 <- speci_elastic
-model_2 <- "Lasso_with_interact"
-score_2 <- speci_lwi
+model_1 <- paste(model_name, "_monthly", sep = "")
+score_1 <- monthly_performance$speci
+model_2 <- paste(model_name, "_seasonal", sep = "")
+score_2 <- seasonal_performance$speci
 
 substract_score_plot(score_name = score,
                      score_1 = score_1, model1_name = model_1,
@@ -293,13 +329,14 @@ ggsave(paste(output_path, score,"_",model_1,"VS",model_2,".png", sep = ""), widt
 
 # CSI map ####
 ##############
-pairs(cbind(csi_bestglm, csi_lwi, csi_ridge, csi_simplelasso, csi_elastic))
+pairs(cbind(monthly_performance$csi, seasonal_performance$csi))
 
-score <- "CSI"
-model_1 <- "Elastic"
-score_1 <- csi_elastic
-model_2 <- "BestGLM"
-score_2 <- csi_bestglm
+
+score <- "csi"
+model_1 <- paste(model_name, "_monthly", sep = "")
+score_1 <- monthly_performance$csi
+model_2 <- paste(model_name, "_seasonal", sep = "")
+score_2 <- seasonal_performance$csi
 
 substract_score_plot(score_name = score,
                      score_1 = score_1, model1_name = model_1,
