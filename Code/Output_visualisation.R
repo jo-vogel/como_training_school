@@ -468,16 +468,22 @@ cor(mean_yield, speci)
   x11()
   grid.draw(roc_info$plot)
   
-  
 
-data_test_all <- pblapply(1:length(work_pix), function(x){ data.frame("Actuals"=y1_test_list_red[[x]], "Predictions"=mypred[[x]])})
-cm_info_all <-  pblapply(1:length(work_pix), function(x){ConfusionMatrixInfo( data = data_test_all[[x]], predict = "Predictions", 
+y1_train_list_red <- lapply(work_pix,function(work_pix){y1_train_list[[work_pix]]})  
+mypred_train <- lapply(work_pix, function(x){predict(cv_fit[[x]],x1_train_list[[x]],type="response")}) 
+
+# Data set with actuals and predictions
+# data_test_all <- pblapply(1:length(work_pix), function(x){ data.frame("Actuals"=y1_test_list_red[[x]], "Predictions"=mypred[[x]])}) # test data
+data_train_all <- pblapply(1:length(work_pix), function(x){ data.frame("Actuals"=y1_train_list_red[[x]], "Predictions"=mypred_train[[x]])}) # train data
+# Calculate confusion matrix
+cm_info_all <-  pblapply(1:length(work_pix), function(x){ConfusionMatrixInfo( data = data_train_all[[x]], predict = "Predictions", 
                                                                                actual = "Actuals", cutoff = .5 )})
+# Calculate ROC curve and cost function
 roc_info_all <- pblapply(1:length(work_pix), function(x){ROCInfo( data = cm_info_all[[x]]$data, predict = "predict", 
-                     actual = "actual", cost.fp = cost_fp, cost.fn = cost_fn )})
+                     actual = "actual", cost.fp = cost_fp, cost.fn = cost_fn )}) # note: the cutoff from cm_info_all has no role here
 # x11()
-exam_pixels <- sample(963,10)
-pblapply(exam_pixels, function(x){x11();grid.draw(roc_info_all[[x]]$plot)})
+exam_pixels <- sample(963,10) # Choose some examplary pixels
+pblapply(exam_pixels, function(x){x11();grid.draw(roc_info_all[[x]]$plot)}) # plot ROC and cost function
 cutoff_avg <- pbsapply(1:length(work_pix), function(x){roc_info_all[[x]]$cutoff})
 mean(cutoff_avg)
 boxplot(cutoff_avg)
