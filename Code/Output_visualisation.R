@@ -449,6 +449,7 @@ cor(mean_yield, speci)
   
   # Finding appropriate cutoff level ####
   #######################################
+  # Pauline did similar investigations (however without a criterion for determining the cutoff): see her email from 31.10.19
   
   source("./Code/unbalanced_funtions.R") 
   mypix <- 6 # decide by having a look at "con_tab" or see later in summary(cm_info$data$type)
@@ -460,7 +461,7 @@ cor(mean_yield, speci)
                                   actual = "Actuals", cutoff = .79 )
   cm_info$plot
   
-  cost_fp <- 200 # Misses: this should be associated with a higher cost, as it is more detrimental
+  cost_fp <- 100 # Misses: this should be associated with a higher cost, as it is more detrimental
   cost_fn <- 100 # False alarms
   roc_info <- ROCInfo( data = cm_info$data, predict = "predict", 
                        actual = "actual", cost.fp = cost_fp, cost.fn = cost_fn )
@@ -477,3 +478,6 @@ roc_info_all <- pblapply(1:length(work_pix), function(x){ROCInfo( data = cm_info
 # x11()
 exam_pixels <- sample(963,10)
 pblapply(exam_pixels, function(x){x11();grid.draw(roc_info_all[[x]]$plot)})
+cutoff_avg <- pbsapply(1:length(work_pix), function(x){roc_info_all[[x]]$cutoff})
+mean(cutoff_avg)
+boxplot(cutoff_avg)
