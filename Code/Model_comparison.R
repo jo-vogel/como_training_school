@@ -500,3 +500,23 @@ boxplot(cbind(speci_bestglm, speci_lwi, speci_ridge, speci_simplelasso),main="Sp
 boxplot(cbind(csi_bestglm, csi_lwi, csi_ridge, csi_simplelasso),main="CSI",names=box_names, col='lightblue')
 boxplot(cbind(EDI_bestglm, EDI_lwi, EDI_ridge, EDI_simplelasso),main="EDI",names=box_names, col='lightblue')
 dev.off()
+
+
+
+# Scatterplot performance VS mean yield
+
+mean_yield <- apply(yield, MARGIN = 1, FUN = mean, na.rm=T)
+
+par(mfrow=c(2,3))
+plot(mean_yield, csi_simplelasso, xlab="Mean Yield", ylab="CSI", main="Lasso w/o interaction\nmonthly data")
+plot(mean_yield, csi_elastic, xlab="Mean Yield", ylab="CSI", main="Elastic Net\nmonthly data")
+plot(mean_yield, csi_ridge, xlab="Mean Yield", ylab="CSI", main="Ridge\nmonthly data")
+plot(mean_yield, csi_bestglm, xlab="Mean Yield", ylab="CSI", main="Best GLM\nmonthly data")
+plot(mean_yield, csi_lwi, xlab="Mean Yield", ylab="CSI", main="Lasso with interaction\nmonthly data")
+
+par(mfrow=c(2,3))
+plot(mean_yield, speci_simplelasso, xlab="Mean Yield", ylab="Specificity", main="Lasso w/o interaction\nmonthly data")
+plot(mean_yield, speci_elastic, xlab="Mean Yield", ylab="Specificity", main="Elastic Net\nmonthly data")
+plot(mean_yield, speci_ridge, xlab="Mean Yield", ylab="Specificity", main="Ridge\nmonthly data")
+plot(mean_yield, speci_bestglm, xlab="Mean Yield", ylab="Specificity", main="Best GLM\nmonthly data")
+plot(mean_yield, speci_lwi, xlab="Mean Yield", ylab="Specificity", main="Lasso with interaction\nmonthly data")
