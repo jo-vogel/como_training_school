@@ -10,7 +10,7 @@ print("Are you sure you want to run the next line? ;) everything in the environm
 rm(list=ls(all=TRUE))
 
 # which method? model_name in c("Ridge", "Lasso)
-model_name <- "ElasticNet"
+model_name <- "Lasso"
 # stopifnot(model_name %in% c("Ridge", "Lasso"))
 
 alpha_elastic <- 0.5
@@ -279,7 +279,7 @@ load(file = paste("C:/Users/admin/Documents/Damocles_training_school_Como/GroupP
 #######################
 #Start with Lambda min
 
-MODEL_chosen <- lasso_model_lambda1se
+MODEL_chosen <- lasso_model_lambdamin
 
 test_length <- length(MODEL_chosen)
 
@@ -315,6 +315,13 @@ for(pix in 1:length(coefs)){
     csi[pix] <- 0
   }
 }#end for pix
+
+
+csi_lambdamin <- csi
+speci_lambdamin <- speci
+
+# csi_lambda1se <- csi
+# speci_lambda1se <- speci
 
 # Plots ####
 world <- map_data("world")
@@ -412,3 +419,22 @@ if(model_name=="Lasso"){
           legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
     X11(width = 20, height = 7)
 }#end if Lasso
+
+
+
+# Scatterplot performance VS mean yield
+
+mean_yield <- apply(yield, MARGIN = 1, FUN = mean, na.rm=T)
+
+plotfun <- function(x,y,...){
+  points(x,y,...) #plot them
+  abline(a = 0, b=1, col="green", lwd=2) #y=x line
+}
+pairs(cbind(mean_yield, csi_lambdamin, speci_lambdamin,
+            csi_lambda1se, speci_lambda1se),
+      main=paste(model_name, ", seasonal data", sep = ""),
+      upper.panel = plotfun, lower.panel=NULL)
+
+pairs(cbind(mean_yield, csi_lambdamin, speci_lambdamin,
+            csi_lambda1se, speci_lambda1se),
+      main=paste(model_name, ", seasonal data", sep = ""), lower.panel=NULL)
