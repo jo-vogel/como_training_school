@@ -17,6 +17,7 @@ library(pbapply)
 path_to_NH_files <- "D:/user/vogelj/Data/Group project Como"
 source('./Code/Lasso_interact_global_preparation.R')
 load("D:/user/vogelj/Group_project/Code/Workspaces/cv_fit_complete.RData") # monthly model
+# load("D:/user/vogelj/Group_project/Code/Workspaces/cv_fit_no_int_act.RData") # monthly model without interactions
 # source('./Code/Lasso_interact_seasonal_global_preparation.R')
 # load("D:/user/vogelj/Group_project/Code/Workspaces/cv_fit_seasonal.RData") # seasonal model
 
@@ -76,6 +77,106 @@ con_tab1 <- sapply(seq_along(work_pix), function(x){matrix(c(tp[x],fn[x],fp[x],t
 # sens <- tp/(tp+fn) 
 csi <- rep(NA,965)
 csi[work_pix] <- sapply(seq_along(work_pix), function(x){tn[x]/(tn[x]+fp[x]+fn[x])})
+
+
+
+# Finding appropriate cutoff level ####
+#######################################
+# Pauline did similar investigations (however without a criterion for determining the cutoff): see her email from 31.10.19
+
+source("./Code/unbalanced_funtions.R") 
+
+# Example for one pixel
+exam_pixels <- sample(963,10) # Choose some examplary pixels
+mypix <- 6 # decide by having a look at "con_tab" or see later in summary(cm_info$data$type)
+mypix <- exam_pixels[4] # decide by having a look at "con_tab" or see later in summary(cm_info$data$type)
+# data_test <- data.frame("Actuals"=y1_test_list_red[[mypix]], "Predictions"=fitted.results_model[[mypix]])
+# data_test <- data.frame("Actuals"=as.factor(y1_test_list_red[[mypix]]), "Predictions"=as.factor(fitted.results_model[[mypix]]))
+data_test <- data.frame("Actuals"=y1_test_list_red[[mypix]], "Predictions"=mypred[[mypix]])
+cm_info <- ConfusionMatrixInfo( data = data_test, predict = "Predictions", 
+                                actual = "Actuals", cutoff = .79 )
+cm_info$plot
+
+cost_fp <- 100 # Misses: this should be associated with a higher cost, as it is more detrimental
+cost_fn <- 100 # False alarms
+roc_info <- ROCInfo( data = cm_info$data, predict = "predict", 
+                     actual = "actual", cost.fp = cost_fp, cost.fn = cost_fn )
+x11()
+grid.draw(roc_info$plot)
+
+
+# Procedure for whole training data set
+y1_train_list_red <- lapply(work_pix,function(work_pix){y1_train_list[[work_pix]]})  
+mypred_train <- lapply(work_pix, function(x){predict(cv_fit[[x]],x1_train_list[[x]],type="response")}) 
+
+# Data set with actuals and predictions
+# data_test_all <- pblapply(1:length(work_pix), function(x){ data.frame("Actuals"=y1_test_list_red[[x]], "Predictions"=mypred[[x]])}) # test data
+data_train_all <- pblapply(1:length(work_pix), function(x){ data.frame("Actuals"=y1_train_list_red[[x]], "Predictions"=mypred_train[[x]])}) # train data
+# Calculate confusion matrix
+cm_info_all <-  pblapply(1:length(work_pix), function(x){ConfusionMatrixInfo( data = data_train_all[[x]], predict = "Predictions", 
+                                                                              actual = "Actuals", cutoff = .5 )})
+# Calculate ROC curve and cost function
+roc_info_all <- pblapply(1:length(work_pix), function(x){ROCInfo( data = cm_info_all[[x]]$data, predict = "predict", 
+                                                                  actual = "actual", cost.fp = cost_fp, cost.fn = cost_fn )}) # note: the cutoff from cm_info_all has no role here
+# x11()
+pblapply(exam_pixels, function(x){x11();grid.draw(roc_info_all[[x]]$plot)}) # plot ROC and cost function
+cutoff_avg <- pbsapply(1:length(work_pix), function(x){roc_info_all[[x]]$cutoff})
+mean(cutoff_avg)
+boxplot(cutoff_avg)
+
+
+# Assess performance with adjusted cutoff in test data set
+data_test_all <- pblapply(1:length(work_pix), function(x){ data.frame("Actuals"=y1_test_list_red[[x]], "Predictions"=mypred[[x]])})
+
+cm_info_all_test<-  pblapply(1:length(work_pix), function(x){ConfusionMatrixInfo( data = data_test_all[[x]], predict = "Predictions", 
+                                                                                  actual = "Actuals", cutoff = 0.5 )})
+tp_pre <- sapply(seq_along(work_pix), function(x){summary(cm_info_all_test[[x]]$data$type)[4]}) # True positive, Correct rejections
+tn_pre <- sapply(seq_along(work_pix), function(x){summary(cm_info_all_test[[x]]$data$type)[3]}) # True negative, Hits
+fp_pre <- sapply(seq_along(work_pix), function(x){summary(cm_info_all_test[[x]]$data$type)[2]}) # False positive, Misses
+fn_pre <- sapply(seq_along(work_pix), function(x){summary(cm_info_all_test[[x]]$data$type)[1]}) # False negative, False alarm
+# Adjust confusion matrix_test
+cm_info_all_adj <-  pblapply(1:length(work_pix), function(x){ConfusionMatrixInfo( data = data_test_all[[x]], predict = "Predictions", 
+                                                                                  actual = "Actuals", cutoff = mean(cutoff_avg) )})
+
+tp_adj <- sapply(seq_along(work_pix), function(x){summary(cm_info_all_adj[[x]]$data$type)[4]}) # True positive, Correct rejections
+tn_adj <- sapply(seq_along(work_pix), function(x){summary(cm_info_all_adj[[x]]$data$type)[3]}) # True negative, Hits
+fp_adj <- sapply(seq_along(work_pix), function(x){summary(cm_info_all_adj[[x]]$data$type)[2]}) # False positive, Misses
+fn_adj <- sapply(seq_along(work_pix), function(x){summary(cm_info_all_adj[[x]]$data$type)[1]}) # False negative, False alarm
+
+mean(tp_adj,na.rm=T);mean(tp_pre,na.rm=T) # less true positives after adjusting
+median(tp_adj,na.rm=T);median(tp_pre,na.rm=T) # less true positives after adjusting
+plot(tp_adj,col='green',ylim=c(100,950)); points(tp_pre,col='blue') # less true positives after adjusting
+mean(tn_adj,na.rm=T);mean(tn_pre,na.rm=T) # seems like less true negatives after adjusting, but this is due to outliers before
+median(tn_adj,na.rm=T);median(tn_pre,na.rm=T) # more true negatives after adjusting
+plot(tn_adj,col='green'); points(tn_pre,col='blue') # some weird outliers are produced
+plot(tn_adj,col='green',ylim=c(0,100)); points(tn_pre,col='blue') # more true negatives after adjusting
+mean(fp_adj,na.rm=T);mean(fp_pre,na.rm=T) # less false positives
+median(fp_adj,na.rm=T);median(fp_pre,na.rm=T) # less false positives
+plot(fp_adj,col='green'); points(fp_pre,col='blue') # some weird outliers are produced
+plot(fp_adj,col='green',ylim=c(0,100)); points(fp_pre,col='blue') # less false positives
+mean(fn_adj,na.rm=T);mean(fn_pre,na.rm=T) # more false negatives after adjusting
+median(fn_adj,na.rm = T);median(fn_pre,na.rm = T) # more false negatives after adjusting
+plot(fn_adj,col='green'); points(fn_pre,col='blue') # more false negatives after adjusting
+
+csi_adj <- rep(NA,965)
+csi_adj[work_pix] <- sapply(seq_along(work_pix), function(x){tn_adj[x]/(tn_adj[x]+fp_adj[x]+fn_adj[x])})
+
+fitted.results_model_adj <- lapply(seq_along(work_pix), function(x){ifelse(mypred[[x]] > mean(cutoff_avg),1,0)})
+sensi_adj <- rep(NA,965)
+speci_adj <- rep(NA,965)
+sensi_adj[work_pix] <- sapply(seq_along(work_pix), function(x){InformationValue::sensitivity(y1_test_list_red[[x]],fitted.results_model_adj[[x]],
+                                                                                             threshold = mean(cutoff_avg))})
+speci_adj[work_pix] <- sapply(seq_along(work_pix), function(x){InformationValue::specificity(y1_test_list_red[[x]],fitted.results_model_adj[[x]],
+                                                                                             threshold = mean(cutoff_avg))})
+
+csi_diff <- csi_adj - csi
+plot(csi_diff);mean(csi_diff, na.rm=T)
+speci_diff <- speci_adj - speci
+plot(speci_diff);mean(speci_diff, na.rm=T)
+sensi_diff <- sensi_adj- sensi
+plot(sensi_diff);mean(sensi_diff, na.rm=T)
+
+
 
 
 
@@ -144,6 +245,30 @@ ggsave(file="D:/user/vogelj/Group_project/Output/Plots/Specificity_lasso_interac
 # ggsave(file="D:/user/vogelj/Group_project/Output/Plots/Specificity_lasso_interact_seasonal_map.png")
 
 
+DF_speci_adj <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], specificity = speci_adj)
+ggplot(data = DF_speci_adj, aes(x=lon, y=lat)) +
+  geom_polygon(data = world, aes(long, lat, group=group),
+               fill="white", color="black", size=0.3) +
+  geom_point(shape=15, aes(color=speci_adj),size=0.7) +
+  scale_color_gradient2(limits=c(min(speci_adj,na.rm=T),max(speci_adj,na.rm=T)),midpoint=min(speci_adj,na.rm=T)+(max(speci_adj,na.rm=T)-min(speci_adj,na.rm=T))/2,
+                        low = "black", mid = "red3", high = "yellow") +
+  theme(panel.ontop = F, panel.grid = element_blank(),
+        panel.border = element_rect(colour = "black", fill = NA),
+        axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
+  ylab("Lat (°N)") +
+  xlab("Lon (°E)") +
+  coord_fixed(xlim = c(-120, 135),
+              ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
+              ratio = 1.3)+
+  labs(color="Specif.",
+       title = paste("Specificity (adj.), simple",model_name,"regression"),
+       subtitle = paste("Bad yield threshold=", threshold,
+                        ", segregation threshold=", segreg_th, sep = ""))+
+  theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
+        legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
+  X11(width = 20, height = 7)
+ggsave(file="D:/user/vogelj/Group_project/Output/Plots/Specificity_adj_lasso_interact_map.png")
+
 
 # Plot sensitivity ####
 
@@ -201,6 +326,31 @@ ggplot(data = DF_csi, aes(x=lon, y=lat)) +
   X11(width = 20, height = 7)
 ggsave(file="D:/user/vogelj/Group_project/Output/Plots/CSI_lasso_interact_map.png")
 # ggsave(file="D:/user/vogelj/Group_project/Output/Plots/CSI_lasso_interact_seasonal_map.png")
+
+
+DF_csi_adj <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], Critical_success_index = csi_adj)
+ggplot(data = DF_csi_adj, aes(x=lon, y=lat)) +
+  geom_polygon(data = world, aes(long, lat, group=group),
+               fill="white", color="black", size=0.3) +
+  geom_point(shape=15, aes(color=csi_adj),size=0.7) +
+  scale_color_gradient2(limits=c(min(csi_adj,na.rm=T),max(csi_adj,na.rm=T)),midpoint=min(csi_adj,na.rm=T)+(max(csi_adj,na.rm=T)-min(csi_adj,na.rm=T))/2,
+                        low = "black", mid = "red3", high = "yellow") +
+  theme(panel.ontop = F, panel.grid = element_blank(),
+        panel.border = element_rect(colour = "black", fill = NA),
+        axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
+  ylab("Lat (°N)") +
+  xlab("Lon (°E)") +
+  coord_fixed(xlim = c(-120, 135),
+              ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
+              ratio = 1.3)+
+  labs(color="CSI",
+       title = paste("Critical succes index (adj.), simple",model_name,"regression"),
+       subtitle = paste("Bad yield threshold=", threshold,
+                        ", segregation threshold=", segreg_th, sep = ""))+
+  theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
+        legend.title = element_text(size = 15), legend.text = element_text(size = 14))  +
+  X11(width = 20, height = 7)
+ggsave(file="D:/user/vogelj/Group_project/Output/Plots/CSI_adj_lasso_interact_map.png")
 
 
 # Correlation between yield and specificity or miscla error ####
@@ -446,44 +596,3 @@ cor(mean_yield, speci)
   
   
   
-  
-  # Finding appropriate cutoff level ####
-  #######################################
-  # Pauline did similar investigations (however without a criterion for determining the cutoff): see her email from 31.10.19
-  
-  source("./Code/unbalanced_funtions.R") 
-  mypix <- 6 # decide by having a look at "con_tab" or see later in summary(cm_info$data$type)
-  mypix <- exam_pixels[4] # decide by having a look at "con_tab" or see later in summary(cm_info$data$type)
-  # data_test <- data.frame("Actuals"=y1_test_list_red[[mypix]], "Predictions"=fitted.results_model[[mypix]])
-  # data_test <- data.frame("Actuals"=as.factor(y1_test_list_red[[mypix]]), "Predictions"=as.factor(fitted.results_model[[mypix]]))
-  data_test <- data.frame("Actuals"=y1_test_list_red[[mypix]], "Predictions"=mypred[[mypix]])
-  cm_info <- ConfusionMatrixInfo( data = data_test, predict = "Predictions", 
-                                  actual = "Actuals", cutoff = .79 )
-  cm_info$plot
-  
-  cost_fp <- 100 # Misses: this should be associated with a higher cost, as it is more detrimental
-  cost_fn <- 100 # False alarms
-  roc_info <- ROCInfo( data = cm_info$data, predict = "predict", 
-                       actual = "actual", cost.fp = cost_fp, cost.fn = cost_fn )
-  x11()
-  grid.draw(roc_info$plot)
-  
-
-y1_train_list_red <- lapply(work_pix,function(work_pix){y1_train_list[[work_pix]]})  
-mypred_train <- lapply(work_pix, function(x){predict(cv_fit[[x]],x1_train_list[[x]],type="response")}) 
-
-# Data set with actuals and predictions
-# data_test_all <- pblapply(1:length(work_pix), function(x){ data.frame("Actuals"=y1_test_list_red[[x]], "Predictions"=mypred[[x]])}) # test data
-data_train_all <- pblapply(1:length(work_pix), function(x){ data.frame("Actuals"=y1_train_list_red[[x]], "Predictions"=mypred_train[[x]])}) # train data
-# Calculate confusion matrix
-cm_info_all <-  pblapply(1:length(work_pix), function(x){ConfusionMatrixInfo( data = data_train_all[[x]], predict = "Predictions", 
-                                                                               actual = "Actuals", cutoff = .5 )})
-# Calculate ROC curve and cost function
-roc_info_all <- pblapply(1:length(work_pix), function(x){ROCInfo( data = cm_info_all[[x]]$data, predict = "predict", 
-                     actual = "actual", cost.fp = cost_fp, cost.fn = cost_fn )}) # note: the cutoff from cm_info_all has no role here
-# x11()
-exam_pixels <- sample(963,10) # Choose some examplary pixels
-pblapply(exam_pixels, function(x){x11();grid.draw(roc_info_all[[x]]$plot)}) # plot ROC and cost function
-cutoff_avg <- pbsapply(1:length(work_pix), function(x){roc_info_all[[x]]$cutoff})
-mean(cutoff_avg)
-boxplot(cutoff_avg)
