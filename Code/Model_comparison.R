@@ -346,13 +346,22 @@ colnames(Result_matrix_bestglm) = c("speci", "CSI", "EDI", "lon", "lat")
 # On the Drive you can find my data in:
 # Models/LASSO_with_interactions/cv_fit_complete.RData.RData
 load("D:/user/vogelj/Group_project/Code/Workspaces/cv_fit_complete.RData") # load model output
-
 #location on Pauline's Laptop
 # load("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/OtherModels/cv_fit_complete.Rdata")
+
 
 # Identify pixels with failed runs
 failed_pixels_lwi <- which(sapply(1:965, function(x) {is.character(cv_fit[[x]])})==1)
 work_pix_lwi <- pix_in[-failed_pixels_lwi] # working pixels
+
+# Adjust cutoff level
+source("./Code/cutoff_adjustment.R")
+y1_train_list_lwi <- y1_train_list
+x1_train_list_lwi <- x1_train_list
+cost_fp_lwi <- 100 # Misses: this should be associated with a higher cost, as it is more detrimental
+cost_fn_lwi <- 100 # False alarms  
+cutoff_lwi <- adjust_cutoff(x1_train_list = x1_train_list_lwi, y1_train_list = y1_train_list_lwi, 
+                            work_pix = work_pix_lwi, cost_fp = cost_fp_lwi, cost_fn= cost_fn_lwi)
 
 
 # Create specificity, CSI and EDI for Lasso w interactions ####
