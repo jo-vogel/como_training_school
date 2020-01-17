@@ -73,45 +73,54 @@ coord_all <- cbind(long_all,lati_all)
 # Process data ####
 ###################
 
-yields_3dim <- array(yield,dim=c(965,1,1600));yields_stand_3dim <- array(yield,dim=c(965,1,1600))
+load(file = paste("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/SeasonalDATA",
+                  model_name,"_threshbadyield",
+                  str_pad(threshold*100, 3, pad = "0"),".RData", sep = ""))
 
-seasons <- matrix(c(2:16),nrow=3,ncol=5) # five seasons autumn1, winter, spring, summer, autumn2; first August and last December excluded
-tasmax_seas <- array(NA,dim=c(965,5,1600))
-pr_seas <- array(NA,dim=c(965,5,1600))
-vpd_seas <- array(NA,dim=c(965,5,1600))
-tasmax_seas_stand <- array(NA,dim=c(965,5,1600))
-pr_seas_stand <- array(NA,dim=c(965,5,1600))
-vpd_seas_stand <- array(NA,dim=c(965,5,1600))
-for (i in c(1:5)){
-  curr_seas <- seasons[,i] # current season (3 months)
-  pr_seas[,i,] <- t(sapply(1:965, function(x) {apply(pr[x,curr_seas,],2,mean,na.rm=T)}))
-  tasmax_seas[,i,] <- t(sapply(1:965, function(x) {apply(tasmax[x,curr_seas,],2,mean,na.rm=T)}))
-  vpd_seas[,i,] <- t(sapply(1:965, function(x) {apply(vpd[x,curr_seas,],2,mean,na.rm=T)}))
-  pr_seas_stand[,i,] <- t(sapply(1:965, function(x) {apply(pr_stand[x,curr_seas,],2,mean,na.rm=T)}))
-  tasmax_seas_stand[,i,] <- t(sapply(1:965, function(x) {apply(tasmax_stand[x,curr_seas,],2,mean,na.rm=T)}))
-  vpd_seas_stand[,i,] <- t(sapply(1:965, function(x) {apply(vpd_stand[x,curr_seas,],2,mean,na.rm=T)}))
-}
+# yields_3dim <- array(yield,dim=c(965,1,1600));yields_stand_3dim <- array(yield,dim=c(965,1,1600))
+# 
+# seasons <- matrix(c(2:16),nrow=3,ncol=5) # five seasons autumn1, winter, spring, summer, autumn2; first August and last December excluded
+# tasmax_seas <- array(NA,dim=c(965,5,1600))
+# pr_seas <- array(NA,dim=c(965,5,1600))
+# vpd_seas <- array(NA,dim=c(965,5,1600))
+# tasmax_seas_stand <- array(NA,dim=c(965,5,1600))
+# pr_seas_stand <- array(NA,dim=c(965,5,1600))
+# vpd_seas_stand <- array(NA,dim=c(965,5,1600))
+# for (i in c(1:5)){
+#   curr_seas <- seasons[,i] # current season (3 months)
+#   pr_seas[,i,] <- t(sapply(1:965, function(x) {apply(pr[x,curr_seas,],2,mean,na.rm=T)}))
+#   tasmax_seas[,i,] <- t(sapply(1:965, function(x) {apply(tasmax[x,curr_seas,],2,mean,na.rm=T)}))
+#   vpd_seas[,i,] <- t(sapply(1:965, function(x) {apply(vpd[x,curr_seas,],2,mean,na.rm=T)}))
+#   pr_seas_stand[,i,] <- t(sapply(1:965, function(x) {apply(pr_stand[x,curr_seas,],2,mean,na.rm=T)}))
+#   tasmax_seas_stand[,i,] <- t(sapply(1:965, function(x) {apply(tasmax_stand[x,curr_seas,],2,mean,na.rm=T)}))
+#   vpd_seas_stand[,i,] <- t(sapply(1:965, function(x) {apply(vpd_stand[x,curr_seas,],2,mean,na.rm=T)}))
+# }
+# 
+# Model_data <- abind(yields_3dim,tasmax_seas,vpd_seas,pr_seas,along=2)
+# Model_data_stand <- abind(yields_3dim,tasmax_seas_stand,vpd_seas_stand,pr_seas_stand,along=2)
+# 
+# threshold <- 0.05
+# pix_num <- dim(Model_data)[1]
+# low_yield <- sapply(1:pix_num,function(x) {quantile(yield[x,],threshold,na.rm=T)})
+# cy <- t(sapply(1:pix_num,function(x){ifelse(yield[x,]<low_yield[x],0,1)})) # identical for standardised and non-standardised yield
+# 
+# 
+# cy_reshaped <- array(data=cy,dim=c(dim(cy)[1],1,1600))
+# Model_data[,1,] <-cy_reshaped
+# Model_data_stand[,1,] <-cy_reshaped
+# 
+# columnnames <- c("Yield","tmax_aut_Y1","tmax_win_Y1","tmax_spr_Y1","tmax_sum_Y1","tmax_aut_Y2",
+#                  "vpd_aut_Y1","vpd_win_Y1","vpd_svpd_Y1","vpd_sum_Y1","vpd_aut_Y2",
+#                  "pr_aut_Y1","pr_win_Y1","pr_spr_Y1","pr_sum_Y1","pr_aut_Y2")
+# colnames(Model_data) <- columnnames
+# colnames(Model_data_stand) <- columnnames
 
-Model_data <- abind(yields_3dim,tasmax_seas,vpd_seas,pr_seas,along=2)
-Model_data_stand <- abind(yields_3dim,tasmax_seas_stand,vpd_seas_stand,pr_seas_stand,along=2)
-
-threshold <- 0.05
-pix_num <- dim(Model_data)[1]
-low_yield <- sapply(1:pix_num,function(x) {quantile(yield[x,],threshold,na.rm=T)})
-cy <- t(sapply(1:pix_num,function(x){ifelse(yield[x,]<low_yield[x],0,1)})) # identical for standardised and non-standardised yield
-
-
-cy_reshaped <- array(data=cy,dim=c(dim(cy)[1],1,1600))
-Model_data[,1,] <-cy_reshaped
-Model_data_stand[,1,] <-cy_reshaped
-
-columnnames <- c("Yield","tmax_aut_Y1","tmax_win_Y1","tmax_spr_Y1","tmax_sum_Y1","tmax_aut_Y2",
-                 "vpd_aut_Y1","vpd_win_Y1","vpd_svpd_Y1","vpd_sum_Y1","vpd_aut_Y2",
-                 "pr_aut_Y1","pr_win_Y1","pr_spr_Y1","pr_sum_Y1","pr_aut_Y2")
-colnames(Model_data) <- columnnames
-colnames(Model_data_stand) <- columnnames
-
-
+# Q=list(Model_data=Model_data, Model_data_stand=Model_data_stand)
+# 
+# save(Q,
+#      file = paste("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/SeasonalDATA",
+#                   model_name,"_threshbadyield",
+#                   str_pad(threshold*100, 3, pad = "0"),".RData", sep = ""))
 
 # Exclude NA variable columns
 na_col <- matrix(data=NA,nrow=pix_num,ncol=dim(Model_data)[2])
@@ -169,6 +178,7 @@ numLevels_list <- sapply(1:pix_num, function(x){ rep(1,times=var_num[x])})
 for (i in 1:pix_num){
   names(numLevels_list[[i]]) <-  colnames(x1_test_list[[i]])
 }
+
 
 
 # Run the model ####
@@ -304,6 +314,10 @@ con_tab <-  lapply(1:test_length, function(x){InformationValue::confusionMatrix(
                                                                                 threshold = segreg_th)})
 
 speci <- sapply(1:test_length, function(x){InformationValue::specificity(as.matrix(y1_test_list[[x]]),
+                                                                         fitted.results_model[[x]],
+                                                                         threshold = segreg_th)})
+
+sensi <- sapply(1:test_length, function(x){InformationValue::sensitivity(as.matrix(y1_test_list[[x]]),
                                                                          fitted.results_model[[x]],
                                                                          threshold = segreg_th)})
 
