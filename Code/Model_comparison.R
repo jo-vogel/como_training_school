@@ -19,7 +19,7 @@ library(maps);library(mapdata);library(ggplot2)
 library(glmnet);library(InformationValue);library(ROCR)
 library(abind);library(stringr)
 library(foreach);library(doParallel)
-library(tictoc)
+library(tictoc); library(pbapply)
 
 
 
@@ -344,7 +344,7 @@ colnames(Result_matrix_bestglm) = c("speci", "CSI", "EDI", "lon", "lat")
 # source('./Code/Lasso_interact_global.R') # takes ca. 3 hours: load necessary files, calculate model
 # source('./Code/Lasso_interact_global_preparation.R') # load necessary files
 # On the Drive you can find my data in:
-# Models/LASSO_with_interactions/cv_fit_complete.RData.RData
+# Models/Lasso (glinternet)/LASSO_with_interactions/cv_fit_complete.RData.RData
 load("D:/user/vogelj/Group_project/Code/Workspaces/cv_fit_complete.RData") # load model output
 #location on Pauline's Laptop
 # load("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/OtherModels/cv_fit_complete.Rdata")
