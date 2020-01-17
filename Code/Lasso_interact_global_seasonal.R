@@ -207,7 +207,8 @@ set.seed(100)
 cv_fit <- foreach (i=1:dim(Model_data)[1],.multicombine=TRUE) %dopar% {
   # for (i in 1:dim(Model_data)[1]){
   # normal run
-  tryCatch(glinternet.cv(x1_train_list[[i]], y1_train_list[[i]], numLevels_list[[i]],family = "binomial"), error=function(e) paste0("Error in iteration ",i))
+  tryCatch(glinternet.cv(x1_train_list[[i]], y1_train_list[[i]], numLevels_list[[i]],family = "binomial",interactionCandidates=""), error=function(e) paste0("Error in iteration ",i))
+  # tryCatch(glinternet.cv(x1_train_list[[i]], y1_train_list[[i]], numLevels_list[[i]],family = "binomial"), error=function(e) paste0("Error in iteration ",i))
   
   # run with the preferential lambda from the normal run
   # tryCatch(glinternet.cv(x1_train_list[[i]], y1_train_list[[i]], numLevels_list[[i]],family = "binomial",lambda=pref_lam[i]), error=function(e) paste0("Error in iteration ",i))
@@ -218,7 +219,7 @@ cv_fit <- foreach (i=1:dim(Model_data)[1],.multicombine=TRUE) %dopar% {
 stopCluster(cl)
 toc()
 
-
+# save(cv_fit, file="./Code/Workspaces/cv_fit_seasonal_no_int.RData")
 
 
 # Model performance assessment ####

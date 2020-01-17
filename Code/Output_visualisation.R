@@ -16,7 +16,9 @@ library(pbapply)
 # source('./Code/Lasso_interact_global.R') # takes ca. 3 hours
 path_to_NH_files <- "D:/user/vogelj/Data/Group project Como"
 source('./Code/Lasso_interact_global_preparation.R')
-load("D:/user/vogelj/Group_project/Code/Workspaces/cv_fit_complete.RData") # monthly model
+# load("D:/user/vogelj/Group_project/Code/Workspaces/cv_fit_complete.RData") # monthly model
+load("D:/user/vogelj/Group_project/Code/Workspaces/cv_fit_no_int.RData") # monthly model
+
 # load("D:/user/vogelj/Group_project/Code/Workspaces/cv_fit_no_int_act.RData") # monthly model without interactions
 # source('./Code/Lasso_interact_seasonal_global_preparation.R')
 # load("D:/user/vogelj/Group_project/Code/Workspaces/cv_fit_seasonal.RData") # seasonal model
@@ -595,8 +597,9 @@ cor(mean_yield, speci)
   par(mfrow=c(5,5))
   # plot(prf[[3]])
   for (i in sample(1:963,25)) (plot(prf[[3]]))
-  ROCs <- sapply(seq_along(work_pix), function(x) plotROC(actuals=y1_test_list_red[[x]],predictedScores=fitted.results_model[[x]]))
-  for (i in sample(1:963,25)) (plot(ROCs[[3]]))
+  # takes long
+  # ROCs <- sapply(seq_along(work_pix), function(x) plotROC(actuals=y1_test_list_red[[x]],predictedScores=fitted.results_model[[x]]))
+  # for (i in sample(1:963,25)) (plot(ROCs[[3]]))
   auc2 <- sapply(seq_along(work_pix), function(x) auc(y1_test_list_red[[x]],fitted.results_model[[x]]))
   auc <- sapply(seq_along(work_pix), function(x) performance(pred[[x]], measure = "auc"))
   # auc@y.values[[1]]

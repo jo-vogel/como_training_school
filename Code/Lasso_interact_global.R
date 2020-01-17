@@ -22,12 +22,12 @@ yield <- ncvar_get(nh_data[[1]],"yield")
 tasmax <- ncvar_get(nh_data[[1]],"tasmax")
 vpd <- ncvar_get(nh_data[[1]],"vpd")
 pr <- ncvar_get(nh_data[[1]],"pr")
-lat_subset <- ncvar_get(nh_data[[1]],"lat")
-lon_subset <- ncvar_get(nh_data[[1]],"lon")
 yield_stand <- ncvar_get(nh_data[[2]],"yield")
 tasmax_stand <- ncvar_get(nh_data[[2]],"tasmax")
 vpd_stand <- ncvar_get(nh_data[[2]],"vpd")
 pr_stand <- ncvar_get(nh_data[[2]],"pr")
+lat_subset <- ncvar_get(nh_data[[1]],"lat")
+lon_subset <- ncvar_get(nh_data[[1]],"lon")
 lapply(1:length(nh_files),function(x){nc_close(nh_data[[x]])})
 coord_subset <- cbind(lon_subset,lat_subset)
 
@@ -172,10 +172,16 @@ for (i in 1:pix_num){
 # Lasso model ####
 ##################
 
+message('This small section if meant for reruns with the preferential lambda')
+# load("D:/user/vogelj/Group_project/Code/Workspaces/cv_fit_complete.RData") # load model output (if you want to recalculate it based on the preferential lambda)
+# failed_pixels <- which(sapply(1:965, function(x) {is.character(cv_fit[[x]])})==1)
+# work_pix <- pix_in[-failed_pixels] # working pixels
+# pref_lam <- rep(NA,965)
+# pref_lam[work_pix] <- sapply(work_pix, function(x) cv_fit[[x]]$lambdaHat1Std)
 
 
 tic()
-# cv_fit_list <- vector("list",length=dim(Model_data)[1])
+cv_fit_list <- vector("list",length=dim(Model_data)[1])
 
 no_cores <- detectCores() / 2 - 1
 cl<-makeCluster(no_cores)
@@ -189,9 +195,18 @@ registerDoParallel(cl)
 set.seed(100)
 cv_fit <- foreach (i=1:dim(Model_data)[1],.multicombine=TRUE) %dopar% {
 # for (i in 1:dim(Model_data)[1]){
-    tryCatch(glinternet.cv(x1_train_list[[i]], y1_train_list[[i]], numLevels_list[[i]],family = "binomial"), error=function(e) paste0("Error in iteration ",i))
-    # cv_fit <- try(glinternet.cv(x1_train_list[[i]], y1_train_list[[i]], numLevels_list[[i]],family = "binomial"))
-    # cv_fit_list[[i]] <- cv_fit
+    # normal run
+    tryCatch(glinternet.cv(x1_train_list[[i]], y1_train_list[[i]], numLevels_list[[i]],family = "binomial",interactionCandidates=""), error=function(e) paste0("Error in iteration ",i))
+  # tryCatch(glinternet.cv(x1_train_list[[i]], y1_train_list[[i]], numLevels_list[[i]],family = "binomial"), error=function(e) paste0("Error in iteration ",i))
+    
+  # run with the preferential lambda from the normal run
+    # tryCatch(glinternet.cv(x1_train_list[[i]], y1_train_list[[i]], numLevels_list[[i]],family = "binomial",lambda=pref_lam[i]), error=function(e) paste0("Error in iteration ",i))
+
+  # print(i)
+  # # cv_fit <- try(glinternet.cv(x1_train_list[[i]], y1_train_list[[i]], numLevels_list[[i]],family = "binomial"))
+  # cv_fit <- glinternet.cv(x1_train_list[[i]], y1_train_list[[i]], numLevels_list[[i]],family = "binomial",lambda=pref_lam[i])
+  # cv_fit <- tryCatch(glinternet.cv(x1_train_list[[i]], y1_train_list[[i]], numLevels_list[[i]],family = "binomial",lambda=pref_lam[i]), error=function(e) paste0("Error in iteration ",i))
+  # cv_fit_list[[i]] <- cv_fit
 }
 stopCluster(cl)
 toc()

@@ -65,8 +65,8 @@ pred_ridge <- lapply(1:nb_pix_ridge, function(x){predict(ridge_model_lambdamin[[
 fitted_results_ridge <- lapply(1:nb_pix_ridge, function(x){ifelse(pred_ridge[[x]] > segreg_th,1,0)})
 
 speci_ridge <- sapply(1:nb_pix_ridge, function(x){InformationValue::specificity(as.matrix(y1_test_list[[x]]),
-                                                                         fitted_results_ridge[[x]],
-                                                                         threshold = segreg_th)})
+                                                                                fitted_results_ridge[[x]],
+                                                                                threshold = segreg_th)})
 con_tab_ridge <-  lapply(1:nb_pix_ridge, function(x){InformationValue::confusionMatrix(as.matrix(y1_test_list[[x]]),
                                                                                        fitted_results_ridge[[x]],
                                                                                        threshold = segreg_th)})
@@ -81,7 +81,7 @@ for(pix in 1:nb_pix_ridge){
                                                      con_tab_ridge[[pix]]["0","1"])
   
   F_ridge[pix] <- con_tab_ridge[[pix]]["0","1"]/(con_tab_ridge[[pix]]["0","1"] +
-                                                     con_tab_ridge[[pix]]["1","1"])
+                                                   con_tab_ridge[[pix]]["1","1"])
   
   H_ridge[pix] <- con_tab_ridge[[pix]]["0","0"]/(con_tab_ridge[[pix]]["0","0"] +
                                                    con_tab_ridge[[pix]]["1","0"])
@@ -125,18 +125,18 @@ coefs_simplelasso <- lapply(1:nb_pix_simplelasso, function(x){coef(lasso_model_l
 
 
 pred_simplelasso <- lapply(1:nb_pix_simplelasso, function(x){predict(lasso_model_lambdamin[[x]],
-                                                         as.matrix(x1_test_list[[x]]),type="response")})
+                                                                     as.matrix(x1_test_list[[x]]),type="response")})
 
 
 
 fitted_results_simplelasso <- lapply(1:nb_pix_simplelasso, function(x){ifelse(pred_simplelasso[[x]] > segreg_th,1,0)})
 
 speci_simplelasso <- sapply(1:nb_pix_simplelasso, function(x){InformationValue::specificity(as.matrix(y1_test_list[[x]]),
-                                                                                fitted_results_simplelasso[[x]],
-                                                                                threshold = segreg_th)})
+                                                                                            fitted_results_simplelasso[[x]],
+                                                                                            threshold = segreg_th)})
 con_tab_simplelasso <-  lapply(1:nb_pix_simplelasso, function(x){InformationValue::confusionMatrix(as.matrix(y1_test_list[[x]]),
-                                                                                       fitted_results_simplelasso[[x]],
-                                                                                       threshold = segreg_th)})
+                                                                                                   fitted_results_simplelasso[[x]],
+                                                                                                   threshold = segreg_th)})
 
 csi_simplelasso <- numeric()  #critical success index
 F_simplelasso <- numeric()    #False alarm rate
@@ -144,14 +144,14 @@ H_simplelasso <- numeric()    #Hit rate
 
 for(pix in 1:nb_pix_simplelasso){
   csi_simplelasso[pix] <- con_tab_simplelasso[[pix]]["0","0"]/(con_tab_simplelasso[[pix]]["0","0"] +
-                                                     con_tab_simplelasso[[pix]]["1","0"] +
-                                                     con_tab_simplelasso[[pix]]["0","1"])
+                                                                 con_tab_simplelasso[[pix]]["1","0"] +
+                                                                 con_tab_simplelasso[[pix]]["0","1"])
   
   F_simplelasso[pix] <- con_tab_simplelasso[[pix]]["0","1"]/(con_tab_simplelasso[[pix]]["0","1"] +
-                                                   con_tab_simplelasso[[pix]]["1","1"])
+                                                               con_tab_simplelasso[[pix]]["1","1"])
   
   H_simplelasso[pix] <- con_tab_simplelasso[[pix]]["0","0"]/(con_tab_simplelasso[[pix]]["0","0"] +
-                                                   con_tab_simplelasso[[pix]]["1","0"])
+                                                               con_tab_simplelasso[[pix]]["1","0"])
   
   if(is.na(con_tab_simplelasso[[pix]]["0","0"])){ #no extreme event forecasted => no first line in contengency table
     csi_simplelasso[pix] <- 0
@@ -192,18 +192,18 @@ coefs_elastic <- lapply(1:nb_pix_elastic, function(x){coef(elastic_model_lambdam
 
 
 pred_elastic <- lapply(1:nb_pix_elastic, function(x){predict(elastic_model_lambdamin[[x]],
-                                                                     as.matrix(x1_test_list[[x]]),type="response")})
+                                                             as.matrix(x1_test_list[[x]]),type="response")})
 
 
 
 fitted_results_elastic <- lapply(1:nb_pix_elastic, function(x){ifelse(pred_elastic[[x]] > segreg_th,1,0)})
 
 speci_elastic <- sapply(1:nb_pix_elastic, function(x){InformationValue::specificity(as.matrix(y1_test_list[[x]]),
-                                                                                            fitted_results_elastic[[x]],
-                                                                                            threshold = segreg_th)})
+                                                                                    fitted_results_elastic[[x]],
+                                                                                    threshold = segreg_th)})
 con_tab_elastic <-  lapply(1:nb_pix_elastic, function(x){InformationValue::confusionMatrix(as.matrix(y1_test_list[[x]]),
-                                                                                                   fitted_results_elastic[[x]],
-                                                                                                   threshold = segreg_th)})
+                                                                                           fitted_results_elastic[[x]],
+                                                                                           threshold = segreg_th)})
 
 csi_elastic <- numeric()  #critical success index
 F_elastic <- numeric()    #False alarm rate
@@ -338,14 +338,18 @@ colnames(Result_matrix_bestglm) = c("speci", "CSI", "EDI", "lon", "lat")
 
 
 
-# Load Model output for Lasso w interactions ####
+# Load Model output for Lasso glinternet (with and without) interactions ####
 ###################################################
 
 # source('./Code/Lasso_interact_global.R') # takes ca. 3 hours: load necessary files, calculate model
 # source('./Code/Lasso_interact_global_preparation.R') # load necessary files
 # On the Drive you can find my data in:
 # Models/Lasso (glinternet)/LASSO_with_interactions/cv_fit_complete.RData.RData
-load("D:/user/vogelj/Group_project/Code/Workspaces/cv_fit_complete.RData") # load model output
+# Monthly models
+# load("D:/user/vogelj/Group_project/Code/Workspaces/cv_fit_complete.RData") # load model output
+# Models/Lasso (glinternet)/LASSO_without_interactions/v_fit_no_int_act.RData.RData
+load("D:/user/vogelj/Group_project/Code/Workspaces/cv_fit_no_int_act.RData") # monthly model without interactions
+
 #location on Pauline's Laptop
 # load("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/OtherModels/cv_fit_complete.Rdata")
 
@@ -362,14 +366,19 @@ cost_fp_lwi <- 100 # Misses: this should be associated with a higher cost, as it
 cost_fn_lwi <- 100 # False alarms  
 cutoff_lwi <- adjust_cutoff(x1_train_list = x1_train_list_lwi, y1_train_list = y1_train_list_lwi, 
                             work_pix = work_pix_lwi, cost_fp = cost_fp_lwi, cost_fn= cost_fn_lwi)
-# segreg_th <- cutoff_lwi # replace the default threshold = 0.5, by the calculated optimal cutoff
+segreg_th_adj <- cutoff_lwi # replace the default threshold = 0.5, by the calculated optimal cutoff
+segreg_th <- 0.5 # default
 
+i_1Std <- sapply(work_pix_lwi, function(x){ which(cv_fit[[x]]$lambdaHat1Std == cv_fit[[x]]$lambda)}) # the preferential lambda (tuning parameter)
+i_1Std_all_pix <- rep(NA,965)
+i_1Std_all_pix[work_pix_lwi] <- i_1Std # needed as a workaround (to have an object of lenght=965)
 
 # Create specificity, CSI and EDI for Lasso w interactions ####
 ################################################################
 
 mypred_lwi <- lapply(work_pix_lwi, function(x){predict(cv_fit[[x]],x1_test_list[[x]],type="response")}) 
 fitted.results_model_lwi <- lapply(seq_along(work_pix_lwi), function(x){ifelse(mypred_lwi[[x]] > segreg_th,1,0)})
+fitted.results_model_adj_lwi <- lapply(seq_along(work_pix_lwi), function(x){ifelse(mypred_lwi[[x]] > mean(segreg_th_adj),1,0)})
 y1_test_list_red_lwi <- lapply(work_pix_lwi,function(work_pix_lwi){y1_test_list[[work_pix_lwi]]})
 
 obs_pred_lwi <- lapply(seq_along(work_pix_lwi), function(x){cbind(y1_test_list_red_lwi[[x]],fitted.results_model_lwi[[x]])})
@@ -377,16 +386,38 @@ tp_lwi <- sapply(seq_along(work_pix_lwi), function(x){sum(rowSums(obs_pred_lwi[[
 tn_lwi <- sapply(seq_along(work_pix_lwi), function(x){sum(rowSums(obs_pred_lwi[[x]])==0)}) # Hits
 fp_lwi <- sapply(seq_along(work_pix_lwi), function(x){sum(obs_pred_lwi[[x]][,1]==0 & obs_pred_lwi[[x]][,2]==1)}) # Misses
 fn_lwi <- sapply(seq_along(work_pix_lwi), function(x){sum(obs_pred_lwi[[x]][,1]==1 & obs_pred_lwi[[x]][,2]==0)}) # False alarm
+obs_pred_adj_lwi <- lapply(seq_along(work_pix_lwi), function(x){cbind(y1_test_list_red_lwi[[x]],fitted.results_model_adj_lwi[[x]])})
+tp_adj_lwi <- sapply(seq_along(work_pix_lwi), function(x){sum(rowSums(obs_pred_adj_lwi[[x]])==2)}) # Correct rejections
+tn_adj_lwi <- sapply(seq_along(work_pix_lwi), function(x){sum(rowSums(obs_pred_adj_lwi[[x]])==0)}) # Hits
+fp_adj_lwi <- sapply(seq_along(work_pix_lwi), function(x){sum(obs_pred_adj_lwi[[x]][,1]==0 & obs_pred_adj_lwi[[x]][,2]==1)}) # Misses
+fn_adj_lwi <- sapply(seq_along(work_pix_lwi), function(x){sum(obs_pred_adj_lwi[[x]][,1]==1 & obs_pred_adj_lwi[[x]][,2]==0)}) # False alarm
 # con_tab <- sapply(seq_along(work_pix), function(x){matrix(c(tp[x],fn[x],fp[x],tn[x]),nrow=2,ncol=2)})
 
 
 # Calculate specificity
 speci_lwi <- rep(NA,965)
 speci_lwi[work_pix_lwi] <- sapply(seq_along(work_pix_lwi), function(x){InformationValue::specificity(y1_test_list_red_lwi[[x]],fitted.results_model_lwi[[x]],
-                                                                                         threshold = segreg_th)})
+                                                                                                     threshold = segreg_th)})
+
+# Calculate sensitivity
+sensi_lwi <- rep(NA,965)
+sensi_lwi[work_pix_lwi] <- sapply(seq_along(work_pix_lwi), function(x){InformationValue::sensitivity(y1_test_list_red_lwi[[x]],fitted.results_model_lwi[[x]],
+                                                                                                     threshold = segreg_th)})
+
+# Sensitivity and specificity with adjusted cutoff
+sensi_adj_lwi <- rep(NA,965)
+speci_adj_lwi <- rep(NA,965)
+sensi_adj_lwi[work_pix_lwi] <- sapply(seq_along(work_pix_lwi), function(x){InformationValue::sensitivity(y1_test_list_red_lwi[[x]],fitted.results_model_adj_lwi[[x]],
+                                                                                                         threshold = mean(segreg_th_adj))}) # note: the threshold is actually not used here, it is already applied in fitted.results_model_adj 
+speci_adj_lwi[work_pix_lwi] <- sapply(seq_along(work_pix_lwi), function(x){InformationValue::specificity(y1_test_list_red_lwi[[x]],fitted.results_model_adj_lwi[[x]],
+                                                                                                         threshold = mean(segreg_th_adj))})
+
 # Calculate CSI 
 csi_lwi <- rep(NA,965)
 csi_lwi[work_pix_lwi] <- sapply(seq_along(work_pix_lwi), function(x){tn_lwi[x]/(tn_lwi[x]+fn_lwi[x]+fp_lwi[x])})
+# CSI with adjusted cutoff
+csi_adj_lwi <- rep(NA,965)
+csi_adj_lwi[work_pix_lwi] <- sapply(seq_along(work_pix_lwi), function(x){tn_adj_lwi[x]/(tn_adj_lwi[x]+fp_adj_lwi[x]+fn_adj_lwi[x])})
 
 # Calculate EDI 
 hr_lwi <- rep(NA,965)
@@ -397,7 +428,29 @@ EDI_lwi <- rep(NA,965)
 # EDI_lwi[work_pix_lwi] <- sapply(seq_along(work_pix_lwi), function(x) (log(fn_lwi[x]/(fn_lwi[x]+tp_lwi[x]))-log(tn_lwi[x]/(tn_lwi[x]+fp_lwi[x])))/(log(fn_lwi[x]/(fn_lwi[x]+tp_lwi[x]))+log(tn_lwi[x]/(tn_lwi[x]+fp_lwi[x]))))
 EDI_lwi[work_pix_lwi] <- sapply(seq_along(work_pix_lwi), function(x) (log(far_lwi[x])-log(hr_lwi[x]))/(log(far_lwi[x])+log(hr_lwi[x])))
 
+# Calculate number of coefficients
+coefs_lwi <- vector("list",length=965)
+coefs_lwi[work_pix_lwi] <- pblapply(work_pix_lwi, function(x){coef(cv_fit[[x]]$glinternetFit)[[i_1Std_all_pix[[x]]]]})
+coeff_kep_lwi <- numeric()
+for (pix in 1:pix_num) {coeff_kep_lwi[pix] <- length(coefs_lwi[[pix]]$mainEffects$cont)}
 
+# Calculate number of interactions
+num_interact <- numeric()
+for (pix in 1:pix_num) {
+  if (is.null(dim(coefs_lwi[[pix]]$interactions$contcont)[1])){
+    num_interact[pix] <- 0
+  } else {
+    num_interact[pix] <-  dim(coefs_lwi[[pix]]$interactions$contcont)[1]
+  }
+}
+
+# print average performance
+mean(csi_lwi,na.rm=T);mean(csi_adj_lwi,na.rm=T)
+mean(speci_lwi,na.rm=T);mean(speci_adj_lwi,na.rm=T)
+mean(sensi_lwi,na.rm=T);mean(sensi_adj_lwi,na.rm=T)
+segreg_th_adj
+mean(coeff_kep_lwi,na.rm=T)
+mean(num_interact,na.rm=T)
 
 # Create comparison maps ####
 #############################
