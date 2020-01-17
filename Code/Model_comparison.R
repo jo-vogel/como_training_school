@@ -344,11 +344,14 @@ colnames(Result_matrix_bestglm) = c("speci", "CSI", "EDI", "lon", "lat")
 # source('./Code/Lasso_interact_global.R') # takes ca. 3 hours: load necessary files, calculate model
 # source('./Code/Lasso_interact_global_preparation.R') # load necessary files
 # On the Drive you can find my data in:
-# Models/Lasso (glinternet)/LASSO_with_interactions/cv_fit_complete.RData.RData
-# Monthly models
-# load("D:/user/vogelj/Group_project/Code/Workspaces/cv_fit_complete.RData") # load model output
-# Models/Lasso (glinternet)/LASSO_without_interactions/v_fit_no_int_act.RData.RData
-load("D:/user/vogelj/Group_project/Code/Workspaces/cv_fit_no_int_act.RData") # monthly model without interactions
+# with interactions
+# Models/Lasso (glinternet)/LASSO_with_interactions/cv_fit_complete.RData.RData 
+# load("D:/user/vogelj/Group_project/Code/Workspaces/cv_fit_complete.RData") # load monthly model output
+load("D:/user/vogelj/Group_project/Code/Workspaces/cv_fit_seasonal.RData") # load seasonal model output
+# without interactions
+# Models/Lasso (glinternet)/LASSO_without_interactions/cv_fit_no_int.RData.RData
+# load("D:/user/vogelj/Group_project/Code/Workspaces/cv_fit_no_int.RData") # monthly model without interactions
+# load("D:/user/vogelj/Group_project/Code/Workspaces/cv_fit_seasonal_no_int.RData") # seasonal model without interactions
 
 #location on Pauline's Laptop
 # load("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/OtherModels/cv_fit_complete.Rdata")
