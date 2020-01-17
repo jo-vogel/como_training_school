@@ -362,7 +362,7 @@ cost_fp_lwi <- 100 # Misses: this should be associated with a higher cost, as it
 cost_fn_lwi <- 100 # False alarms  
 cutoff_lwi <- adjust_cutoff(x1_train_list = x1_train_list_lwi, y1_train_list = y1_train_list_lwi, 
                             work_pix = work_pix_lwi, cost_fp = cost_fp_lwi, cost_fn= cost_fn_lwi)
-# cutoff_lwi <- segreg_th # replace the default threshold = 0.5, by the calculated optimal cutoff
+# segreg_th <- cutoff_lwi # replace the default threshold = 0.5, by the calculated optimal cutoff
 
 
 # Create specificity, CSI and EDI for Lasso w interactions ####
