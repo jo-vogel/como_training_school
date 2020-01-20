@@ -195,61 +195,26 @@ segreg_th_adj <- cutoff_simple_lasso # replace the default threshold = 0.5, by t
 
 
 
-fitted_results_simplelasso <- lapply(1:nb_pix_simplelasso, function(x){ifelse(pred_simplelasso[[x]] > segreg_th,1,0)})
 fitted_results_simplelasso_adj <- lapply(1:nb_pix_simplelasso, function(x){ifelse(pred_simplelasso[[x]] > segreg_th_adj,1,0)})
 
-speci_simplelasso <- sapply(1:nb_pix_simplelasso, function(x){InformationValue::specificity(as.matrix(y1_test_list[[x]]),
-                                                                                            fitted_results_simplelasso[[x]],
-                                                                                            threshold = segreg_th)})
 speci_simplelasso_adj <- sapply(1:nb_pix_simplelasso, function(x){InformationValue::specificity(as.matrix(y1_test_list[[x]]),
                                                                                                 fitted_results_simplelasso_adj[[x]],
                                                                                                 threshold = segreg_th_adj)})
 
-sensi_simplelasso <- sapply(1:nb_pix_simplelasso, function(x){InformationValue::sensitivity(as.matrix(y1_test_list[[x]]),
-                                                                                            fitted_results_simplelasso[[x]],
-                                                                                            threshold = segreg_th)})
 sensi_simplelasso_adj <- sapply(1:nb_pix_simplelasso, function(x){InformationValue::sensitivity(as.matrix(y1_test_list[[x]]),
                                                                                                 fitted_results_simplelasso_adj[[x]],
                                                                                                 threshold = segreg_th_adj)})
 
 
-con_tab_simplelasso <-  lapply(1:nb_pix_simplelasso, function(x){InformationValue::confusionMatrix(as.matrix(y1_test_list[[x]]),
-                                                                                                   fitted_results_simplelasso[[x]],
-                                                                                                   threshold = segreg_th)})
-
 con_tab_simplelasso_adj <-  lapply(1:nb_pix_simplelasso, function(x){InformationValue::confusionMatrix(as.matrix(y1_test_list[[x]]),
                                                                                                        fitted_results_simplelasso_adj[[x]],
                                                                                                        threshold = segreg_th_adj)})
-
-csi_simplelasso <- numeric()  #critical success index
 csi_simplelasso_adj <- numeric()  #critical success index
-F_simplelasso <- numeric()    #False alarm rate
-H_simplelasso <- numeric()    #Hit rate
 
 for(pix in 1:nb_pix_simplelasso){
-  csi_simplelasso[pix] <- con_tab_simplelasso[[pix]]["0","0"]/(con_tab_simplelasso[[pix]]["0","0"] +
-                                                                 con_tab_simplelasso[[pix]]["1","0"] +
-                                                                 con_tab_simplelasso[[pix]]["0","1"])
   csi_simplelasso_adj[pix] <- con_tab_simplelasso_adj[[pix]]["0","0"]/(con_tab_simplelasso_adj[[pix]]["0","0"] +
                                                                          con_tab_simplelasso_adj[[pix]]["1","0"] +
                                                                          con_tab_simplelasso_adj[[pix]]["0","1"])
-  
-  F_simplelasso[pix] <- con_tab_simplelasso[[pix]]["0","1"]/(con_tab_simplelasso[[pix]]["0","1"] +
-                                                               con_tab_simplelasso[[pix]]["1","1"])
-  
-  H_simplelasso[pix] <- con_tab_simplelasso[[pix]]["0","0"]/(con_tab_simplelasso[[pix]]["0","0"] +
-                                                               con_tab_simplelasso[[pix]]["1","0"])
-  
-  if(is.na(con_tab_simplelasso[[pix]]["0","0"])){ #no extreme event forecasted => no first line in contengency table
-    csi_simplelasso[pix] <- 0
-    H_simplelasso[pix] <- 0
-    F_simplelasso[pix] <- 0
-  }
-  if(is.na(con_tab_simplelasso[[pix]]["1","0"])){ #No good year forecasted. Problematic pixels for this model
-    csi_simplelasso[pix] <- NA
-    H_simplelasso[pix] <- NA
-    F_simplelasso[pix] <- NA
-  }
   if(is.na(con_tab_simplelasso_adj[[pix]]["0","0"])){ #no extreme event forecasted => no first line in contengency table
     csi_simplelasso_adj[pix] <- 0
   }
@@ -258,11 +223,6 @@ for(pix in 1:nb_pix_simplelasso){
   }
 }#end for pix
 
-EDI_simplelasso <- (log(F_simplelasso)-log(H_simplelasso))/(log(F_simplelasso)+log(H_simplelasso))
-
-
-Result_matrix_simplelasso <- cbind(speci_simplelasso, csi_simplelasso, EDI_simplelasso, coord_subset[,1],coord_subset[,2])
-colnames(Result_matrix_simplelasso) = c("speci", "CSI", "EDI", "lon", "lat")
 
 
 
