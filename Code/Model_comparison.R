@@ -182,8 +182,7 @@ colnames(Result_matrix_simplelasso) = c("speci", "CSI", "EDI", "lon", "lat")
 # Create specificity, CSI and EDI for Lasso w/o interactions with cutoff level ####
 ###################################################################################
 # Adjust cutoff level
-message("Adjust prediction in the cutoff adjustement function")
-source("./Code/cutoff_adjustment.R")
+source("./Code/cutoff_adj_glmnet_lambda1se.R")
 y1_train_list_simple_lasso <- y1_train_list
 x1_train_list_simple_lasso <- x1_train_list
 cost_fp_simple_lasso <- 100 # Misses: this should be associated with a higher cost, as it is more detrimental
