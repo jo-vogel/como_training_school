@@ -6,14 +6,15 @@ adjust_cutoff <- function(x1_train_list, y1_train_list, work_pix, cost_fp = 100,
   # Procedure for whole training data set ####
   source("./Code/unbalanced_funtions.R") 
   
-  y1_train_list_red <- lapply(work_pix,
-                              function(work_pix){y1_train_list[[work_pix]]})  
+  y1_train_list_red <- as.list(lapply(work_pix,
+                              function(work_pix){y1_train_list[[work_pix]]})  )
   mypred_train <- lapply(work_pix,
-                         function(x){predict(lasso_model_lambda1se[[x]],x1_train_list[[x]],type="response")}) 
+                         function(x){predict(lasso_model_lambda1se[[x]],as.matrix(x1_train_list[[x]]),type="response")}) 
   
   # Data set with actuals and predictions
   data_train_all <- pblapply(1:length(work_pix),
-                             function(x){ data.frame("Actuals"=y1_train_list_red[[x]], "Predictions"=mypred_train[[x]])}) # train data
+                             function(x){ data.frame("Actuals"=as.numeric(y1_train_list_red[[x]]),
+                                                     "Predictions"=as.numeric(mypred_train[[x]]))}) # train data
   # Calculate confusion matrix
   cm_info_all <-  pblapply(1:length(work_pix),
                            function(x){ConfusionMatrixInfo( data = data_train_all[[x]], predict = "Predictions", 
