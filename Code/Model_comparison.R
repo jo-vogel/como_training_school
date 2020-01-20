@@ -107,20 +107,18 @@ colnames(Result_matrix_Ridge) = c("speci", "CSI", "EDI", "lon", "lat")
 
 # Load Model output for Lasso w/o interactions ####
 ##################################################
-# start with lambda.min
 
 # On the Drive you can find my data in:
-# Models/LASSO-Ridge regression/regression_results_Global_wo_interactions/Lasso_lambdamin_threshbadyield005.RData
+# Models/LASSO-Ridge regression/regression_results_Global_wo_interactions/Lasso_lambda1se_threshbadyield005.RData
 
-# load(file = "C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/Lasso_lambdamin_threshbadyield005.RData")
-load(file = "D:/user/vogelj/Group_project/Code/Workspaces/Lasso_lambdamin_threshbadyield005.RData")
+load(file = "C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/Lasso_lambda1se_threshbadyield005.RData")
 
 
 # Create specificity, CSI and EDI for Lasso w/o interactions ####
 #################################################################
-nb_pix_simplelasso <- length(lasso_model_lambdamin)
+nb_pix_simplelasso <- length(lasso_model_lambda1se)
 
-coefs_simplelasso <- lapply(1:nb_pix_simplelasso, function(x){coef(lasso_model_lambdamin[[x]])})
+coefs_simplelasso <- lapply(1:nb_pix_simplelasso, function(x){coef(lasso_model_lambda1se[[x]])})
 
 nb_coeff_simple_lasso <- numeric()
 
@@ -128,7 +126,7 @@ for (pix in pix_in) {
   nb_coeff_simple_lasso[pix]<- sum(coefs_simplelasso[[pix]]!=0)-1
 }
 
-pred_simplelasso <- lapply(1:nb_pix_simplelasso, function(x){predict(lasso_model_lambdamin[[x]],
+pred_simplelasso <- lapply(1:nb_pix_simplelasso, function(x){predict(lasso_model_lambda1se[[x]],
                                                                      as.matrix(x1_test_list[[x]]),type="response")})
 
 
@@ -191,8 +189,6 @@ x1_train_list_simple_lasso <- x1_train_list
 cost_fp_simple_lasso <- 100 # Misses: this should be associated with a higher cost, as it is more detrimental
 cost_fn_simple_lasso <- 100 # False alarms
 
-# mypred_train_simplelasso <- lapply(1:nb_pix_simplelasso, function(x){predict(lasso_model_lambdamin[[x]],
-#                                                                              as.matrix(x1_train_list_simple_lasso[[x]]),type="response")})
 
 cutoff_simple_lasso <- adjust_cutoff(x1_train_list = x1_train_list_simple_lasso, y1_train_list = y1_train_list_simple_lasso,
                                      work_pix = pix_in, cost_fp = cost_fp_simple_lasso, cost_fn= cost_fn_simple_lasso)
