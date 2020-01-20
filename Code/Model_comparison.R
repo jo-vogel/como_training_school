@@ -172,6 +172,67 @@ Result_matrix_simplelasso <- cbind(speci_simplelasso, csi_simplelasso, EDI_simpl
 colnames(Result_matrix_simplelasso) = c("speci", "CSI", "EDI", "lon", "lat")
 
 
+# Create specificity, CSI and EDI for Lasso w/o interactions with cutoff level ####
+###################################################################################
+# Adjust cutoff level
+source("./Code/cutoff_adjustment.R")
+y1_train_list_lwoi <- y1_train_list
+x1_train_list_lwpi <- x1_train_list
+cost_fp_lwoi <- 100 # Misses: this should be associated with a higher cost, as it is more detrimental
+cost_fn_lwoi <- 100 # False alarms  
+cutoff_lwoi <- adjust_cutoff(x1_train_list = x1_train_list_lwi, y1_train_list = y1_train_list_lwi, 
+                            work_pix = work_pix_lwi, cost_fp = cost_fp_lwi, cost_fn= cost_fn_lwi)
+segreg_th_adj <- cutoff_lwi # replace the default threshold = 0.5, by the calculated optimal cutoff
+
+
+
+fitted_results_simplelasso <- lapply(1:nb_pix_simplelasso, function(x){ifelse(pred_simplelasso[[x]] > segreg_th,1,0)})
+
+speci_simplelasso <- sapply(1:nb_pix_simplelasso, function(x){InformationValue::specificity(as.matrix(y1_test_list[[x]]),
+                                                                                            fitted_results_simplelasso[[x]],
+                                                                                            threshold = segreg_th)})
+con_tab_simplelasso <-  lapply(1:nb_pix_simplelasso, function(x){InformationValue::confusionMatrix(as.matrix(y1_test_list[[x]]),
+                                                                                                   fitted_results_simplelasso[[x]],
+                                                                                                   threshold = segreg_th)})
+
+csi_simplelasso <- numeric()  #critical success index
+F_simplelasso <- numeric()    #False alarm rate
+H_simplelasso <- numeric()    #Hit rate
+
+for(pix in 1:nb_pix_simplelasso){
+  csi_simplelasso[pix] <- con_tab_simplelasso[[pix]]["0","0"]/(con_tab_simplelasso[[pix]]["0","0"] +
+                                                                 con_tab_simplelasso[[pix]]["1","0"] +
+                                                                 con_tab_simplelasso[[pix]]["0","1"])
+  
+  F_simplelasso[pix] <- con_tab_simplelasso[[pix]]["0","1"]/(con_tab_simplelasso[[pix]]["0","1"] +
+                                                               con_tab_simplelasso[[pix]]["1","1"])
+  
+  H_simplelasso[pix] <- con_tab_simplelasso[[pix]]["0","0"]/(con_tab_simplelasso[[pix]]["0","0"] +
+                                                               con_tab_simplelasso[[pix]]["1","0"])
+  
+  if(is.na(con_tab_simplelasso[[pix]]["0","0"])){ #no extreme event forecasted => no first line in contengency table
+    csi_simplelasso[pix] <- 0
+    H_simplelasso[pix] <- 0
+    F_simplelasso[pix] <- 0
+  }
+  if(is.na(con_tab_simplelasso[[pix]]["1","0"])){ #No good year forecasted. Problematic pixels for this model
+    csi_simplelasso[pix] <- NA
+    H_simplelasso[pix] <- NA
+    F_simplelasso[pix] <- NA
+  }
+}#end for pix
+
+EDI_simplelasso <- (log(F_simplelasso)-log(H_simplelasso))/(log(F_simplelasso)+log(H_simplelasso))
+
+
+Result_matrix_simplelasso <- cbind(speci_simplelasso, csi_simplelasso, EDI_simplelasso, coord_subset[,1],coord_subset[,2])
+colnames(Result_matrix_simplelasso) = c("speci", "CSI", "EDI", "lon", "lat")
+
+
+
+
+
+
 # Load Model output for ElasticNet 0.5 ####
 ##################################################
 # start with lambda.min
@@ -355,6 +416,7 @@ load("D:/user/vogelj/Group_project/Code/Workspaces/cv_fit_seasonal.RData") # loa
 
 #location on Pauline's Laptop
 # load("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/OtherModels/cv_fit_complete.Rdata")
+# load("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/OtherModels/cv_fit_no_int.Rdata")
 
 
 # Identify pixels with failed runs
@@ -421,6 +483,9 @@ csi_lwi[work_pix_lwi] <- sapply(seq_along(work_pix_lwi), function(x){tn_lwi[x]/(
 # CSI with adjusted cutoff
 csi_adj_lwi <- rep(NA,965)
 csi_adj_lwi[work_pix_lwi] <- sapply(seq_along(work_pix_lwi), function(x){tn_adj_lwi[x]/(tn_adj_lwi[x]+fp_adj_lwi[x]+fn_adj_lwi[x])})
+
+
+
 
 # Calculate EDI 
 hr_lwi <- rep(NA,965)
