@@ -122,7 +122,11 @@ nb_pix_simplelasso <- length(lasso_model_lambdamin)
 
 coefs_simplelasso <- lapply(1:nb_pix_simplelasso, function(x){coef(lasso_model_lambdamin[[x]])})
 
+nb_coeff_simple_lasso <- numeric()
 
+for (pix in pix_in) {
+  nb_coeff_simple_lasso[pix]<- sum(coefs_simplelasso[[pix]]!=0)-1
+}
 
 pred_simplelasso <- lapply(1:nb_pix_simplelasso, function(x){predict(lasso_model_lambdamin[[x]],
                                                                      as.matrix(x1_test_list[[x]]),type="response")})
@@ -130,6 +134,11 @@ pred_simplelasso <- lapply(1:nb_pix_simplelasso, function(x){predict(lasso_model
 
 
 fitted_results_simplelasso <- lapply(1:nb_pix_simplelasso, function(x){ifelse(pred_simplelasso[[x]] > segreg_th,1,0)})
+
+
+sensi_simplelasso <- sapply(1:nb_pix_simplelasso, function(x){InformationValue::sensitivity(as.matrix(y1_test_list[[x]]),
+                                                                                            fitted_results_simplelasso[[x]],
+                                                                                            threshold = segreg_th)})
 
 speci_simplelasso <- sapply(1:nb_pix_simplelasso, function(x){InformationValue::specificity(as.matrix(y1_test_list[[x]]),
                                                                                             fitted_results_simplelasso[[x]],
@@ -175,13 +184,18 @@ colnames(Result_matrix_simplelasso) = c("speci", "CSI", "EDI", "lon", "lat")
 # Create specificity, CSI and EDI for Lasso w/o interactions with cutoff level ####
 ###################################################################################
 # Adjust cutoff level
+message("Adjust prediction in the cutoff adjustement function")
 source("./Code/cutoff_adjustment.R")
-y1_train_list_lwoi <- y1_train_list
-x1_train_list_lwpi <- x1_train_list
-cost_fp_lwoi <- 100 # Misses: this should be associated with a higher cost, as it is more detrimental
-cost_fn_lwoi <- 100 # False alarms  
-cutoff_lwoi <- adjust_cutoff(x1_train_list = x1_train_list_lwi, y1_train_list = y1_train_list_lwi, 
-                            work_pix = work_pix_lwi, cost_fp = cost_fp_lwi, cost_fn= cost_fn_lwi)
+y1_train_list_simple_lasso <- y1_train_list
+x1_train_list_simple_lasso <- x1_train_list
+cost_fp_simple_lasso <- 100 # Misses: this should be associated with a higher cost, as it is more detrimental
+cost_fn_simple_lasso <- 100 # False alarms
+
+# mypred_train_simplelasso <- lapply(1:nb_pix_simplelasso, function(x){predict(lasso_model_lambdamin[[x]],
+#                                                                              as.matrix(x1_train_list_simple_lasso[[x]]),type="response")})
+
+cutoff_simple_lasso <- adjust_cutoff(x1_train_list = x1_train_list_simple_lasso, y1_train_list = y1_train_list_simple_lasso,
+                                     work_pix = pix_in, cost_fp = cost_fp_simple_lasso, cost_fn= cost_fn_simple_lasso)
 segreg_th_adj <- cutoff_lwi # replace the default threshold = 0.5, by the calculated optimal cutoff
 
 
@@ -428,8 +442,11 @@ source("./Code/cutoff_adjustment.R")
 y1_train_list_lwi <- y1_train_list
 x1_train_list_lwi <- x1_train_list
 cost_fp_lwi <- 100 # Misses: this should be associated with a higher cost, as it is more detrimental
-cost_fn_lwi <- 100 # False alarms  
-cutoff_lwi <- adjust_cutoff(x1_train_list = x1_train_list_lwi, y1_train_list = y1_train_list_lwi, 
+cost_fn_lwi <- 100 # False alarms 
+mypred_train_lwi <- lapply(work_pix_lwi,
+                       function(x){predict(cv_fit[[x]],x1_train_list_lwi[[x]],type="response")}) 
+
+cutoff_lwi <- adjust_cutoff(x1_train_list = x1_train_list_lwi, y1_train_list = y1_train_list_lwi,
                             work_pix = work_pix_lwi, cost_fp = cost_fp_lwi, cost_fn= cost_fn_lwi)
 segreg_th_adj <- cutoff_lwi # replace the default threshold = 0.5, by the calculated optimal cutoff
 segreg_th <- 0.5 # default
@@ -484,6 +501,11 @@ csi_lwi[work_pix_lwi] <- sapply(seq_along(work_pix_lwi), function(x){tn_lwi[x]/(
 csi_adj_lwi <- rep(NA,965)
 csi_adj_lwi[work_pix_lwi] <- sapply(seq_along(work_pix_lwi), function(x){tn_adj_lwi[x]/(tn_adj_lwi[x]+fp_adj_lwi[x]+fn_adj_lwi[x])})
 
+#If without interact
+csi_lasso_wo_int_glmint <- csi_lwi
+csi_lasso_wo_int_glmint_adj <- csi_adj_lwi
+speci_lasso_wo_int_glmint <- speci_lwi
+speci_lasso_wo_int_glmint_adj <- speci_adj_lwi
 
 
 
@@ -568,10 +590,10 @@ possible_pairs <- c("BestGLM-Ridge",
                     "Elastic-Lasso_with_interact")
 
 score <- "Specificity"
-model_1 <- "Elastic"
-score_1 <- speci_elastic
-model_2 <- "Lasso_with_interact"
-score_2 <- speci_lwi
+model_1 <- "Lasso_wo_int"
+score_1 <- speci_simplelasso
+model_2 <- "Lasso_wo_int_glinternet"
+score_2 <- speci_lasso_wo_int_glmint
 
 substract_score_plot(score_name = score,
                      score_1 = score_1, model1_name = model_1,
@@ -584,10 +606,10 @@ ggsave(paste(output_path, score,"_",model_1,"VS",model_2,".png", sep = ""), widt
 pairs(cbind(csi_bestglm, csi_lwi, csi_ridge, csi_simplelasso, csi_elastic))
 
 score <- "CSI"
-model_1 <- "Elastic"
-score_1 <- csi_elastic
-model_2 <- "BestGLM"
-score_2 <- csi_bestglm
+model_1 <- "Lasso_wo_int"
+score_1 <- csi_simplelasso
+model_2 <- "Lasso_wo_int_glinternet"
+score_2 <- csi_lasso_wo_int_glmint
 
 substract_score_plot(score_name = score,
                      score_1 = score_1, model1_name = model_1,
