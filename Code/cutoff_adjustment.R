@@ -1,4 +1,4 @@
-adjust_cutoff <- function(x1_train_list, y1_train_list, work_pix, cost_fp = 100, cost_fn = 100){
+adjust_cutoff <- function(x1_train_list, y1_train_list,  mypred_train, work_pix, cost_fp = 100, cost_fn = 100){
   
 
 
@@ -9,10 +9,10 @@ adjust_cutoff <- function(x1_train_list, y1_train_list, work_pix, cost_fp = 100,
 source("./Code/unbalanced_funtions.R") 
 
 y1_train_list_red <- lapply(work_pix,function(work_pix){y1_train_list[[work_pix]]})  
-mypred_train <- lapply(work_pix, function(x){predict(cv_fit[[x]],x1_train_list[[x]],type="response")}) 
+# mypred_train <- lapply(work_pix, function(x){predict(cv_fit[[x]],x1_train_list[[x]],type="response")}) 
 
 # Data set with actuals and predictions
-data_train_all <- pblapply(1:length(work_pix), function(x){ data.frame("Actuals"=y1_train_list_red[[x]], "Predictions"=mypred_train[[x]])}) # train data
+data_train_all <- pblapply(1:length(work_pix), function(x){ data.frame("Actuals"= y1_train_list_red[[x]], "Predictions"=mypred_train[[x]])}) # train data
 # Calculate confusion matrix
 cm_info_all <-  pblapply(1:length(work_pix), function(x){ConfusionMatrixInfo( data = data_train_all[[x]], predict = "Predictions", 
                                                                               actual = "Actuals", cutoff = .5 )})

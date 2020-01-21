@@ -404,10 +404,10 @@ colnames(Result_matrix_bestglm) = c("speci", "CSI", "EDI", "lon", "lat")
 # with interactions
 # Models/Lasso (glinternet)/LASSO_with_interactions/cv_fit_complete.RData.RData 
 # load("D:/user/vogelj/Group_project/Code/Workspaces/cv_fit_complete.RData") # load monthly model output
-load("D:/user/vogelj/Group_project/Code/Workspaces/cv_fit_seasonal.RData") # load seasonal model output
+# load("D:/user/vogelj/Group_project/Code/Workspaces/cv_fit_seasonal.RData") # load seasonal model output
 # without interactions
 # Models/Lasso (glinternet)/LASSO_without_interactions/cv_fit_no_int.RData.RData
-# load("D:/user/vogelj/Group_project/Code/Workspaces/cv_fit_no_int.RData") # monthly model without interactions
+load("D:/user/vogelj/Group_project/Code/Workspaces/cv_fit_no_int.RData") # monthly model without interactions
 # load("D:/user/vogelj/Group_project/Code/Workspaces/cv_fit_seasonal_no_int.RData") # seasonal model without interactions
 
 #location on Pauline's Laptop
@@ -428,7 +428,7 @@ cost_fn_lwi <- 100 # False alarms
 mypred_train_lwi <- lapply(work_pix_lwi,
                        function(x){predict(cv_fit[[x]],x1_train_list_lwi[[x]],type="response")}) 
 
-cutoff_lwi <- adjust_cutoff(x1_train_list = x1_train_list_lwi, y1_train_list = y1_train_list_lwi,
+cutoff_lwi <- adjust_cutoff(x1_train_list = x1_train_list_lwi, y1_train_list = y1_train_list_lwi, mypred_train = mypred_train_lwi, 
                             work_pix = work_pix_lwi, cost_fp = cost_fp_lwi, cost_fn= cost_fn_lwi)
 segreg_th_adj <- cutoff_lwi # replace the default threshold = 0.5, by the calculated optimal cutoff
 segreg_th <- 0.5 # default
