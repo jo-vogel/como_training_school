@@ -572,10 +572,13 @@ possible_pairs <- c("BestGLM-Ridge",
                     "Elastic-Lasso_with_interact")
 
 score <- "Specificity"
-model_1 <- "Lasso_wo_int"
-score_1 <- speci_simplelasso
-model_2 <- "Lasso_wo_int_glinternet"
-score_2 <- speci_lasso_wo_int_glmint
+model_1 <- "Lasso_wo_int_lambda1se_adj"
+score_1 <- speci_simplelasso_adj
+model_2 <- "Lasso_wo_int_glinternet_adj"
+score_2 <- speci_lasso_wo_int_glmint_adj
+
+pairs(cbind(speci_simplelasso, speci_simplelasso_adj, speci_lasso_wo_int_glmint,
+            speci_lasso_wo_int_glmint_adj))
 
 substract_score_plot(score_name = score,
                      score_1 = score_1, model1_name = model_1,
@@ -588,10 +591,12 @@ ggsave(paste(output_path, score,"_",model_1,"VS",model_2,".png", sep = ""), widt
 pairs(cbind(csi_bestglm, csi_lwi, csi_ridge, csi_simplelasso, csi_elastic))
 
 score <- "CSI"
-model_1 <- "Lasso_wo_int"
-score_1 <- csi_simplelasso
-model_2 <- "Lasso_wo_int_glinternet"
-score_2 <- csi_lasso_wo_int_glmint
+model_1 <- "Lasso_wo_int_lambda1se_adj"
+score_1 <- csi_simplelasso_adj
+model_2 <- "Lasso_wo_int_glinternet_adj"
+score_2 <- csi_lasso_wo_int_glmint_adj
+
+pairs(cbind(csi_simplelasso, csi_simplelasso_adj, csi_lasso_wo_int_glmint, csi_lasso_wo_int_glmint_adj))
 
 substract_score_plot(score_name = score,
                      score_1 = score_1, model1_name = model_1,
