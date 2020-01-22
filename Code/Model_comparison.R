@@ -307,8 +307,8 @@ colnames(Result_matrix_elastic) = c("speci", "CSI", "EDI", "lon", "lat")
 # On the Drive you can find my data in:
 # Models/BestGlm/BestGlm_complete.RData
 
-# load(file="D:/PROJECTS/DAMOCLES/BestGLM_rep1000_worksp/BestGLm_complete.RData")
-load(file = "D:/user/vogelj/Group_project/Code/Workspaces/BestGLm_complete.RData")
+ load(file="D:/PROJECTS/DAMOCLES/BestGLM_rep1000_worksp/BestGLm_complete.RData")
+#load(file = "D:/user/vogelj/Group_project/Code/Workspaces/BestGLm_complete.RData")
 
 
 #location Pauline's Laptop
@@ -329,6 +329,11 @@ fitted.results_model_bestglm <- lapply(seq_along(nb_pix_bestglm), function(x){if
 
 
 y1_test_list_bestglm <- lapply(1:pix_num, function(x){Testing_Data[[x]][,ncol(Testing_Data[[x]])]}) # predictand
+
+
+
+
+
 
 y1_test_list_red <- lapply(nb_pix_bestglm,function(work_pix){y1_test_list_bestglm[[work_pix]]})
 
@@ -392,6 +397,58 @@ EDI_bestglm <- (log(F_bestglm)-log(H_bestglm))/(log(F_bestglm)+log(H_bestglm))
 
 Result_matrix_bestglm<- cbind(speci_bestglm, csi_bestglm, EDI_bestglm, coord_subset[,1],coord_subset[,2])
 colnames(Result_matrix_bestglm) = c("speci", "CSI", "EDI", "lon", "lat")
+
+x1_test_list_bestglm <- lapply(1:pix_num, function(x){if(ncol(Testing_Data[[x]])>1){Testing_Data[[x]][,1:(ncol(Testing_Data[[x]])-1)]}}) # predictors
+y1_test_list_bestglm <- lapply(1:pix_num, function(x){Testing_Data[[x]][,ncol(Testing_Data[[x]])]}) # predictand
+
+x1_train_list_bestglm <- lapply(1:pix_num, function(x){if(ncol(Training_Data[[x]])>1){Training_Data[[x]][,1:(ncol(Training_Data[[x]])-1)]}}) # predictors
+y1_train_list_bestglm <- lapply(1:pix_num, function(x){Training_Data[[x]][,ncol(Training_Data[[x]])]}) # predictand
+
+
+
+
+## Adjust cutoff level for BestGlm ##
+source("./Code/cutoff_adj_glm.R")
+#y1_train_list_bestglm <- y1_train_list
+#x1_train_list_bestglm <- x1_train_list
+cost_fp_bestglm <- 100 # Misses: this should be associated with a higher cost, as it is more detrimental
+cost_fn_bestglm <- 100 # False alarms
+work_pix_bestglm<-Pixel_ok
+
+
+cutoff_bestglm <- adjust_cutoff_bestglm(x1_train_list = x1_train_list_bestglm, y1_train_list = y1_train_list_bestglm,
+                                        work_pix = work_pix_bestglm, cost_fp = cost_fp_bestglm, cost_fn= cost_fn_bestglm)
+segreg_th_adj <- cutoff_bestglm # replace the default threshold = 0.5, by the calculated optimal cutoff
+
+
+
+fitted_results_bestglm_adj <- lapply(1:nb_pix_bestglm, function(x){ifelse(pred_bestglm[[x]] > segreg_th_adj,1,0)})
+
+speci_bestglm_adj <- sapply(1:nb_pix_bestglm, function(x){InformationValue::specificity(as.matrix(y1_test_list[[x]]),
+                                                                                        fitted_results_bestglm_adj[[x]],
+                                                                                        threshold = segreg_th_adj)})
+
+sensi_bestglm_adj <- sapply(1:nb_pix_bestglm, function(x){InformationValue::sensitivity(as.matrix(y1_test_list[[x]]),
+                                                                                        fitted_results_bestglm_adj[[x]],
+                                                                                        threshold = segreg_th_adj)})
+
+
+con_tab_bestglm_adj <-  lapply(1:nb_pix_bestglm, function(x){InformationValue::confusionMatrix(as.matrix(y1_test_list[[x]]),
+                                                                                               fitted_results_bestglm_adj[[x]],
+                                                                                               threshold = segreg_th_adj)})
+csi_bestglm_adj <- numeric()  #critical success index
+
+for(pix in 1:nb_pix_bestglm){
+  csi_bestglm_adj[pix] <- con_tab_bestglm_adj[[pix]]["0","0"]/(con_tab_bestglm_adj[[pix]]["0","0"] +
+                                                                 con_tab_bestglm_adj[[pix]]["1","0"] +
+                                                                 con_tab_bestglm_adj[[pix]]["0","1"])
+  if(is.na(con_tab_bestglm_adj[[pix]]["0","0"])){ #no extreme event forecasted => no first line in contengency table
+    csi_bestglm_adj[pix] <- 0
+  }
+  if(is.na(con_tab_bestglm_adj[[pix]]["1","0"])){ #No good year forecasted. Problematic pixels for this model
+    csi_bestglm_adj[pix] <- NA
+  }
+}#end for pix
 
 
 
