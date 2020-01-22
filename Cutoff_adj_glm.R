@@ -10,9 +10,8 @@ adjust_cutoff_bestglm <- function(x1_train_list, y1_train_list,  mypred_train, w
   
   
   
-  mypred_train <- lapply(Pixel_ok, function(x){predict(BestGlm_model[[x]]$BestModel,Training_Data[[x]][,1:(ncol(Training_Data[[x]])-1)],type='response')}) 
   y1_train_list_red <- lapply(work_pix,function(work_pix){y1_train_list[[work_pix]]})  
-  # mypred_train <- lapply(work_pix, function(x){predict(cv_fit[[x]],x1_train_list[[x]],type="response")}) 
+  mypred_train <- lapply(work_pix, function(x){predict(BestGlm_model[[x]]$BestModel,x1_train_list[[x]],type="response")}) 
   
   # Data set with actuals and predictions
   data_train_all <- pblapply(1:length(work_pix), function(x){ data.frame("Actuals"= y1_train_list_red[[x]], "Predictions"=mypred_train[[x]])}) # train data
