@@ -459,7 +459,7 @@ for(pix in 1:nb_pix_bestglm){
 # source('./Code/Lasso_interact_global_preparation.R') # load necessary files
 # On the Drive you can find my data in:
 # with interactions
-# Models/Lasso (glinternet)/LASSO_with_interactions/cv_fit_complete.RData.RData 
+# Models/Lasso (glinternet)/LASSO_with_interactions/cv_fit_complete.RData
 # load("D:/user/vogelj/Group_project/Code/Workspaces/cv_fit_complete.RData") # load monthly model output
 # load("D:/user/vogelj/Group_project/Code/Workspaces/cv_fit_seasonal.RData") # load seasonal model output
 # without interactions

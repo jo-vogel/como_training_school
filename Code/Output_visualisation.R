@@ -16,13 +16,15 @@ library(pbapply)
 # source('./Code/Lasso_interact_global.R') # takes ca. 3 hours
 path_to_NH_files <- "D:/user/vogelj/Data/Group project Como"
 source('./Code/Lasso_interact_global_preparation.R')
-# load("D:/user/vogelj/Group_project/Code/Workspaces/cv_fit_complete.RData") # monthly model
-load("D:/user/vogelj/Group_project/Code/Workspaces/cv_fit_no_int.RData") # monthly model
 
-# load("D:/user/vogelj/Group_project/Code/Workspaces/cv_fit_no_int_act.RData") # monthly model without interactions
-# source('./Code/Lasso_interact_seasonal_global_preparation.R')
-# load("D:/user/vogelj/Group_project/Code/Workspaces/cv_fit_seasonal.RData") # seasonal model
-
+# with interactions
+# Models/Lasso (glinternet)/LASSO_with_interactions/cv_fit_complete.RData
+# load("D:/user/vogelj/Group_project/Code/Workspaces/cv_fit_complete.RData") # load monthly model output
+# load("D:/user/vogelj/Group_project/Code/Workspaces/cv_fit_seasonal.RData") # load seasonal model output
+# without interactions
+# Models/Lasso (glinternet)/LASSO_without_interactions/cv_fit_no_int.RData
+load("D:/user/vogelj/Group_project/Code/Workspaces/cv_fit_no_int.RData") # monthly model without interactions
+# load("D:/user/vogelj/Group_project/Code/Workspaces/cv_fit_seasonal_no_int.RData") # seasonal model without interactions
 
 
 # Model performance assessment ####
@@ -512,6 +514,13 @@ cor(mean_yield, speci)
   }
   plot(table(num_months))
   
+  # combinations of months and variables
+  coefs_seas <- sapply(1:length(coefs), function(x) names(numLevels_list[[x]])[coefs[[x]]$mainEffects$cont])
+  coefs_seas_vec <- unlist(coefs_seas)
+  png(filename="D:/user/vogelj/Group_project/Output/Plots/Combination_variable_season_barplot.png",res=2000,units="cm",width=15,height=20)
+  par(mar=c(5,7,4,2))
+  barplot(sort(table(myvec)),horiz=T,las=1,col="ForestGreen",xlab="Number of pixels, where variable is included in the model")
+  dev.off()
   
   nb_of_seas <- vector("numeric",length=length(coefs))
   for (i in 1:length(coefs)){
@@ -587,6 +596,33 @@ cor(mean_yield, speci)
   # ggsave(file="D:/user/vogelj/Group_project/Output/Plots/Number_of_seasons_seasonal.png")
   
   
+  
+  # Cutoff level plot
+  cutoffs <- rep(NA,965)
+  cutoffs[work_pix] <- sapply(work_pix, function(x){cutoff_avg[x]})
+  DF_cutoff <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], cutoff = cutoffs)
+  
+  ggplot(data = DF_cutoff, aes(x=lon, y=lat)) +
+    geom_polygon(data = world, aes(long, lat, group=group),
+                 fill="white", color="black", size=0.3) +
+    geom_point(shape=15, aes(color=cutoffs),size=0.7) +
+    scale_color_gradient2(limits=c(min(cutoffs,na.rm=T),max(cutoffs,na.rm=T)),midpoint=min(cutoffs,na.rm=T)+(max(cutoffs,na.rm=T)-min(cutoffs,na.rm=T))/2,
+                          low = "black", mid = "red3", high = "yellow") +
+    theme(panel.ontop = F, panel.grid = element_blank(),
+          panel.border = element_rect(colour = "black", fill = NA),
+          axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
+    ylab("Lat (°N)") +
+    xlab("Lon (°E)") +
+    coord_fixed(xlim = c(-120, 135),
+                ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
+                ratio = 1.3)+
+    labs(color="Cutoff",
+         title = paste("Cutoff",model_name,"regression"),
+         subtitle = paste("Bad yield threshold=", threshold, sep = ""))+
+    theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
+          legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
+    X11(width = 20, height = 7)
+  ggsave(file="D:/user/vogelj/Group_project/Output/Plots/Cutoff_lasso_interact_map.png")
   
   
   # ROC ####
