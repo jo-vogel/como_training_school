@@ -27,8 +27,7 @@ segreg_th <- 0.5
 ##### Initialisation, librairies, data #####
 
 library(ncdf4);library(glmnet);library(InformationValue);library(ROCR)
-library(abind);library(stringr)
-library(foreach);library(doParallel)
+library(abind);library(stringr);library(tictoc)
 
 
 
@@ -127,3 +126,28 @@ numLevels_list <- sapply(1:pix_num, function(x){ rep(1,times=var_num[x])})
 for (i in 1:pix_num){
   names(numLevels_list[[i]]) <-  colnames(x1_test_list[[i]])
 }
+
+
+
+
+
+##### Run the CrossValidation #####
+tic()
+model_cv_fitting <- list()
+for (pixel in 1:pix_num) {
+  # for (pixel in 1:5) {
+    num_na <- list()
+    for (varia in 1:7) { #extreme indices
+      num_na[[varia]] <- which(is.na(as.matrix(x1_train_list[[pixel]])[,varia]))
+    }#end for varia
+    
+  model_cv_fitting[[pixel]] <- cv.glmnet(x = as.matrix(x1_train_list[[pixel]])[-unique(c(unlist(num_na))),],
+                                         y = as.matrix(y1_train_list[[pixel]])[-unique(c(unlist(num_na))),],
+                                         family = "binomial", alpha = no_model, nfolds = 10)
+  print(paste(pixel, "out of", pix_num))
+}#end for pixel
+
+toc()
+
+save(model_cv_fitting, file = paste0("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/cv_month_xtrm_",
+                                    model_name,"_threshbadyield", str_pad(threshold*100, 3, pad = "0"),".RData"))
