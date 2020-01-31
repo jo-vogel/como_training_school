@@ -153,7 +153,7 @@ for (pixel in 1:pix_num) {
   print(paste(pixel, "out of", pix_num))
 }#end for pixel
 
-toc()
+toc() #2.4h for Lasso
 
 save(model_cv_fitting, file = paste0("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/cv_month_xtrm_",
                                     model_name,"_threshbadyield", str_pad(threshold*100, 3, pad = "0"),".RData"))
