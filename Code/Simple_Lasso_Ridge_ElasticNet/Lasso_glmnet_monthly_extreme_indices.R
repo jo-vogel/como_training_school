@@ -141,9 +141,15 @@ for (pixel in 1:pix_num) {
       num_na[[varia]] <- which(is.na(as.matrix(x1_train_list[[pixel]])[,varia]))
     }#end for varia
     
+    if (length(unique(c(unlist(num_na))))>(dim(as.matrix(x1_train_list[[pixel]]))[1])/2){
+      model_cv_fitting[[pixel]]<-paste(length(unique(c(unlist(num_na)))),"NA in extreme indices")
+    } else {
   model_cv_fitting[[pixel]] <- cv.glmnet(x = as.matrix(x1_train_list[[pixel]])[-unique(c(unlist(num_na))),],
                                          y = as.matrix(y1_train_list[[pixel]])[-unique(c(unlist(num_na))),],
                                          family = "binomial", alpha = no_model, nfolds = 10)
+        
+      }#end if else
+    
   print(paste(pixel, "out of", pix_num))
 }#end for pixel
 
