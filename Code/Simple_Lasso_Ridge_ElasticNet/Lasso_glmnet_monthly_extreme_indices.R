@@ -209,7 +209,7 @@ load(paste0("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject
 load(paste0("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/Lasso_lambdamin_month_xtrm_",
             model_name,"_threshbadyield", str_pad(threshold*100, 3, pad = "0"),".RData"))
 
-Model_chosen <- lasso_model_lambda1se
+Model_chosen <- lasso_model_lambdamin
 
 pix_model_failed <- numeric(length = pix_num)
 coeff  <-list()
@@ -323,7 +323,7 @@ ggplot(data = DF_speci, aes(x=lon, y=lat)) +
   labs(color="Specif.",
        title = paste("Specificity, simple",model_name,"regression, monthly meteo var + extreme indices"),
        subtitle = paste("Bad yield threshold=", threshold,
-                        ", cutoff level=", segreg_th,", lambda 1se", sep = ""))+
+                        ", cutoff level=", segreg_th,", lambda min", sep = ""))+
   theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
         legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
   X11(width = 20, height = 7)
@@ -349,7 +349,7 @@ ggplot(data = DF_sci, aes(x=lon, y=lat)) +
   labs(color="CSI",
        title = paste("CSI, simple",model_name,"regression, monthly meteo var + extreme indices"),
        subtitle = paste("Bad yield threshold=", threshold,
-                        ", cutoff level=", segreg_th,", lambda 1se", sep = ""))+
+                        ", cutoff level=", segreg_th,", lambda min", sep = ""))+
   theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
         legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
   X11(width = 20, height = 7)
@@ -373,7 +373,7 @@ ggplot(data = DF_numbcoeff, aes(x=lon, y=lat)) +
               ratio = 1.3)+
   labs(color="Nb of var.",
        title = paste("Number of variables kept, simple",model_name,"regression, monthly meteo var + extreme indices"),
-       subtitle = paste("Bad yield threshold=", threshold, sep = ""))+
+       subtitle = paste("Bad yield threshold=", threshold, ", lambdamin", sep = ""))+
   theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
         legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
   X11(width = 20, height = 7)
@@ -383,7 +383,7 @@ DF_numbextr <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], coeff_ke
 DF_numbextr$coeff_kep <- as.factor(DF_numbextr$coeff_kep)
 
 mycolors <- c("orange", rgb(0.3,0.3,0.5), rgb(0,0,0.7),
-              rgb(0.2,0.2,0.8), rgb(0.4,0.4,0.9), rgb(0.7,0.7,1), "gray")
+              rgb(0.2,0.2,0.8), rgb(0.4,0.4,0.9), rgb(0.7,0.7,1), rgb(0.8,0.8,1), rgb(0.9,0.9,1))
 
 ggplot(data = DF_numbextr, aes(x=lon, y=lat)) +
   geom_polygon(data = world, aes(long, lat, group=group),
@@ -400,7 +400,7 @@ ggplot(data = DF_numbextr, aes(x=lon, y=lat)) +
               ratio = 1.3)+
   labs(color="Nb ind.",
        title = paste("Number of exteme indices kept, simple",model_name,"regression, monthly meteo var + extreme indices"),
-       subtitle = paste("Bad yield threshold=", threshold, sep = ""))+
+       subtitle = paste("Bad yield threshold=", threshold, ", lambdamin", sep = ""))+
   theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
         legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
   X11(width = 20, height = 7)
