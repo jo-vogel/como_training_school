@@ -180,23 +180,21 @@ for (i in 1:pix_num){
 #       lasso_model_lambdamin[[pixel]] <- glmnet(x = as.matrix(x1_train_list[[pixel]])[training_years_wo_na,],
 #                                                y = as.matrix(y1_train_list[[pixel]])[training_years_wo_na,],
 #                                                family = "binomial", alpha = no_model,
-#                                                lambda = model_cv_fitting[[pixel]]$lambda.min,
-#                                                type.multinomial = "grouped")
+#                                                lambda = model_cv_fitting[[pixel]]$lambda.min)
 #       
 #       lasso_model_lambda1se[[pixel]] <- glmnet(x = as.matrix(x1_train_list[[pixel]])[training_years_wo_na,],
 #                                                y = as.matrix(y1_train_list[[pixel]])[training_years_wo_na,],
 #                                                family = "binomial", alpha = no_model,
-#                                                lambda = model_cv_fitting[[pixel]]$lambda.1se,
-#                                                type.multinomial = "grouped")
+#                                                lambda = model_cv_fitting[[pixel]]$lambda.1se)
 #     } #end ifelse
 #     print(paste(pixel, "out of", pix_num))
 #     
 #   }#end for pixel
 #   
 #   save(lasso_model_lambdamin, file = paste0("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/Lasso_lambdamin_month_xtrm_",
-#                                             model_name,"_threshbadyield", str_pad(threshold*100, 3, pad = "0"),"_typemulti-grouped.RData"))
+#                                             model_name,"_threshbadyield", str_pad(threshold*100, 3, pad = "0"),".RData"))
 #   save(lasso_model_lambda1se, file = paste0("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/Lasso_lambda1se_month_xtrm_",
-#                                             model_name,"_threshbadyield", str_pad(threshold*100, 3, pad = "0"),"_typemulti-grouped.RData"))
+#                                             model_name,"_threshbadyield", str_pad(threshold*100, 3, pad = "0"),".RData"))
 # }
 # toc()
 
@@ -207,9 +205,9 @@ for (i in 1:pix_num){
 ##### Model performance assessment #####
 
 load(paste0("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/Lasso_lambda1se_month_xtrm_",
-            model_name,"_threshbadyield", str_pad(threshold*100, 3, pad = "0"),"_typemulti-grouped.RData"))
+            model_name,"_threshbadyield", str_pad(threshold*100, 3, pad = "0"),".RData"))
 load(paste0("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/Lasso_lambdamin_month_xtrm_",
-            model_name,"_threshbadyield", str_pad(threshold*100, 3, pad = "0"),"_typemulti-grouped.RData"))
+            model_name,"_threshbadyield", str_pad(threshold*100, 3, pad = "0"),".RData"))
 
 Model_chosen <- lasso_model_lambda1se
 
