@@ -251,7 +251,7 @@ sqrt(cv_fit$cvErr[[i_1Std]]) # root mean squared error (RMSE) on validation data
 # mypred <- predict(cv_fit,x1_test,type="response")
 # fitted.results_bestglm <- ifelse(mypred > 0.5,1,0)
 
-mypred <- lapply(1:50, function(x){predict(cv_fit_all[[x]],x1_test_list[[x]],type="response")}) 
+mypred <- lapply(1:50, function(x){predict(cv_fit_all[[x]],x1_test_list[[x]],type="response", lambdaType="lambdaHat1Std")}) 
 fitted.results_bestglm <- lapply(1:50, function(x){ifelse(mypred[[x]] > 0.5,1,0)})
 
 misClassError(y1_test,fitted.results_bestglm)

@@ -74,9 +74,9 @@ colnames(Model_data_stand) <- columnnames
 
 
 # Exclude NA variable columns
-na_col <- matrix(data=NA,nrow=pix_num,ncol=52)
+na_col <- matrix(data=NA,nrow=pix_num,ncol=dim(Model_data)[2])
 for (j in 1:pix_num){
-  for (i in 1:52){
+  for (i in 1:dim(Model_data)[2]){
     na_col[j,i] <- all(is.na(Model_data[j,i,])) # TRUE if entire column is NA
   }
 }
@@ -238,7 +238,8 @@ coefs[work_pix] <- lapply(work_pix, function(x){coef(cv_fit[[x]]$glinternetFit)[
 
 #which segregation threshold for the model?
 segreg_th <- 0.5
-mypred <- lapply(work_pix, function(x){predict(cv_fit[[x]],x1_test_list[[x]],type="response")}) 
+# mypred <- lapply(work_pix, function(x){predict(cv_fit[[x]],x1_test_list[[x]],type="response")}) # default lambdaType
+mypred <- lapply(work_pix, function(x){predict(cv_fit[[x]],x1_test_list[[x]],type="response", lambdaType="lambdaHat1Std")}) # recommended lambdaType
 fitted.results_model <- lapply(seq_along(work_pix), function(x){ifelse(mypred[[x]] > segreg_th,1,0)})
 
 y1_test_list_red <- lapply(work_pix,function(work_pix){y1_test_list[[work_pix]]})

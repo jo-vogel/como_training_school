@@ -12,7 +12,7 @@
 # Training and testing data ####
 ################################
 
-##### Initialisation, librairies, data
+##### Initialisation, libraries, data
 
 library(ncdf4);library(RColorBrewer);library(viridis)
 library(maps);library(mapdata);library(ggplot2)
@@ -96,7 +96,7 @@ for(pix in 1:nb_pix_ridge){
     H_ridge[pix] <- NA
     F_ridge[pix] <- NA
   }
-}#end for pix
+} # end for pix
 
 EDI_ridge <- (log(F_ridge)-log(H_ridge))/(log(F_ridge)+log(H_ridge))
 
@@ -460,11 +460,11 @@ for(pix in 1:nb_pix_bestglm){
 # On the Drive you can find my data in:
 # with interactions
 # Models/Lasso (glinternet)/LASSO_with_interactions/cv_fit_complete.RData
-# load("D:/user/vogelj/Group_project/Code/Workspaces/cv_fit_complete.RData") # load monthly model output
+load("D:/user/vogelj/Group_project/Code/Workspaces/cv_fit_complete.RData") # load monthly model output
 # load("D:/user/vogelj/Group_project/Code/Workspaces/cv_fit_seasonal.RData") # load seasonal model output
 # without interactions
 # Models/Lasso (glinternet)/LASSO_without_interactions/cv_fit_no_int.RData.RData
-load("D:/user/vogelj/Group_project/Code/Workspaces/cv_fit_no_int.RData") # monthly model without interactions
+# load("D:/user/vogelj/Group_project/Code/Workspaces/cv_fit_no_int.RData") # monthly model without interactions
 # load("D:/user/vogelj/Group_project/Code/Workspaces/cv_fit_seasonal_no_int.RData") # seasonal model without interactions
 
 #location on Pauline's Laptop
@@ -483,7 +483,9 @@ x1_train_list_lwi <- x1_train_list
 cost_fp_lwi <- 100 # Misses: this should be associated with a higher cost, as it is more detrimental
 cost_fn_lwi <- 100 # False alarms 
 mypred_train_lwi <- lapply(work_pix_lwi,
-                       function(x){predict(cv_fit[[x]],x1_train_list_lwi[[x]],type="response")}) 
+                           function(x){predict(cv_fit[[x]],x1_train_list_lwi[[x]],type="response", lambdaType="lambdaHat1Std")}) # recommended lambdaType
+# mypred_train_lwi2 <- lapply(work_pix_lwi,
+#                             function(x){predict(cv_fit[[x]],x1_train_list_lwi[[x]],type="response", lambdaType="lambdaHat")}) # default lambdaType
 
 cutoff_lwi <- adjust_cutoff(x1_train_list = x1_train_list_lwi, y1_train_list = y1_train_list_lwi, mypred_train = mypred_train_lwi, 
                             work_pix = work_pix_lwi, cost_fp = cost_fp_lwi, cost_fn= cost_fn_lwi)

@@ -70,7 +70,7 @@ colnames(Model_data_stand) <- c("Yield", "dtr", "frs", "txx", "tnn", "rx5", "tx9
                           "pr_Aug_Y2","pr_Sep_Y2","pr_Oct_Y2","pr_Nov_Y2","pr_Dec_Y2")
 
 
-Model_data_stand <- abind(yields_stand_3dim,tasmax_stand,vpd_stand,pr_stand,along=2)
+# Model_data_stand <- abind(yields_stand_3dim,tasmax_stand,vpd_stand,pr_stand,along=2)
 
 
 threshold <- 0.05
@@ -83,15 +83,15 @@ cy_reshaped <- array(data=cy,dim=c(dim(cy)[1],1,1600))
 Model_data_stand[,1,] <-cy_reshaped
 # Model_data_stand[,1,] <-cy_reshaped
 
-colnames(Model_data_stand) <- columnnames
+# colnames(Model_data_stand) <- columnnames
 # colnames(Model_data_stand) <- columnnames
 
 
 
 # Exclude NA variable columns
-na_col <- matrix(data=NA,nrow=pix_num,ncol=52)
+na_col <- matrix(data=NA,nrow=pix_num,ncol=dim(Model_data_stand)[2])
 for (j in 1:pix_num){
-  for (i in 1:52){
+  for (i in 1:dim(Model_data_stand)[2]){
     na_col[j,i] <- all(is.na(Model_data_stand[j,i,])) # TRUE if entire column is NA
   }
 }
@@ -209,7 +209,7 @@ registerDoParallel(cl)
 
 
 set.seed(100)
-cv_fit <- foreach (i=1:dim(Model_data)[1],.multicombine=TRUE) %dopar% {
+cv_fit <- foreach (i=1:dim(Model_data_stand)[1],.multicombine=TRUE) %dopar% {
   # for (i in 1:dim(Model_data)[1]){
   # normal run
   tryCatch(glinternet.cv(x1_train_list[[i]], y1_train_list[[i]], numLevels_list[[i]],family = "binomial",interactionCandidates=""), error=function(e) paste0("Error in iteration ",i))
@@ -254,7 +254,7 @@ coefs[work_pix] <- lapply(work_pix, function(x){coef(cv_fit[[x]]$glinternetFit)[
 
 #which segregation threshold for the model?
 segreg_th <- 0.5
-mypred <- lapply(work_pix, function(x){predict(cv_fit[[x]],x1_test_list[[x]],type="response")}) 
+mypred <- lapply(work_pix, function(x){predict(cv_fit[[x]],x1_test_list[[x]],type="response", lambdaType="lambdaHat1Std")}) 
 fitted.results_model <- lapply(seq_along(work_pix), function(x){ifelse(mypred[[x]] > segreg_th,1,0)})
 
 y1_test_list_red <- lapply(work_pix,function(work_pix){y1_test_list[[work_pix]]})

@@ -51,7 +51,7 @@ coefs[work_pix] <- lapply(work_pix, function(x){coef(cv_fit[[x]]$glinternetFit)[
 
 #which segregation threshold for the model?
 segreg_th <- 0.5
-mypred <- lapply(work_pix, function(x){predict(cv_fit[[x]],x1_test_list[[x]],type="response")}) 
+mypred <- lapply(work_pix, function(x){predict(cv_fit[[x]],x1_test_list[[x]],type="response", lambdaType="lambdaHat1Std")}) 
 fitted.results_model <- lapply(seq_along(work_pix), function(x){ifelse(mypred[[x]] > segreg_th,1,0)})
 
 y1_test_list_red <- lapply(work_pix,function(work_pix){y1_test_list[[work_pix]]})
@@ -114,7 +114,7 @@ source("./Code/unbalanced_funtions.R")
 # Procedure for whole training data set ####
 
   y1_train_list_red <- lapply(work_pix,function(work_pix){y1_train_list[[work_pix]]})  
-  mypred_train <- lapply(work_pix, function(x){predict(cv_fit[[x]],x1_train_list[[x]],type="response")}) 
+  mypred_train <- lapply(work_pix, function(x){predict(cv_fit[[x]],x1_train_list[[x]],type="response", lambdaType="lambdaHat1Std")}) 
   
   # Data set with actuals and predictions
   # data_test_all <- pblapply(1:length(work_pix), function(x){ data.frame("Actuals"=y1_test_list_red[[x]], "Predictions"=mypred[[x]])}) # test data
