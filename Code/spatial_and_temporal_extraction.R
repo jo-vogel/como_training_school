@@ -15,7 +15,7 @@ rm(list=ls(all=TRUE))
 library(glmnet);library(InformationValue)
 library(ncdf4);library(lubridate)
 library(foreach);library(doParallel)
-library(abind); library(raster); library(BBmisc)
+library(abind); library(raster); library(BBmisc); library(ggplot2)
 
 # Get the data
 path_to_NH_files <- "C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/Data/Global"
@@ -362,3 +362,219 @@ Model_brick <- raster("Model_data_brick.tif")
 Model_stack <- raster("Model_data_stack.tif")
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+##### Rapid look at the growing season length #####
+min_growingseas_length <- apply(X = growingseason_length[pix_to_keep,], MARGIN = 1, FUN = min)
+mean_growingseas_length <- apply(X=growingseason_length[pix_to_keep,], MARGIN = 1, FUN = max)
+mean_growingseas_length_corrected <- apply(X=growingseason_length_corrected[pix_to_keep,], MARGIN = 1, FUN = max, na.rm=T)
+max_growingseas_length <- apply(X = growingseason_length[pix_to_keep,], MARGIN = 1, FUN = max)
+max_growingseas_length_corrected <- apply(X = growingseason_length_corrected[pix_to_keep,], MARGIN = 1, FUN = max, na.rm=T)
+range_growingseason_length <- max_growingseas_length - min_growingseas_length
+range_growingseason_length_corrected <- max_growingseas_length_corrected - min_growingseas_length
+
+
+
+# load all coordinates of northern hemisphere
+path_to_NH_files <- "C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/Data/Global"
+nh_files <- list.files(path=path_to_NH_files,pattern="*NH.nc") # all files from northern hemisphere
+nh_data <- lapply(1:length(nh_files),function(x){nc_open(paste0(path_to_NH_files,"/",nh_files[x]))})
+lat_all <- ncvar_get(nh_data[[1]],"lat")
+lon_all <- ncvar_get(nh_data[[1]],"lon")
+lati_all <- rep(lat_all,each=length(lon_all))
+long_all <- rep(lon_all,length(lat_all)) # coordinates rearranged
+coord_all <- cbind(long_all,lati_all)
+
+lapply(1:length(nh_files),function(x){nc_close(nh_data[[x]])})
+
+coord_subset <- cbind(lon_kept,lat_kept)
+world <- map_data("world")
+
+
+DF_min <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], speci = min_growingseas_length)
+
+ggplot(data = DF_min, aes(x=lon, y=lat)) +
+  geom_polygon(data = world, aes(long, lat, group=group),
+               fill="white", color="black", size=0.3) +
+  geom_point(shape=15, aes(color=min_growingseas_length)) +
+  scale_color_gradient(low = "black", high = "turquoise") +
+  theme(panel.ontop = F, panel.grid = element_blank(),
+        panel.border = element_rect(colour = "black", fill = NA),
+        axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
+  ylab("Lat (°N)") +
+  xlab("Lon (°E)") +
+  coord_fixed(xlim = c(-120, 135),
+              ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
+              ratio = 1.3)+
+  labs(color="Min GSL",
+       title = paste("Minimum length of the growing season"))+
+  theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
+        legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
+  X11(width = 20, height = 7)
+
+
+DF_max <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], speci = max_growingseas_length)
+
+ggplot(data = DF_max, aes(x=lon, y=lat)) +
+  geom_polygon(data = world, aes(long, lat, group=group),
+               fill="white", color="black", size=0.3) +
+  geom_point(shape=15, aes(color=max_growingseas_length)) +
+  scale_color_gradient2(low = "black", mid = "orange", high = "red", midpoint = 365) +
+  theme(panel.ontop = F, panel.grid = element_blank(),
+        panel.border = element_rect(colour = "black", fill = NA),
+        axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
+  ylab("Lat (°N)") +
+  xlab("Lon (°E)") +
+  coord_fixed(xlim = c(-120, 135),
+              ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
+              ratio = 1.3)+
+  labs(color="Max GSL",
+       title = paste("Maximum length of the growing season"))+
+  theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
+        legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
+  X11(width = 20, height = 7)
+
+DF_max_corr <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], speci = max_growingseas_length_corrected)
+
+ggplot(data = DF_max_corr, aes(x=lon, y=lat)) +
+  geom_polygon(data = world, aes(long, lat, group=group),
+               fill="white", color="black", size=0.3) +
+  geom_point(shape=15, aes(color=max_growingseas_length_corrected)) +
+  scale_color_gradient(low = "black", high = "orange") +
+  theme(panel.ontop = F, panel.grid = element_blank(),
+        panel.border = element_rect(colour = "black", fill = NA),
+        axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
+  ylab("Lat (°N)") +
+  xlab("Lon (°E)") +
+  coord_fixed(xlim = c(-120, 135),
+              ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
+              ratio = 1.3)+
+  labs(color="Max GSL",
+       title = paste("Maximum length of the growing season (removing years GS>365 days)"))+
+  theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
+        legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
+  X11(width = 20, height = 7)
+
+
+
+DF_mean <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], speci = mean_growingseas_length)
+
+ggplot(data = DF_mean, aes(x=lon, y=lat)) +
+  geom_polygon(data = world, aes(long, lat, group=group),
+               fill="white", color="black", size=0.3) +
+  geom_point(shape=15, aes(color=mean_growingseas_length)) +
+  scale_color_gradient2(low = "black", mid = "green",
+                        high = "white", midpoint = max(mean_growingseas_length_corrected)) +
+  theme(panel.ontop = F, panel.grid = element_blank(),
+        panel.border = element_rect(colour = "black", fill = NA),
+        axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
+  ylab("Lat (°N)") +
+  xlab("Lon (°E)") +
+  coord_fixed(xlim = c(-120, 135),
+              ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
+              ratio = 1.3)+
+  labs(color="Mean GSL",
+       title = paste("Mean length of the growing season"))+
+  theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
+        legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
+  X11(width = 20, height = 7)
+
+DF_mean_corr <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], speci = mean_growingseas_length_corrected)
+
+ggplot(data = DF_mean_corr, aes(x=lon, y=lat)) +
+  geom_polygon(data = world, aes(long, lat, group=group),
+               fill="white", color="black", size=0.3) +
+  geom_point(shape=15, aes(color=mean_growingseas_length_corrected)) +
+  scale_color_gradient(low = "black", high = "green") +
+  theme(panel.ontop = F, panel.grid = element_blank(),
+        panel.border = element_rect(colour = "black", fill = NA),
+        axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
+  ylab("Lat (°N)") +
+  xlab("Lon (°E)") +
+  coord_fixed(xlim = c(-120, 135),
+              ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
+              ratio = 1.3)+
+  labs(color="Mean GSL",
+       title = paste("Mean length of the growing season (removing years GS>365 days)"))+
+  theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
+        legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
+  X11(width = 20, height = 7)
+
+
+
+
+DF_range <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], speci = range_growingseason_length)
+
+ggplot(data = DF_range, aes(x=lon, y=lat)) +
+  geom_polygon(data = world, aes(long, lat, group=group),
+               fill="white", color="black", size=0.3) +
+  geom_point(shape=15, aes(color=range_growingseason_length)) +
+  scale_color_gradientn(colours = c("black", "brown",  "red", "yellow", "purple"),
+                        breaks = c(min(range_growingseason_length_corrected),30, 150,
+                                   max(range_growingseason_length_corrected),
+                                   max(range_growingseason_length))) +
+  theme(panel.ontop = F, panel.grid = element_blank(),
+        panel.border = element_rect(colour = "black", fill = NA),
+        axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
+  ylab("Lat (°N)") +
+  xlab("Lon (°E)") +
+  coord_fixed(xlim = c(-120, 135),
+              ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
+              ratio = 1.3)+
+  labs(color="Range GSL",
+       title = paste("Range of the growing season length"))+
+  theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
+        legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
+  X11(width = 20, height = 7)
+
+DF_range_corr <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], speci = range_growingseason_length_corrected)
+
+ggplot(data = DF_range_corr, aes(x=lon, y=lat)) +
+  geom_polygon(data = world, aes(long, lat, group=group),
+               fill="white", color="black", size=0.3) +
+  geom_point(shape=15, aes(color=range_growingseason_length_corrected)) +
+  scale_color_gradientn(colours = c("black", "brown",  "red", "yellow"),
+                        breaks = c(min(range_growingseason_length_corrected),30, 150,
+                                   max(range_growingseason_length_corrected))) +
+  theme(panel.ontop = F, panel.grid = element_blank(),
+        panel.border = element_rect(colour = "black", fill = NA),
+        axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
+  ylab("Lat (°N)") +
+  xlab("Lon (°E)") +
+  coord_fixed(xlim = c(-120, 135),
+              ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
+              ratio = 1.3)+
+  labs(color="Range GSL",
+       title = paste("Range of the growing season length (removing years GS>365 days)"))+
+  theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
+        legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
+  X11(width = 20, height = 7)
