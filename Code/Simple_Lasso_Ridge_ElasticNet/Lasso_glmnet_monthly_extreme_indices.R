@@ -355,7 +355,7 @@ ggplot(data = DF_sci, aes(x=lon, y=lat)) +
   X11(width = 20, height = 7)
 
 
-#Plot number of extreme indices kept
+#Plot number of variables kept
 DF_numbcoeff <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], coeff_kep = nb_coeff_kept)
 
 ggplot(data = DF_numbcoeff, aes(x=lon, y=lat)) +
