@@ -484,15 +484,16 @@ cost_fp_lwi <- 100 # Misses: this should be associated with a higher cost, as it
 cost_fn_lwi <- 100 # False alarms 
 mypred_train_lwi <- lapply(work_pix_lwi,
                            function(x){predict(cv_fit[[x]],x1_train_list_lwi[[x]],type="response", lambdaType="lambdaHat1Std")}) # recommended lambdaType
-# mypred_train_lwi2 <- lapply(work_pix_lwi,
-#                             function(x){predict(cv_fit[[x]],x1_train_list_lwi[[x]],type="response", lambdaType="lambdaHat")}) # default lambdaType
+# mypred_train_lwi <- lapply(work_pix_lwi,
+                            # function(x){predict(cv_fit[[x]],x1_train_list_lwi[[x]],type="response", lambdaType="lambdaHat")}) # default lambdaType
 
-cutoff_lwi <- adjust_cutoff(x1_train_list = x1_train_list_lwi, y1_train_list = y1_train_list_lwi, mypred_train = mypred_train_lwi, 
+cutoff_lwi <- adjust_cutoff(x1_train_list = x1_train_list_lwi, y1_train_list = y1_train_list_lwi, mypred_train = mypred_train_lwi,
                             work_pix = work_pix_lwi, cost_fp = cost_fp_lwi, cost_fn= cost_fn_lwi)
 segreg_th_adj <- cutoff_lwi # replace the default threshold = 0.5, by the calculated optimal cutoff
 segreg_th <- 0.5 # default
 
-i_1Std <- sapply(work_pix_lwi, function(x){ which(cv_fit[[x]]$lambdaHat1Std == cv_fit[[x]]$lambda)}) # the preferential lambda (tuning parameter)
+i_1Std <- sapply(work_pix_lwi, function(x){ which(cv_fit[[x]]$lambdaHat1Std == cv_fit[[x]]$lambda)}) # the preferential lambda (tuning parameter): lambdaHat1Std
+# i_1Std <- sapply(work_pix_lwi, function(x){ which(cv_fit[[x]]$lambdaHat == cv_fit[[x]]$lambda)}) # the preferential lambda (tuning parameter): lambdaHat
 i_1Std_all_pix <- rep(NA,965)
 i_1Std_all_pix[work_pix_lwi] <- i_1Std # needed as a workaround (to have an object of lenght=965)
 
@@ -582,6 +583,13 @@ mean(sensi_lwi,na.rm=T);mean(sensi_adj_lwi,na.rm=T)
 segreg_th_adj
 mean(coeff_kep_lwi,na.rm=T)
 mean(num_interact,na.rm=T)
+
+# Calculaute preferential lambda
+pref_lam <- rep(NA,965)
+pref_lam[work_pix_lwi] <- sapply(work_pix_lwi, function(x) cv_fit[[x]]$lambdaHat1Std)
+  # write.csv(pref_lam,file="glinternet_lasso_without_interactions_lambdaHat1Std.csv")
+
+
 
 # Create comparison maps ####
 #############################

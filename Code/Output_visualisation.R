@@ -19,11 +19,11 @@ source('./Code/Lasso_interact_global_preparation.R')
 
 # with interactions
 # Models/Lasso (glinternet)/LASSO_with_interactions/cv_fit_complete.RData
-# load("D:/user/vogelj/Group_project/Code/Workspaces/cv_fit_complete.RData") # load monthly model output
+load("D:/user/vogelj/Group_project/Code/Workspaces/cv_fit_complete.RData") # load monthly model output
 # load("D:/user/vogelj/Group_project/Code/Workspaces/cv_fit_seasonal.RData") # load seasonal model output
 # without interactions
 # Models/Lasso (glinternet)/LASSO_without_interactions/cv_fit_no_int.RData
-load("D:/user/vogelj/Group_project/Code/Workspaces/cv_fit_no_int.RData") # monthly model without interactions
+# load("D:/user/vogelj/Group_project/Code/Workspaces/cv_fit_no_int.RData") # monthly model without interactions
 # load("D:/user/vogelj/Group_project/Code/Workspaces/cv_fit_seasonal_no_int.RData") # seasonal model without interactions
 
 
@@ -35,7 +35,8 @@ failed_pixels <- which(sapply(1:965, function(x) {is.character(cv_fit[[x]])})==1
 work_pix <- pix_in[-failed_pixels] # working pixels
 
 
-i_1Std <- sapply(work_pix, function(x){ which(cv_fit[[x]]$lambdaHat1Std == cv_fit[[x]]$lambda)}) # the preferential lambda (tuning parameter)
+i_1Std <- sapply(work_pix, function(x){ which(cv_fit[[x]]$lambdaHat1Std == cv_fit[[x]]$lambda)}) # the preferential lambda (tuning parameter) lambdaHat1Std
+# i_1Std <- sapply(work_pix, function(x){ which(cv_fit[[x]]$lambdaHat == cv_fit[[x]]$lambda)}) # the preferential lambda (tuning parameter) lambdaHat
 i_1Std_all_pix <- rep(NA,965)
 i_1Std_all_pix[work_pix] <- i_1Std # needed as a workaround (to have an object of lenght=965)
 
@@ -51,7 +52,8 @@ coefs[work_pix] <- lapply(work_pix, function(x){coef(cv_fit[[x]]$glinternetFit)[
 
 #which segregation threshold for the model?
 segreg_th <- 0.5
-mypred <- lapply(work_pix, function(x){predict(cv_fit[[x]],x1_test_list[[x]],type="response", lambdaType="lambdaHat1Std")}) 
+mypred <- lapply(work_pix, function(x){predict(cv_fit[[x]],x1_test_list[[x]],type="response", lambdaType="lambdaHat1Std")})
+# mypred <- lapply(work_pix, function(x){predict(cv_fit[[x]],x1_test_list[[x]],type="response", lambdaType="lambdaHat")}) 
 fitted.results_model <- lapply(seq_along(work_pix), function(x){ifelse(mypred[[x]] > segreg_th,1,0)})
 
 y1_test_list_red <- lapply(work_pix,function(work_pix){y1_test_list[[work_pix]]})
@@ -114,7 +116,8 @@ source("./Code/unbalanced_funtions.R")
 # Procedure for whole training data set ####
 
   y1_train_list_red <- lapply(work_pix,function(work_pix){y1_train_list[[work_pix]]})  
-  mypred_train <- lapply(work_pix, function(x){predict(cv_fit[[x]],x1_train_list[[x]],type="response", lambdaType="lambdaHat1Std")}) 
+  mypred_train <- lapply(work_pix, function(x){predict(cv_fit[[x]],x1_train_list[[x]],type="response", lambdaType="lambdaHat1Std")})
+  # mypred_train <- lapply(work_pix, function(x){predict(cv_fit[[x]],x1_train_list[[x]],type="response", lambdaType="lambdaHat")}) 
   
   # Data set with actuals and predictions
   # data_test_all <- pblapply(1:length(work_pix), function(x){ data.frame("Actuals"=y1_test_list_red[[x]], "Predictions"=mypred[[x]])}) # test data
@@ -519,7 +522,7 @@ cor(mean_yield, speci)
   coefs_seas_vec <- unlist(coefs_seas)
   png(filename="D:/user/vogelj/Group_project/Output/Plots/Combination_variable_season_barplot.png",res=2000,units="cm",width=15,height=20)
   par(mar=c(5,7,4,2))
-  barplot(sort(table(myvec)),horiz=T,las=1,col="ForestGreen",xlab="Number of pixels, where variable is included in the model")
+  barplot(sort(table(coefs_seas_vec)),horiz=T,las=1,col="ForestGreen",xlab="Number of pixels, where variable is included in the model",cex.names=0.8)
   dev.off()
   
   nb_of_seas <- vector("numeric",length=length(coefs))

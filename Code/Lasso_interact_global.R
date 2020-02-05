@@ -11,7 +11,7 @@ library(tictoc)
 library(rgdal)
 library(raster)
 
-# Get the data ####
+# Get the data (provided by Karin http://climexp.knmi.nl/Karin/DAMOCLES_project1/) ####
 ###################
 # path_to_NH_files <- "C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/Data/Global"
 path_to_NH_files <- "D:/user/vogelj/Data/Group project Como"
@@ -73,7 +73,7 @@ colnames(Model_data_stand) <- columnnames
 
 
 
-# Exclude NA variable columns
+# Exclude NA variable columns (outside of the growing season)
 na_col <- matrix(data=NA,nrow=pix_num,ncol=dim(Model_data)[2])
 for (j in 1:pix_num){
   for (i in 1:dim(Model_data)[2]){
@@ -84,6 +84,7 @@ non_na_col <- !na_col # columns without NAs
 non_na_col[,1] <- FALSE # exclude yield (it is no predictor and should therefore be ignored)
 
 
+# exclude years with yield = NA
 na_time <- vector("list",length=pix_num) # for each pixel, the positions of NAs over time
 for (j in 1:pix_num){
   na_time[[j]] <- which(is.na(Model_data[j,1,])) # locations of years with NA values
@@ -105,10 +106,10 @@ training_indices <- vector("list",length=pix_num)
 testing_indices <- vector("list",length=pix_num)
 set.seed(1994)
 for (x in 1:pix_num) {
-  if (years_with_na[x]) {
+  if (years_with_na[x]) { # if there are years with yield = NA for this pixel, neglect these years
     training_indices[[x]] <- sort(sample(x=vec[-na_time[[x]]], size = floor((1600-length(na_time[[x]]))*0.6)))
     testing_indices[[x]] <- vec[-c(na_time[[x]], training_indices[[x]])]
-  } else {
+  } else { # otherwise use all years
     training_indices[[x]] <- sort(sample(1:1600, size = floor(1600*0.6)))
     testing_indices[[x]] <- (1:1600)[-training_indices[[x]]]    
   }
