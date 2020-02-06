@@ -461,11 +461,13 @@ for(pix in 1:nb_pix_bestglm){
 # folder: Models/Lasso (glinternet)/LASSO_with_interactions/cv_fit_complete.RData
 # load("D:/user/vogelj/Group_project/Code/Workspaces/cv_fit_complete.RData") # load monthly model output
 # load("D:/user/vogelj/Group_project/Code/Workspaces/cv_fit_seasonal.RData") # load seasonal model output
+load("D:/user/vogelj/Group_project/Code/Workspaces/cv_fit_monthly_with_int_incl_ext.RData") # monthly model including extreme indices with interactions
+
 # without interactions
 # folder: Models/Lasso (glinternet)/LASSO_without_interactions/cv_fit_no_int.RData
 # load("D:/user/vogelj/Group_project/Code/Workspaces/cv_fit_no_int.RData") # monthly model without interactions
 # load("D:/user/vogelj/Group_project/Code/Workspaces/cv_fit_seasonal_no_int.RData") # seasonal model without interactions
-load("D:/user/vogelj/Group_project/Code/Workspaces/cv_fit_monthly_without_int_incl_ext.RData") # monthly model including extreme indices without interactions
+# load("D:/user/vogelj/Group_project/Code/Workspaces/cv_fit_monthly_without_int_incl_ext.RData") # monthly model including extreme indices without interactions
 
 #location on Pauline's Laptop
 # load("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/OtherModels/cv_fit_complete.Rdata")
