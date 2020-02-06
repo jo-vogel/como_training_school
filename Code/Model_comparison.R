@@ -35,7 +35,8 @@ message('Adjust the path accordingly.')
 path_to_NH_files <- "D:/user/vogelj/Data/Group project Como"
 output_path <- "D:/user/vogelj/Group_project/Output/Plots/"
 
-source('./Code/Lasso_interact_global_preparation.R') # load necessary files
+# source('./Code/Lasso_interact_global_preparation.R') # load necessary files
+source('./Code/Lasso_interact_global_preparation_incl_ext_ind.R') # monthly data including extreme indices
 
 
 # Load Model output for Ridge ####
@@ -455,17 +456,16 @@ for(pix in 1:nb_pix_bestglm){
 # Load Model output for Lasso glinternet (with and without) interactions ####
 ###################################################
 
-# source('./Code/Lasso_interact_global.R') # takes ca. 3 hours: load necessary files, calculate model
-# source('./Code/Lasso_interact_global_preparation.R') # load necessary files
 # On the Drive you can find my data in:
 # with interactions
-# Models/Lasso (glinternet)/LASSO_with_interactions/cv_fit_complete.RData
-load("D:/user/vogelj/Group_project/Code/Workspaces/cv_fit_complete.RData") # load monthly model output
+# folder: Models/Lasso (glinternet)/LASSO_with_interactions/cv_fit_complete.RData
+# load("D:/user/vogelj/Group_project/Code/Workspaces/cv_fit_complete.RData") # load monthly model output
 # load("D:/user/vogelj/Group_project/Code/Workspaces/cv_fit_seasonal.RData") # load seasonal model output
 # without interactions
-# Models/Lasso (glinternet)/LASSO_without_interactions/cv_fit_no_int.RData.RData
+# folder: Models/Lasso (glinternet)/LASSO_without_interactions/cv_fit_no_int.RData
 # load("D:/user/vogelj/Group_project/Code/Workspaces/cv_fit_no_int.RData") # monthly model without interactions
 # load("D:/user/vogelj/Group_project/Code/Workspaces/cv_fit_seasonal_no_int.RData") # seasonal model without interactions
+load("D:/user/vogelj/Group_project/Code/Workspaces/cv_fit_monthly_without_int_incl_ext.RData") # monthly model including extreme indices without interactions
 
 #location on Pauline's Laptop
 # load("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/OtherModels/cv_fit_complete.Rdata")

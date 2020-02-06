@@ -1,4 +1,4 @@
-# Lasso with interactions for northern hemisphere
+# Lasso with interactions for northern hemisphere including extreme indices
 
 library(ncdf4)
 library(glinternet)
@@ -197,7 +197,7 @@ message('This small section if meant for reruns with the preferential lambda')
 
 
 tic()
-cv_fit_list <- vector("list",length=dim(Model_data_stand)[1])
+# cv_fit_list <- vector("list",length=dim(Model_data_stand)[1])
 
 no_cores <- detectCores() / 2 - 1
 cl<-makeCluster(no_cores)
@@ -212,8 +212,8 @@ set.seed(100)
 cv_fit <- foreach (i=1:dim(Model_data_stand)[1],.multicombine=TRUE) %dopar% {
   # for (i in 1:dim(Model_data)[1]){
   # normal run
-  tryCatch(glinternet.cv(x1_train_list[[i]], y1_train_list[[i]], numLevels_list[[i]],family = "binomial",interactionCandidates=""), error=function(e) paste0("Error in iteration ",i))
-  # tryCatch(glinternet.cv(x1_train_list[[i]], y1_train_list[[i]], numLevels_list[[i]],family = "binomial"), error=function(e) paste0("Error in iteration ",i))
+  # tryCatch(glinternet.cv(x1_train_list[[i]], y1_train_list[[i]], numLevels_list[[i]],family = "binomial",interactionCandidates=""), error=function(e) paste0("Error in iteration ",i))
+  tryCatch(glinternet.cv(x1_train_list[[i]], y1_train_list[[i]], numLevels_list[[i]],family = "binomial"), error=function(e) paste0("Error in iteration ",i))
   
   # run with the preferential lambda from the normal run
   # tryCatch(glinternet.cv(x1_train_list[[i]], y1_train_list[[i]], numLevels_list[[i]],family = "binomial",lambda=pref_lam[i]), error=function(e) paste0("Error in iteration ",i))
@@ -226,7 +226,7 @@ cv_fit <- foreach (i=1:dim(Model_data_stand)[1],.multicombine=TRUE) %dopar% {
 }
 stopCluster(cl)
 toc()
-
+# save(cv_fit,file="cv_fit_monthly_without_int_incl_ext.RData")
 
 
 

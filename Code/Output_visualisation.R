@@ -15,17 +15,18 @@ library(pbapply)
 
 # source('./Code/Lasso_interact_global.R') # takes ca. 3 hours
 path_to_NH_files <- "D:/user/vogelj/Data/Group project Como"
-source('./Code/Lasso_interact_global_preparation.R')
+# source('./Code/Lasso_interact_global_preparation.R') # monthly data
+source('./Code/Lasso_interact_global_preparation_incl_ext_ind.R') # monthly data including extreme indices
 
 # with interactions
 # Models/Lasso (glinternet)/LASSO_with_interactions/cv_fit_complete.RData
-load("D:/user/vogelj/Group_project/Code/Workspaces/cv_fit_complete.RData") # load monthly model output
+# load("D:/user/vogelj/Group_project/Code/Workspaces/cv_fit_complete.RData") # load monthly model output
 # load("D:/user/vogelj/Group_project/Code/Workspaces/cv_fit_seasonal.RData") # load seasonal model output
 # without interactions
 # Models/Lasso (glinternet)/LASSO_without_interactions/cv_fit_no_int.RData
 # load("D:/user/vogelj/Group_project/Code/Workspaces/cv_fit_no_int.RData") # monthly model without interactions
 # load("D:/user/vogelj/Group_project/Code/Workspaces/cv_fit_seasonal_no_int.RData") # seasonal model without interactions
-
+load("D:/user/vogelj/Group_project/Code/Workspaces/cv_fit_monthly_without_int_incl_ext.RData") # monthly model including extreme indices without interactions
 
 # Model performance assessment ####
 ###################################
@@ -95,7 +96,7 @@ source("./Code/unbalanced_funtions.R")
 
 # Example for one pixel ####
 
-  exam_pixels <- sample(963,10) # Choose some examplary pixels
+  exam_pixels <- sample(length(work_pix),10) # Choose some examplary pixels
   mypix <- 6 # decide by having a look at "con_tab" or see later in summary(cm_info$data$type)
   mypix <- exam_pixels[4] # decide by having a look at "con_tab" or see later in summary(cm_info$data$type)
   # data_test <- data.frame("Actuals"=y1_test_list_red[[mypix]], "Predictions"=fitted.results_model[[mypix]])
