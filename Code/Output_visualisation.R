@@ -409,9 +409,15 @@ cor(mean_yield, speci)
     # colours=c(gray.colors(1),topo.colors(23)[-c(1,3,5,16:23)],rev(heat.colors(10))) ,values=rescale(0:22,c(0,1))) + # mixed visualisation
     # colours=c(gray.colors(1),topo.colors(20)[-c(13:20)],rev(heat.colors(10))) ,values=rescale(0:22,c(0,1))) + # mixed visualisation v1
    
-     scale_color_gradientn(limits=c(0,15),
-    colours=c(gray.colors(1),topo.colors(9)[-c(8,9)],rev(heat.colors(7))) ,values=rescale(0:15,c(0,1)),
-    breaks=c(0,3,6,9,12,15),labels=c("0","3","6","9","12",">=15")) + # mixed visualisation with cutoff
+    # lambdaHat1Std
+    #  scale_color_gradientn(limits=c(0,15),
+    # colours=c(gray.colors(1),topo.colors(9)[-c(8,9)],rev(heat.colors(7))) ,values=rescale(0:15,c(0,1)),
+    # breaks=c(0,3,6,9,12,15),labels=c("0","3","6","9","12",">=15")) + # mixed visualisation with cutoff
+    
+    # lambdaHat
+    scale_color_gradientn(limits=c(0,40),
+                          colours=c(gray.colors(1),topo.colors(9)[-c(8,9)],rev(heat.colors(7))) ,values=rescale(0:40,c(0,1)),
+                          breaks=c(0,10,20,30,40),labels=c("0","10","20","30","40")) + # mixed visualisation with cutoff
    
      # scale_color_gradientn(limits=c(0,15), # cut off high values for better visualisation of the rest
                           # colours=c(gray.colors(1),topo.colors(14)) ,values=rescale(0:15,c(0,1))) + # topo color scheme
@@ -464,8 +470,10 @@ cor(mean_yield, speci)
     geom_point(shape=15, aes(color=num_interact),size=0.7) +
     # scale_color_gradient2(limits=c(0,max(DF_numb_interact[,3])),midpoint=max(DF_numb_interact[,3]/2),
                           # low = "blue", mid = "yellow", high = "red3") +
-    scale_color_gradientn(limits=c(0,16), breaks=c(0,4,8,12,16),labels=c("0","4","8","12",">=16"),
-                          colours=c(gray.colors(1),topo.colors(10)[-c(9,10)],rev(heat.colors(7))) ,values=rescale(0:16,c(0,1))) + # mixed visualisation with cutoff
+    # scale_color_gradientn(limits=c(0,16), breaks=c(0,4,8,12,16),labels=c("0","4","8","12",">=16"), # lamdaHat1Std
+    #                       colours=c(gray.colors(1),topo.colors(10)[-c(9,10)],rev(heat.colors(7))) ,values=rescale(0:16,c(0,1))) + # mixed visualisation with cutoff
+    scale_color_gradientn(limits=c(0,64), breaks=c(0,12,24,36,48),labels=c("0","12","24","36",">=48"), # lambdaHat
+                          colours=c(gray.colors(1),topo.colors(10)[-c(9,10)],rev(heat.colors(7))) ,values=rescale(0:64,c(0,1))) + # mixed visualisation with cutoff
     theme(panel.ontop = F, panel.grid = element_blank(),
           panel.border = element_rect(colour = "black", fill = NA),
           axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
