@@ -236,6 +236,10 @@ for (i in 1:pix_num){
 
 ##### Model performance assessment #####
 
+# On the Drive you can find my data in:
+# Models/LASSO-Ridge regression/regression_results_Global_wo_interactions/Lasso_lambda1se_month_xtrm_Lasso_threshbadyield005.RData
+# Models/LASSO-Ridge regression/regression_results_Global_wo_interactions/Lasso_lambdamin_month_xtrm_Lasso_threshbadyield005.RData
+
 load(paste0("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/Lasso_lambda1se_month_xtrm_",
             model_name,"_threshbadyield", str_pad(threshold*100, 3, pad = "0"),".RData"))
 load(paste0("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/Lasso_lambdamin_month_xtrm_",
