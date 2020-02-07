@@ -1,6 +1,7 @@
 ##############################################################################
 ###########          Simple Lasso regression (glmnet)              ###########
 ###########   NH crop model, monthly meteovar, XtrM indices        ###########
+###########               Author: Pauline Rivoire                  ###########
 ##############################################################################
 
 
@@ -69,6 +70,7 @@ low_yield <- apply(Yield, MARGIN = 1, FUN=quantile, probs=threshold, na.rm=T)
 cy <- t(sapply(1:pix_num,function(x){ifelse(Yield[x,]<low_yield[x],0,1)})) # identical for standardised and non-standardised yield
 
 cy_reshaped <- array(data=cy,dim=c(dim(cy)[1],1,1600))
+
 Model_data[,1,] <-cy_reshaped
 
 
@@ -132,72 +134,102 @@ for (i in 1:pix_num){
 
 
 
-##### Run the CrossValidation #####
+# #### Run the CrossValidation #####
 # tic()
 # model_cv_fitting <- list()
+# nbyears_final_training_data <- numeric()
 # for (pixel in 1:pix_num) {
 #   # for (pixel in 1:5) {
-#     num_na <- list()
-#     for (varia in 1:7) { #extreme indices
-#       num_na[[varia]] <- which(is.na(as.matrix(x1_train_list[[pixel]])[,varia]))
-#     }#end for varia
-#     
-#     if (length(unique(c(unlist(num_na))))>(dim(as.matrix(x1_train_list[[pixel]]))[1])/2){
-#       model_cv_fitting[[pixel]]<-paste(length(unique(c(unlist(num_na)))),"NA in extreme indices")
+#   
+#   var_pix <- as.matrix(x1_train_list[[pixel]])
+#   yield_pix <- as.matrix(y1_train_list[[pixel]])
+#   which_na_xtrm <- which(is.na(var_pix[,1]))
+#   nbyears_final_training_data[pixel] <- (dim(var_pix)[1]-length(which_na_xtrm))
+#   
+#     if (sum(yield_pix[-which_na_xtrm,])<=nbyears_final_training_data[pixel] & 
+#         sum(yield_pix[-which_na_xtrm,])>=nbyears_final_training_data[pixel]-8){
+#       #if all the year kept are actually good years, not prediction possible, or there are only 1 or 2 bad years : not possible
+#       model_cv_fitting[[pixel]] <- "Training years w/o na in extremes have less than 8 bad years"
 #     } else {
-#   model_cv_fitting[[pixel]] <- cv.glmnet(x = as.matrix(x1_train_list[[pixel]])[-unique(c(unlist(num_na))),],
-#                                          y = as.matrix(y1_train_list[[pixel]])[-unique(c(unlist(num_na))),],
-#                                          family = "binomial", alpha = no_model, nfolds = 10)
+#       if(length(which_na_xtrm)>0){
+#       model_cv_fitting[[pixel]] <- cv.glmnet(x = var_pix[-which_na_xtrm,],
+#                                              y = yield_pix[-which_na_xtrm,],
+#                                              family = "binomial", alpha = no_model, nfolds = 10)
+#       } else {
+#         model_cv_fitting[[pixel]] <- cv.glmnet(x = var_pix,
+#                                                y = yield_pix,
+#                                                family = "binomial", alpha = no_model, nfolds = 10)
 #         
-#       }#end if else
-#     
+#       }#end if exists na else
+# 
+#     }#end if all years kept are good else
+# 
 #   print(paste(pixel, "out of", pix_num))
 # }#end for pixel
 # 
-# toc() #2.4h for Lasso
+# toc() #3.6h for Lasso
 # 
 # save(model_cv_fitting, file = paste0("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/cv_month_xtrm_",
 #                                    model_name,"_threshbadyield", str_pad(threshold*100, 3, pad = "0"),".RData"))
 
 
-##### Run the model with lambda1se and lambda min #####
-
+# ##### Run the model with lambda1se and lambda min #####
+# 
 # load(file = paste0("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/cv_month_xtrm_",
 #                    model_name,"_threshbadyield", str_pad(threshold*100, 3, pad = "0"),".RData"))
 # 
 # tic()
+# 
 # if (model_name == "Lasso"){
 #   lasso_model_lambdamin <- list()
 #   lasso_model_lambda1se <- list()
-#   
+# 
 #   for (pixel in 1:pix_num) {
 #     if(is.character(model_cv_fitting[[pixel]])){
 #       lasso_model_lambdamin[[pixel]] <- model_cv_fitting[[pixel]]
 #       lasso_model_lambda1se[[pixel]] <- model_cv_fitting[[pixel]]
 #     } else {
+#       var_pix <- as.matrix(x1_train_list[[pixel]])
+#       yield_pix <- as.matrix(y1_train_list[[pixel]])
+#       which_na_xtrm <- which(is.na(var_pix[,1]))
+#       nbyears_final_training_data[pixel] <- (dim(var_pix)[1]-length(which_na_xtrm))
+#       
 #       training_years_wo_na <- which(!is.na(x1_train_list[[pixel]]$dtr))
 #       
-#       lasso_model_lambdamin[[pixel]] <- glmnet(x = as.matrix(x1_train_list[[pixel]])[training_years_wo_na,],
-#                                                y = as.matrix(y1_train_list[[pixel]])[training_years_wo_na,],
-#                                                family = "binomial", alpha = no_model,
-#                                                lambda = model_cv_fitting[[pixel]]$lambda.min)
-#       
-#       lasso_model_lambda1se[[pixel]] <- glmnet(x = as.matrix(x1_train_list[[pixel]])[training_years_wo_na,],
-#                                                y = as.matrix(y1_train_list[[pixel]])[training_years_wo_na,],
-#                                                family = "binomial", alpha = no_model,
-#                                                lambda = model_cv_fitting[[pixel]]$lambda.1se)
+#       if(length(which_na_xtrm)>0){
+#         
+#         lasso_model_lambdamin[[pixel]] <- glmnet(x = var_pix[-which_na_xtrm,],
+#                                                  y = yield_pix[-which_na_xtrm,],
+#                                                  family = "binomial", alpha = no_model,
+#                                                  lambda = model_cv_fitting[[pixel]]$lambda.min)
+#         
+#         lasso_model_lambda1se[[pixel]] <- glmnet(x = var_pix[-which_na_xtrm,],
+#                                                  y = yield_pix[-which_na_xtrm,],
+#                                                  family = "binomial", alpha = no_model,
+#                                                  lambda = model_cv_fitting[[pixel]]$lambda.1se)
+#       } else {
+#         
+#         lasso_model_lambdamin[[pixel]] <- glmnet(x = var_pix, y = yield_pix,
+#                                                  family = "binomial", alpha = no_model,
+#                                                  lambda = model_cv_fitting[[pixel]]$lambda.min)
+#         
+#         lasso_model_lambda1se[[pixel]] <- glmnet(x = var_pix, y = yield_pix,
+#                                                  family = "binomial", alpha = no_model,
+#                                                  lambda = model_cv_fitting[[pixel]]$lambda.1se)
+#       }#end if exists na else
+# 
 #     } #end ifelse
 #     print(paste(pixel, "out of", pix_num))
-#     
+# 
 #   }#end for pixel
-#   
+# 
 #   save(lasso_model_lambdamin, file = paste0("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/Lasso_lambdamin_month_xtrm_",
 #                                             model_name,"_threshbadyield", str_pad(threshold*100, 3, pad = "0"),".RData"))
 #   save(lasso_model_lambda1se, file = paste0("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/Lasso_lambda1se_month_xtrm_",
 #                                             model_name,"_threshbadyield", str_pad(threshold*100, 3, pad = "0"),".RData"))
 # }
 # toc()
-
+# # 2min for Lasso
 
 
 
