@@ -240,7 +240,7 @@ for (i in 1:pix_num){
 
 
 
-##### Model performance assessment #####
+##### Load the model #####
 
 # On the Drive you can find my data in:
 # Models/LASSO-Ridge regression/regression_results_Global_wo_interactions/Lasso_lambda1se_month_xtrm_Lasso_threshbadyield005.RData
@@ -250,6 +250,36 @@ load(paste0("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject
             model_name,"_threshbadyield", str_pad(threshold*100, 3, pad = "0"),".RData"))
 load(paste0("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/Lasso_lambdamin_month_xtrm_",
             model_name,"_threshbadyield", str_pad(threshold*100, 3, pad = "0"),".RData"))
+
+
+
+
+
+
+
+##### Extract lambda value #####
+lambda1se <- numeric()
+lambdamin <- numeric()
+for (pix in 1:pix_num) {
+  if(is.character(lasso_model_lambda1se[[pix]])) {
+    lambda1se[pix] <- NA
+    lambdamin[pix] <- NA
+  } else {
+    lambda1se[pix] <- lasso_model_lambda1se[[pix]]$lambda
+    lambdamin[pix] <- lasso_model_lambdamin[[pix]]$lambda
+  }#end ifelse
+}#end for pix
+colnames(coord_subset) <- c("Longitude", "Latitude")
+LAMBDAS <- list(lambda_min = lambdamin, lambda_1se = lambda1se, coordinates = coord_subset )
+save(LAMBDAS,
+     file = "C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/lambda_values_Lasso_glmnet_monthly_xtrm_indices.Rdata")
+
+
+
+
+
+##### Model performance assessment #####
+
 
 Model_chosen <- lasso_model_lambda1se
 
@@ -291,17 +321,13 @@ for (pixel in 1:pix_num) {
 
 
 
-
-
-
-##### Plot results ######
 extreme_in_coeff <- function(coeff_list){ #function to check how many extreme indeices are kept as predictors
   extreme_indices <- c("dtr", "frs", "txx", "tnn", "rx5", "tx90p", "tn10p")
   if(max(abs(coeff_list[extreme_indices,]))==0){
     return(0)
   } else {
-      return(length(which(abs(coeff_list[extreme_indices,])>0)))
-    }
+    return(length(which(abs(coeff_list[extreme_indices,])>0)))
+  }
 }#end func extreme_in_coeff
 
 
@@ -320,7 +346,7 @@ for (pixel in 1:pix_num) {
     
     nb_extr_kept[pixel] <- extreme_in_coeff(coeff[[pixel]])
     nb_coeff_kept[pixel] <- number_coeff_kept(coeff[[pixel]])
-      
+    
   }#end if else pb model
 }#end pixel
 
@@ -329,6 +355,9 @@ for (pixel in 1:pix_num) {
 
 
 
+
+
+##### Plot results ######
 # load all coordinates of northern hemisphere
 path_to_NH_files <- "C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/Data/Global"
 nh_files <- list.files(path=path_to_NH_files,pattern="*NH.nc") # all files from northern hemisphere
@@ -495,19 +524,249 @@ dev.off()
 
 
 
-##### Extract lambda value #####
-lambda1se <- numeric()
-lambdamin <- numeric()
-for (pix in 1:pix_num) {
-  if(is.character(lasso_model_lambda1se[[pix]])) {
-    lambda1se[pix] <- NA
-    lambdamin[pix] <- NA
+
+
+
+
+
+
+
+##### Adjust cutoff level #####
+source("./Code/cutoff_adj_glmnet_lambda1se.R")
+y1_train_list_simple_lasso <- y1_train_list
+x1_train_list_simple_lasso <- x1_train_list
+cost_fp_simple_lasso <- 100 # Misses: this should be associated with a higher cost, as it is more detrimental
+cost_fn_simple_lasso <- 100 # False alarms
+
+
+cutoff_simple_lasso <- adjust_cutoff(x1_train_list = x1_train_list_simple_lasso, y1_train_list = y1_train_list_simple_lasso,
+                                     work_pix = pix_in, cost_fp = cost_fp_simple_lasso, cost_fn= cost_fn_simple_lasso)
+segreg_th_adj <- cutoff_simple_lasso # replace the default threshold = 0.5, by the calculated optimal cutoff
+
+
+
+##### Model performance assessment #####
+
+
+Model_chosen <- lasso_model_lambda1se
+
+pix_model_failed <- numeric(length = pix_num)
+coeff  <-list()
+speci <- rep(NA, pix_num)
+sensi <- rep(NA, pix_num)
+csi <- rep(NA, pix_num)
+
+for (pixel in 1:pix_num) {
+  if(is.character(Model_chosen[[pixel]])){
+    pix_model_failed[pixel] <- 1
+    coeff[[pixel]] <- "No model"
   } else {
-    lambda1se[pix] <- lasso_model_lambda1se[[pix]]$lambda
-    lambdamin[pix] <- lasso_model_lambdamin[[pix]]$lambda
-  }#end ifelse
-}#end for pix
-colnames(coord_subset) <- c("Longitude", "Latitude")
-LAMBDAS <- list(lambda_min = lambdamin, lambda_1se = lambda1se, coordinates = coord_subset )
-save(LAMBDAS,
-     file = "C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/lambda_values_Lasso_glmnet_monthly_xtrm_indices.Rdata")
+    
+    coeff[[pixel]] <- coefficients(Model_chosen[[pixel]])
+    
+    mypred <- predict(Model_chosen[[pixel]], as.matrix(x1_test_list[[pixel]]),type="response")
+    
+    fitted_bad_yield <- ifelse(mypred > segreg_th,1,0)
+    
+    speci[pixel] <- specificity(actuals = as.matrix(y1_test_list[[pixel]]),
+                                predictedScores = fitted_bad_yield,
+                                threshold = segreg_th)
+    sensi[pixel] <- sensitivity(actuals = as.matrix(y1_test_list[[pixel]]),
+                                predictedScores = fitted_bad_yield,
+                                threshold = segreg_th)
+    
+    con_tab <- confusionMatrix(actuals = as.matrix(y1_test_list[[pixel]]),
+                               predictedScores = fitted_bad_yield,
+                               threshold = segreg_th)
+    csi[pixel] <- con_tab["0","0"]/(con_tab["0","0"] + con_tab["1","0"] + con_tab["0","1"])
+    if(is.na(con_tab["0","0"])){
+      csi[pixel] <- 0
+    }
+    
+  }#end if else pb model
+}#end pixel
+
+
+
+extreme_in_coeff <- function(coeff_list){ #function to check how many extreme indeices are kept as predictors
+  extreme_indices <- c("dtr", "frs", "txx", "tnn", "rx5", "tx90p", "tn10p")
+  if(max(abs(coeff_list[extreme_indices,]))==0){
+    return(0)
+  } else {
+    return(length(which(abs(coeff_list[extreme_indices,])>0)))
+  }
+}#end func extreme_in_coeff
+
+
+number_coeff_kept <- function(coeff_list){#give number of coeff !=0
+  return(length(which(abs(coeff_list[-1,])>0)))
+}
+
+nb_extr_kept <- numeric()
+nb_coeff_kept <- numeric()
+
+for (pixel in 1:pix_num) {
+  if(is.character(Model_chosen[[pixel]])){
+    nb_extr_kept[pixel] <- NA
+    nb_coeff_kept[pixel] <- NA
+  } else {
+    
+    nb_extr_kept[pixel] <- extreme_in_coeff(coeff[[pixel]])
+    nb_coeff_kept[pixel] <- number_coeff_kept(coeff[[pixel]])
+    
+  }#end if else pb model
+}#end pixel
+
+
+
+
+
+
+
+
+##### Plot results ######
+# load all coordinates of northern hemisphere
+path_to_NH_files <- "C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/Data/Global"
+nh_files <- list.files(path=path_to_NH_files,pattern="*NH.nc") # all files from northern hemisphere
+nh_data <- lapply(1:length(nh_files),function(x){nc_open(paste0(path_to_NH_files,"/",nh_files[x]))})
+lat_all <- ncvar_get(nh_data[[1]],"lat")
+lon_all <- ncvar_get(nh_data[[1]],"lon")
+lati_all <- rep(lat_all,each=length(lon_all))
+long_all <- rep(lon_all,length(lat_all)) # coordinates rearranged
+coord_all <- cbind(long_all,lati_all)
+
+lapply(1:length(nh_files),function(x){nc_close(nh_data[[x]])})
+
+coord_subset <- cbind(Data_standardized$longitudes,Data_standardized$latitudes)
+world <- map_data("world")
+
+# Plot specificity error ####
+
+DF_speci <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], speci = speci)
+
+ggplot(data = DF_speci, aes(x=lon, y=lat)) +
+  geom_polygon(data = world, aes(long, lat, group=group),
+               fill="white", color="black", size=0.3) +
+  geom_point(shape=15, aes(color=speci)) +
+  scale_color_gradient2(limits=c(0,1), midpoint = 0.5,
+                        low = "black", mid = "red3", high = "yellow") +
+  theme(panel.ontop = F, panel.grid = element_blank(),
+        panel.border = element_rect(colour = "black", fill = NA),
+        axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
+  ylab("Lat (°N)") +
+  xlab("Lon (°E)") +
+  coord_fixed(xlim = c(-120, 135),
+              ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
+              ratio = 1.3)+
+  labs(color="Specif.",
+       title = paste("Specificity, simple",model_name,"regression, monthly meteo var + extreme indices"),
+       subtitle = paste("Bad yield threshold=", threshold,
+                        ", cutoff level=", segreg_th,", lambda 1se", sep = ""))+
+  theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
+        legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
+  X11(width = 20, height = 7)
+
+
+# plot CSI=(hits)/(hits + misses + false alarm) ###
+DF_sci <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], csi = csi)
+
+ggplot(data = DF_sci, aes(x=lon, y=lat)) +
+  geom_polygon(data = world, aes(long, lat, group=group),
+               fill="white", color="black", size=0.3) +
+  geom_point(shape=15, aes(color=csi)) +
+  scale_color_gradient2(limits=c(0,1), midpoint = 0.5,
+                        low = "black", mid = "red3", high = "yellow") +
+  theme(panel.ontop = F, panel.grid = element_blank(),
+        panel.border = element_rect(colour = "black", fill = NA),
+        axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
+  ylab("Lat (°N)") +
+  xlab("Lon (°E)") +
+  coord_fixed(xlim = c(-120, 135),
+              ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
+              ratio = 1.3)+
+  labs(color="CSI",
+       title = paste("CSI, simple",model_name,"regression, monthly meteo var + extreme indices"),
+       subtitle = paste("Bad yield threshold=", threshold,
+                        ", cutoff level=", segreg_th,", lambda 1se", sep = ""))+
+  theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
+        legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
+  X11(width = 20, height = 7)
+
+
+#Plot number of variables kept
+DF_numbcoeff <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], coeff_kep = nb_coeff_kept)
+
+ggplot(data = DF_numbcoeff, aes(x=lon, y=lat)) +
+  geom_polygon(data = world, aes(long, lat, group=group),
+               fill="white", color="black", size=0.3) +
+  geom_point(shape=15, aes(color=nb_coeff_kept)) +
+  scale_color_gradient(low = "pink", high = "darkblue") +
+  theme(panel.ontop = F, panel.grid = element_blank(),
+        panel.border = element_rect(colour = "black", fill = NA),
+        axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
+  ylab("Lat (°N)") +
+  xlab("Lon (°E)") +
+  coord_fixed(xlim = c(-120, 135),
+              ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
+              ratio = 1.3)+
+  labs(color="Nb of var.",
+       title = paste("Number of variables kept, simple",model_name,"regression, monthly meteo var + extreme indices"),
+       subtitle = paste("Bad yield threshold=", threshold, ", lambda 1se", sep = ""))+
+  theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
+        legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
+  X11(width = 20, height = 7)
+
+#Plot number of extreme indices kept
+DF_numbextr <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], coeff_kep = nb_extr_kept)
+DF_numbextr$coeff_kep <- as.factor(DF_numbextr$coeff_kep)
+
+mycolors <- c("orange", rgb(0.3,0.3,0.5), rgb(0,0,0.7),
+              rgb(0.2,0.2,0.8), rgb(0.4,0.4,0.9), rgb(0.7,0.7,1), rgb(0.8,0.8,1), rgb(0.9,0.9,1))
+
+ggplot(data = DF_numbextr, aes(x=lon, y=lat)) +
+  geom_polygon(data = world, aes(long, lat, group=group),
+               fill="white", color="black", size=0.3) +
+  geom_point(shape=15, aes(color=coeff_kep)) +
+  scale_color_manual(values = mycolors, ) +
+  theme(panel.ontop = F, panel.grid = element_blank(),
+        panel.border = element_rect(colour = "black", fill = NA),
+        axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
+  ylab("Lat (°N)") +
+  xlab("Lon (°E)") +
+  coord_fixed(xlim = c(-120, 135),
+              ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
+              ratio = 1.3)+
+  labs(color="Nb ind.",
+       title = paste("Number of exteme indices kept, simple",model_name,"regression, monthly meteo var + extreme indices"),
+       subtitle = paste("Bad yield threshold=", threshold, ", lambda 1se", sep = ""))+
+  theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
+        legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
+  X11(width = 20, height = 7)
+
+mean_yield <- apply(X=Data_non_standardized$yield, MARGIN = 1, FUN = mean, na.rm=T)
+
+pairs(cbind(mean_yield, csi, speci, nb_coeff_kept, nb_extr_kept), lower.panel = NULL)
+
+
+#Plot percentage of extreme indices in var kept
+DF_numbcoeff <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], perc_kept = nb_extr_kept/nb_coeff_kept)
+
+ggplot(data = DF_numbcoeff, aes(x=lon, y=lat)) +
+  geom_polygon(data = world, aes(long, lat, group=group),
+               fill="white", color="black", size=0.3) +
+  geom_point(shape=15, aes(color=DF_numbcoeff$perc_kept)) +
+  scale_color_gradient(low = "yellow", high = "blue") +
+  theme(panel.ontop = F, panel.grid = element_blank(),
+        panel.border = element_rect(colour = "black", fill = NA),
+        axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
+  ylab("Lat (°N)") +
+  xlab("Lon (°E)") +
+  coord_fixed(xlim = c(-120, 135),
+              ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
+              ratio = 1.3)+
+  labs(color="Nb of var.",
+       title = paste("Perc. of extreme indices in variables kept, simple",model_name,"regression, monthly meteo var + extreme indices"),
+       subtitle = paste("Bad yield threshold=", threshold, ", lambda 1se", sep = ""))+
+  theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
+        legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
+  X11(width = 20, height = 7)
