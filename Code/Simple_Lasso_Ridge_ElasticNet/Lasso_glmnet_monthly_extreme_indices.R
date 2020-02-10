@@ -3,6 +3,12 @@
 ###########   NH crop model, monthly meteovar, XtrM indices        ###########
 ###########               Author: Pauline Rivoire                  ###########
 ##############################################################################
+# It is structured in the following way:
+# a) Load the data, build training and testing dataset (monthly meteo var and extreme indices)
+# b) run the cross validation on training data for Lasso glmnet, to find lambdamin and lambda 1se
+# c) run Lasso glmnet on training data withlambdamin and lambda 1se to get the coefficients of the logistic regression
+# d) Model assessment with testing data: plot of CSI, Specificity, nb of coefficients and exteme indices kept
+# e) extract Lambda min and lambda 1se
 
 
 
@@ -245,7 +251,7 @@ load(paste0("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject
 load(paste0("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/Lasso_lambdamin_month_xtrm_",
             model_name,"_threshbadyield", str_pad(threshold*100, 3, pad = "0"),".RData"))
 
-Model_chosen <- lasso_model_lambdamin
+Model_chosen <- lasso_model_lambda1se
 
 pix_model_failed <- numeric(length = pix_num)
 coeff  <-list()
@@ -359,7 +365,7 @@ ggplot(data = DF_speci, aes(x=lon, y=lat)) +
   labs(color="Specif.",
        title = paste("Specificity, simple",model_name,"regression, monthly meteo var + extreme indices"),
        subtitle = paste("Bad yield threshold=", threshold,
-                        ", cutoff level=", segreg_th,", lambda min", sep = ""))+
+                        ", cutoff level=", segreg_th,", lambda 1se", sep = ""))+
   theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
         legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
   X11(width = 20, height = 7)
@@ -385,7 +391,7 @@ ggplot(data = DF_sci, aes(x=lon, y=lat)) +
   labs(color="CSI",
        title = paste("CSI, simple",model_name,"regression, monthly meteo var + extreme indices"),
        subtitle = paste("Bad yield threshold=", threshold,
-                        ", cutoff level=", segreg_th,", lambda min", sep = ""))+
+                        ", cutoff level=", segreg_th,", lambda 1se", sep = ""))+
   theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
         legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
   X11(width = 20, height = 7)
@@ -409,7 +415,7 @@ ggplot(data = DF_numbcoeff, aes(x=lon, y=lat)) +
               ratio = 1.3)+
   labs(color="Nb of var.",
        title = paste("Number of variables kept, simple",model_name,"regression, monthly meteo var + extreme indices"),
-       subtitle = paste("Bad yield threshold=", threshold, ", lambdamin", sep = ""))+
+       subtitle = paste("Bad yield threshold=", threshold, ", lambda 1se", sep = ""))+
   theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
         legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
   X11(width = 20, height = 7)
@@ -436,7 +442,7 @@ ggplot(data = DF_numbextr, aes(x=lon, y=lat)) +
               ratio = 1.3)+
   labs(color="Nb ind.",
        title = paste("Number of exteme indices kept, simple",model_name,"regression, monthly meteo var + extreme indices"),
-       subtitle = paste("Bad yield threshold=", threshold, ", lambdamin", sep = ""))+
+       subtitle = paste("Bad yield threshold=", threshold, ", lambda 1se", sep = ""))+
   theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
         legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
   X11(width = 20, height = 7)
@@ -444,3 +450,64 @@ ggplot(data = DF_numbextr, aes(x=lon, y=lat)) +
 mean_yield <- apply(X=Data_non_standardized$yield, MARGIN = 1, FUN = mean, na.rm=T)
 
 pairs(cbind(mean_yield, csi, speci, nb_coeff_kept, nb_extr_kept), lower.panel = NULL)
+
+
+#Plot percentage of extreme indices in var kept
+DF_numbcoeff <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], perc_kept = nb_extr_kept/nb_coeff_kept)
+
+ggplot(data = DF_numbcoeff, aes(x=lon, y=lat)) +
+  geom_polygon(data = world, aes(long, lat, group=group),
+               fill="white", color="black", size=0.3) +
+  geom_point(shape=15, aes(color=DF_numbcoeff$perc_kept)) +
+  scale_color_gradient(low = "yellow", high = "blue") +
+  theme(panel.ontop = F, panel.grid = element_blank(),
+        panel.border = element_rect(colour = "black", fill = NA),
+        axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
+  ylab("Lat (°N)") +
+  xlab("Lon (°E)") +
+  coord_fixed(xlim = c(-120, 135),
+              ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
+              ratio = 1.3)+
+  labs(color="Nb of var.",
+       title = paste("Perc. of extreme indices in variables kept, simple",model_name,"regression, monthly meteo var + extreme indices"),
+       subtitle = paste("Bad yield threshold=", threshold, ", lambda 1se", sep = ""))+
+  theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
+        legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
+  X11(width = 20, height = 7)
+
+
+
+
+
+
+#### Barplot: combinations of months and variables ####
+coefs_seas <- sapply(1:length(coeff), function(x) names(numLevels_list[[x]])[coeff[[x]][-1]!=0])
+coefs_seas_vec <- unlist(coefs_seas)
+
+png(filename="C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/Images/Monthly_and_extreme_indices/barplot_variables_lambda1se.png",
+    res=2000,units="cm",width=15,height=20)
+
+par(mar=c(5,7,1,1))
+barplot(sort(table(coefs_seas_vec)),horiz=T,las=1,col="ForestGreen",
+        xlab="Number of pixels, where variable is included in the model\nLasso glmnet lambda 1se",cex.names=0.6)
+dev.off()
+ 
+
+
+
+##### Extract lambda value #####
+lambda1se <- numeric()
+lambdamin <- numeric()
+for (pix in 1:pix_num) {
+  if(is.character(lasso_model_lambda1se[[pix]])) {
+    lambda1se[pix] <- NA
+    lambdamin[pix] <- NA
+  } else {
+    lambda1se[pix] <- lasso_model_lambda1se[[pix]]$lambda
+    lambdamin[pix] <- lasso_model_lambdamin[[pix]]$lambda
+  }#end ifelse
+}#end for pix
+colnames(coord_subset) <- c("Longitude", "Latitude")
+LAMBDAS <- list(lambda_min = lambdamin, lambda_1se = lambda1se, coordinates = coord_subset )
+save(LAMBDAS,
+     file = "C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/lambda_values_Lasso_glmnet_monthly_xtrm_indices.Rdata")
