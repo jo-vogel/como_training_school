@@ -4,6 +4,25 @@
 ###########                                             ###########
 ###########       Author: Pauline Rivoire               ###########
 ###################################################################
+# It is structured in the following way:
+# a) Load the raw Northern hemisphere monthly meteo gridded dataset
+# b) Extract gridpoints containing data
+# c) Set to NA the years where growing season>365 days
+# d) Get rid of meteo data for months out of the growing season (GS)
+# e) Get rid of pixels where 0.025 quantile == 0
+# f) Scale the data between -1 and 1, thanks to the function FUN = normalize, method = "range", range=c(-1,1)
+# g) Store the data (rescaled and not) as 2 netcdfiles, structured this way:
+#     Variables:
+#        yields (dim 965*1600=nb_pixels*nb_of_years)
+#        precip (dim 965*17*1600=nb_pixels*max_nb_month*nb_of_years)
+#        tasmax  (dim 965*nb_month_GS*1600)
+#        vpd      (dim 965*nb_month_GS*1600)
+#        latitude   (dim 965)
+#     Dimensions:
+#        longitude   (length 965)
+#        year        (length 1600)
+#        month      (length 17)
+# output=stored in drive: /Data/Global_data/NH_yield_and_meteovar_range-scaled.nc and /Data/Global_data/NH_yield_and_meteovar.nc
 
 
 # Clean everything
