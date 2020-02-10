@@ -1,4 +1,4 @@
-adjust_cutoff <- function(x1_train_list, y1_train_list, work_pix, cost_fp = 100, cost_fn = 100){
+adjust_cutoff <- function(model_vector, x1_train_list, y1_train_list, work_pix, cost_fp = 100, cost_fn = 100){
   
   # Finding appropriate cutoff level ####
   #######################################
@@ -9,7 +9,7 @@ adjust_cutoff <- function(x1_train_list, y1_train_list, work_pix, cost_fp = 100,
   y1_train_list_red <- as.list(lapply(work_pix,
                               function(work_pix){y1_train_list[[work_pix]]})  )
   mypred_train <- lapply(work_pix,
-                         function(x){predict(lasso_model_lambda1se[[x]],as.matrix(x1_train_list[[x]]),type="response")}) 
+                         function(x){predict(model_vector[[x]],as.matrix(x1_train_list[[x]]),type="response")}) 
   
   # Data set with actuals and predictions
   data_train_all <- pblapply(1:length(work_pix),
