@@ -532,23 +532,38 @@ dev.off()
 
 
 ##### Adjust cutoff level #####
-source("./Code/cutoff_adj_glmnet_lambda1se.R")
+
+# Model_chosen <- lasso_model_lambda1se
+# lambda_val <- lambda_VALS[2]
+
+Model_chosen <- lasso_model_lambdamin
+lambda_val <- lambda_VALS[1]
+
+source("./Code/Simple_Lasso_Ridge_ElasticNet/cutoff_adj_glmnet_lambda1se.R")
 y1_train_list_simple_lasso <- y1_train_list
 x1_train_list_simple_lasso <- x1_train_list
 cost_fp_simple_lasso <- 100 # Misses: this should be associated with a higher cost, as it is more detrimental
 cost_fn_simple_lasso <- 100 # False alarms
 
 
-cutoff_simple_lasso <- adjust_cutoff(x1_train_list = x1_train_list_simple_lasso, y1_train_list = y1_train_list_simple_lasso,
-                                     work_pix = pix_in, cost_fp = cost_fp_simple_lasso, cost_fn= cost_fn_simple_lasso)
-segreg_th_adj <- cutoff_simple_lasso # replace the default threshold = 0.5, by the calculated optimal cutoff
+work_pix_tmp <- numeric()
+for (pix in 1:pix_num) {
+  if(is.character(Model_chosen[[pix]])){work_pix_tmp[pix]<-0} else {work_pix_tmp[pix]<-1}
+}#end for pix
 
+work_pix <- which(work_pix_tmp==1)
+library(pbapply)
+cutoff_simple_lasso <- adjust_cutoff(model_vector = Model_chosen,x1_train_list = x1_train_list_simple_lasso, y1_train_list = y1_train_list_simple_lasso,
+                                     work_pix = work_pix, cost_fp = cost_fp_simple_lasso, cost_fn= cost_fn_simple_lasso)
+# segreg_th_adj_1se <- cutoff_simple_lasso # replace the default threshold = 0.5, by the calculated optimal cutoff
+# segreg_th_adj_min <- cutoff_simple_lasso # replace the default threshold = 0.5, by the calculated optimal cutoff
 
+segreg_th_adj_1se <- 0.6599446
+segreg_th_adj_min <- 0.5975667
 
 ##### Model performance assessment #####
 
-
-Model_chosen <- lasso_model_lambda1se
+segreg_th <- segreg_th_adj_1se
 
 pix_model_failed <- numeric(length = pix_num)
 coeff  <-list()
@@ -568,14 +583,14 @@ for (pixel in 1:pix_num) {
     
     fitted_bad_yield <- ifelse(mypred > segreg_th,1,0)
     
-    speci[pixel] <- specificity(actuals = as.matrix(y1_test_list[[pixel]]),
+    speci[pixel] <- InformationValue::specificity(actuals = as.matrix(y1_test_list[[pixel]]),
                                 predictedScores = fitted_bad_yield,
                                 threshold = segreg_th)
-    sensi[pixel] <- sensitivity(actuals = as.matrix(y1_test_list[[pixel]]),
+    sensi[pixel] <- InformationValue::sensitivity(actuals = as.matrix(y1_test_list[[pixel]]),
                                 predictedScores = fitted_bad_yield,
                                 threshold = segreg_th)
     
-    con_tab <- confusionMatrix(actuals = as.matrix(y1_test_list[[pixel]]),
+    con_tab <- InformationValue::confusionMatrix(actuals = as.matrix(y1_test_list[[pixel]]),
                                predictedScores = fitted_bad_yield,
                                threshold = segreg_th)
     csi[pixel] <- con_tab["0","0"]/(con_tab["0","0"] + con_tab["1","0"] + con_tab["0","1"])
@@ -661,7 +676,7 @@ ggplot(data = DF_speci, aes(x=lon, y=lat)) +
   labs(color="Specif.",
        title = paste("Specificity, simple",model_name,"regression, monthly meteo var + extreme indices"),
        subtitle = paste("Bad yield threshold=", threshold,
-                        ", cutoff level=", segreg_th,", lambda 1se", sep = ""))+
+                        ", cutoff level=", round(segreg_th,3),", ",lambda_val, sep = ""))+
   theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
         legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
   X11(width = 20, height = 7)
@@ -687,7 +702,7 @@ ggplot(data = DF_sci, aes(x=lon, y=lat)) +
   labs(color="CSI",
        title = paste("CSI, simple",model_name,"regression, monthly meteo var + extreme indices"),
        subtitle = paste("Bad yield threshold=", threshold,
-                        ", cutoff level=", segreg_th,", lambda 1se", sep = ""))+
+                        ", cutoff level=", round(segreg_th,3),", ",lambda_val, sep = ""))+
   theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
         legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
   X11(width = 20, height = 7)
@@ -767,6 +782,93 @@ ggplot(data = DF_numbcoeff, aes(x=lon, y=lat)) +
   labs(color="Nb of var.",
        title = paste("Perc. of extreme indices in variables kept, simple",model_name,"regression, monthly meteo var + extreme indices"),
        subtitle = paste("Bad yield threshold=", threshold, ", lambda 1se", sep = ""))+
+  theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
+        legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
+  X11(width = 20, height = 7)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# miscellaneous plots to check NA
+
+nb_na_dtr <- numeric()
+nb_na_frs <- numeric()
+nb_na_txx <- numeric()
+nb_na_tnn <- numeric()
+nb_na_rx5 <- numeric()
+nb_na_tx90p <- numeric()
+nb_na_tn10p <- numeric()
+
+for (pixel in 1:pix_num) {
+  nb_na_dtr[pixel] <- length(which(is.na(Model_data[pixel,"dtr",])))
+  nb_na_frs[pixel] <- length(which(is.na(Model_data[pixel,"frs",])))
+  nb_na_txx[pixel] <- length(which(is.na(Model_data[pixel,"txx",])))
+  nb_na_tnn[pixel] <- length(which(is.na(Model_data[pixel,"tnn",])))
+  nb_na_rx5[pixel] <- length(which(is.na(Model_data[pixel,"rx5",])))
+  nb_na_tx90p[pixel] <- length(which(is.na(Model_data[pixel,"tx90p",])))
+  nb_na_tn10p[pixel] <- length(which(is.na(Model_data[pixel,"tn10p",])))
+}
+
+
+
+DF_numbna <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], nbna = nb_na_dtr/16)
+
+ggplot(data = DF_numbcoeff, aes(x=lon, y=lat)) +
+  geom_polygon(data = world, aes(long, lat, group=group),
+               fill="white", color="black", size=0.3) +
+  geom_point(shape=15, aes(color=DF_numbna$nbna)) +
+  scale_color_gradient(low = "yellow", high = "blue") +
+  theme(panel.ontop = F, panel.grid = element_blank(),
+        panel.border = element_rect(colour = "black", fill = NA),
+        axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
+  ylab("Lat (°N)") +
+  xlab("Lon (°E)") +
+  coord_fixed(xlim = c(-120, 135),
+              ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
+              ratio = 1.3)+
+  labs(color="% of years",
+       title = paste("% years (out of 1600) with NA in extreme indices"))+
+  theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
+        legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
+  X11(width = 20, height = 7)
+
+
+nb_GS_toolong <- numeric()
+for (pixel in 1:pix_num) {
+  nb_GS_toolong[pixel] <- length(which(is.na(Yield[pixel,])))
+}
+
+DF_numbna <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], nbna = nb_GS_toolong/16)
+ggplot(data = DF_numbcoeff, aes(x=lon, y=lat)) +
+  geom_polygon(data = world, aes(long, lat, group=group),
+               fill="white", color="black", size=0.3) +
+  geom_point(shape=15, aes(color=DF_numbna$nbna)) +
+  scale_color_gradient(low = "yellow", high = "blue", limits=c(0,100)) +
+  theme(panel.ontop = F, panel.grid = element_blank(),
+        panel.border = element_rect(colour = "black", fill = NA),
+        axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
+  ylab("Lat (°N)") +
+  xlab("Lon (°E)") +
+  coord_fixed(xlim = c(-120, 135),
+              ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
+              ratio = 1.3)+
+  labs(color="% of years",
+       title = paste("% years (out of 1600) with GS>365 days"))+
   theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
         legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
   X11(width = 20, height = 7)
