@@ -2,7 +2,17 @@
 ###########                      Process DATA                    ###########
 ###########         global (standardised) crop model data        ###########
 ###########         monthly meteo var and extreme indices        ###########
-############################################################################
+###########                                             ###########
+###########       Author: Pauline Rivoire               ###########
+###################################################################
+# It is structured in the following way:
+# a) Load the Northern hemisphere monthly meteo ncdf (previously processed with "spatial_and_temporal_extraction.R")
+#         (NH_yield_and_meteovar.nc and NH_yield_and_meteovar_range-scaled.nc)
+# b) Load extreme indices, extract the gripoints corresponding to the one in NH meteovariabeles
+# c) Build 2 arrays (rescaled and not) with both Monthly meteovariables and extreme indices
+# d) Store the 2 arrays as Rdata files
+# output=stored in drive: /Data/Global_data/extremeindices_and_monthlymeteovar_rescaled.Rdata and /Data/Global_data/extremeindices_and_monthlymeteovar.Rdata
+
 
 
 # Clean everything
