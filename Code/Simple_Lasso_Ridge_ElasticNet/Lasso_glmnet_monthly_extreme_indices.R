@@ -826,13 +826,13 @@ for (pixel in 1:pix_num) {
 
 
 
-DF_numbna <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], nbna = nb_na_dtr/16)
+DF_numbna <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], nbna = nb_na_frs/16)
 
-ggplot(data = DF_numbcoeff, aes(x=lon, y=lat)) +
+ggplot(data = DF_numbna, aes(x=lon, y=lat)) +
   geom_polygon(data = world, aes(long, lat, group=group),
                fill="white", color="black", size=0.3) +
   geom_point(shape=15, aes(color=DF_numbna$nbna)) +
-  scale_color_gradient(low = "yellow", high = "blue") +
+  scale_color_gradient(low = "yellow", high = "blue", limits=c(0,100)) +
   theme(panel.ontop = F, panel.grid = element_blank(),
         panel.border = element_rect(colour = "black", fill = NA),
         axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
@@ -853,8 +853,9 @@ for (pixel in 1:pix_num) {
   nb_GS_toolong[pixel] <- length(which(is.na(Yield[pixel,])))
 }
 
+
 DF_numbna <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], nbna = nb_GS_toolong/16)
-ggplot(data = DF_numbcoeff, aes(x=lon, y=lat)) +
+ggplot(data = DF_numbna, aes(x=lon, y=lat)) +
   geom_polygon(data = world, aes(long, lat, group=group),
                fill="white", color="black", size=0.3) +
   geom_point(shape=15, aes(color=DF_numbna$nbna)) +
