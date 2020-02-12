@@ -113,6 +113,21 @@ for (pix in 1:length(lon_subset)) {
   tx90p_non_stand[pix,] <- tx90p[num_lon,num_lat,];tx90p_stand[pix,] <- normalize(tx90p_non_stand[pix,], method = "range", range=c(-1,1))
   tn10p_non_stand[pix,] <- tn10p[num_lon,num_lat,];tn10p_stand[pix,] <- normalize(tn10p_non_stand[pix,], method = "range", range=c(-1,1))
   
+  #for some pixels: more NA in extreme indices: set all meteovar to NA
+  
+  LOC <- which(is.na(dtr_non_stand[pix,]))
+  
+  if(length(LOC) > 0){
+    yield[pix,LOC] <- rep(NA, length(LOC))
+    tasmax[pix,,LOC] <- rep(NA, length(LOC))
+    pr[pix,,LOC] <- rep(NA, length(LOC))
+    vpd[pix,,LOC] <- rep(NA, length(LOC))
+    yield_stand[pix,LOC] <- rep(NA, length(LOC))
+    tasmax_stand[pix,,LOC] <- rep(NA, length(LOC))
+    pr_stand[pix,,LOC] <- rep(NA, length(LOC))
+    vpd_stand[pix,,LOC] <- rep(NA, length(LOC))
+  }
+  
   
 }#end for pix
 
