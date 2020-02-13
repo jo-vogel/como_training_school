@@ -18,32 +18,32 @@ segreg_th <- 0.5 #If the fitted proba from the model is below this threshold the
 
 # Get the data ####
 ###################
-# path_to_NH_files <- "C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/Data/Global"
+# # path_to_NH_files <- "C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/Data/Global"
 path_to_NH_files <- "D:/user/vogelj/Data/Group project Como"
 nh_files <- list.files(path=path_to_NH_files,pattern="NH_yield*") # all files from northern hemisphere
 nh_data <- lapply(1:length(nh_files),
                   FUN = function(x){nc_open(paste0(path_to_NH_files,"/",nh_files[x]))})
-yield <- ncvar_get(nh_data[[1]],"yield")
-tasmax <- ncvar_get(nh_data[[1]],"tasmax")
-vpd <- ncvar_get(nh_data[[1]],"vpd")
-pr <- ncvar_get(nh_data[[1]],"pr")
-yield_stand <- ncvar_get(nh_data[[2]],"yield")
-tasmax_stand <- ncvar_get(nh_data[[2]],"tasmax")
-vpd_stand <- ncvar_get(nh_data[[2]],"vpd")
-pr_stand <- ncvar_get(nh_data[[2]],"pr")
+# yield <- ncvar_get(nh_data[[1]],"yield")
+# tasmax <- ncvar_get(nh_data[[1]],"tasmax")
+# vpd <- ncvar_get(nh_data[[1]],"vpd")
+# pr <- ncvar_get(nh_data[[1]],"pr")
+# yield_stand <- ncvar_get(nh_data[[2]],"yield")
+# tasmax_stand <- ncvar_get(nh_data[[2]],"tasmax")
+# vpd_stand <- ncvar_get(nh_data[[2]],"vpd")
+# pr_stand <- ncvar_get(nh_data[[2]],"pr")
 lat_subset <- ncvar_get(nh_data[[1]],"lat")
 lon_subset <- ncvar_get(nh_data[[1]],"lon")
 lapply(1:length(nh_files),function(x){nc_close(nh_data[[x]])})
 coord_subset <- cbind(lon_subset,lat_subset)
-
-# load all coordinates of northern hemisphere
-nh_files <- list.files(path=path_to_NH_files,pattern="*NH.nc") # all files from northern hemisphere
-nh_data <- lapply(1:length(nh_files),function(x){nc_open(paste0(path_to_NH_files,"/",nh_files[x]))})
-lat_all <- ncvar_get(nh_data[[1]],"lat")
-lon_all <- ncvar_get(nh_data[[1]],"lon")
-lati_all <- rep(lat_all,each=length(lon_all))
-long_all <- rep(lon_all,length(lat_all)) # coordinates rearranged
-coord_all <- cbind(long_all,lati_all)
+# 
+# # load all coordinates of northern hemisphere
+# nh_files <- list.files(path=path_to_NH_files,pattern="*NH.nc") # all files from northern hemisphere
+# nh_data <- lapply(1:length(nh_files),function(x){nc_open(paste0(path_to_NH_files,"/",nh_files[x]))})
+# lat_all <- ncvar_get(nh_data[[1]],"lat")
+# lon_all <- ncvar_get(nh_data[[1]],"lon")
+# lati_all <- rep(lat_all,each=length(lon_all))
+# long_all <- rep(lon_all,length(lat_all)) # coordinates rearranged
+# coord_all <- cbind(long_all,lati_all)
 
 
 # Process data ####
@@ -80,8 +80,8 @@ colnames(Model_data_stand) <- c("Yield", "dtr", "frs", "txx", "tnn", "rx5", "tx9
 
 # threshold <- 0.05
 pix_num <- dim(Model_data_stand)[1]
-low_yield <- sapply(1:pix_num,function(x) {quantile(yield[x,],threshold,na.rm=T)})
-cy <- t(sapply(1:pix_num,function(x){ifelse(yield[x,]<low_yield[x],0,1)})) # identical for standardised and non-standardised yield
+low_yield <- sapply(1:pix_num,function(x) {quantile(yield_3dim[x,1,],threshold,na.rm=T)})
+cy <- t(sapply(1:pix_num,function(x){ifelse(yield_3dim[x,1,]<low_yield[x],0,1)})) # identical for standardised and non-standardised yield
 
 
 cy_reshaped <- array(data=cy,dim=c(dim(cy)[1],1,1600))

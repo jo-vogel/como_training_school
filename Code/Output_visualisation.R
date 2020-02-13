@@ -22,20 +22,26 @@ source('./Code/Lasso_interact_global_preparation_incl_ext_ind.R') # monthly data
 # Models/Lasso (glinternet)/LASSO_with_interactions/cv_fit_complete.RData
 # load("D:/user/vogelj/Group_project/Code/Workspaces/cv_fit_complete.RData") # load monthly model output
 # load("D:/user/vogelj/Group_project/Code/Workspaces/cv_fit_seasonal.RData") # load seasonal model output
-load("D:/user/vogelj/Group_project/Code/Workspaces/cv_fit_monthly_with_int_incl_ext.RData") # monthly model including extreme indices with interactions
+# load("D:/user/vogelj/Group_project/Code/Workspaces/cv_fit_monthly_with_int_incl_ext.RData") # monthly model including extreme indices with interactions
 
 # without interactions
 # Models/Lasso (glinternet)/LASSO_without_interactions/cv_fit_no_int.RData
 # load("D:/user/vogelj/Group_project/Code/Workspaces/cv_fit_no_int.RData") # monthly model without interactions
 # load("D:/user/vogelj/Group_project/Code/Workspaces/cv_fit_seasonal_no_int.RData") # seasonal model without interactions
-# load("D:/user/vogelj/Group_project/Code/Workspaces/cv_fit_monthly_without_int_incl_ext.RData") # monthly model including extreme indices without interactions
+load("D:/user/vogelj/Group_project/Code/Workspaces/cv_fit_monthly_without_int_incl_ext.RData") # monthly model including extreme indices without interactions
+
+
+# model_name <- "Lasso with interactions"
+model_name <- "Lasso without interactions"
 
 # Model performance assessment ####
 ###################################
 
 # Identify pixels with failed runs
 failed_pixels <- which(sapply(1:965, function(x) {is.character(cv_fit[[x]])})==1)
-work_pix <- pix_in[-failed_pixels] # working pixels
+# work_pix <- pix_in[-failed_pixels] # working pixels
+work_pix <- if (length(failed_pixels)==0) {work_pix <- pix_in
+} else  {work_pix <- pix_in[-failed_pixels]} # working pixels
 
 
 i_1Std <- sapply(work_pix, function(x){ which(cv_fit[[x]]$lambdaHat1Std == cv_fit[[x]]$lambda)}) # the preferential lambda (tuning parameter) lambdaHat1Std
@@ -200,7 +206,8 @@ source("./Code/unbalanced_funtions.R")
 # Visualisation ####
 ####################
 
-model_name <- "Lasso with interactions"
+
+  
 world <- map_data("world")
 
 
@@ -531,7 +538,7 @@ cor(mean_yield, speci)
   # combinations of months and variables
   coefs_seas <- sapply(1:length(coefs), function(x) names(numLevels_list[[x]])[coefs[[x]]$mainEffects$cont])
   coefs_seas_vec <- unlist(coefs_seas)
-  png(filename="D:/user/vogelj/Group_project/Output/Plots/Combination_variable_season_barplot.png",res=2000,units="cm",width=15,height=20)
+  png(filename="D:/user/vogelj/Group_project/Output/Plots/Combination_variable_season_barplot.png",res=2000,units="cm",width=15,height=22)
   par(mar=c(5,7,4,2))
   barplot(sort(table(coefs_seas_vec)),horiz=T,las=1,col="ForestGreen",xlab="Number of pixels, where variable is included in the model",cex.names=0.8)
   dev.off()

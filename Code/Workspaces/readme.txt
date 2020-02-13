@@ -14,3 +14,5 @@ cv_fit_no_int: calculation without interactions
 cv_fit_seasonal_no_int: seasonal model without interactions
 cv_fit_monthly_without_int_incl_ext: monthly data including extreme indices, without interactions
 cv_fit_monthly_with_int_incl_ext: monthly data including extreme indices, with interactions
+cv_fit_monthly_without_int_incl_ext_with_NA: monthly data including extreme indices, without interactions
+cv_fit_monthly_with_int_incl_ext: monthly data including extreme indices, with interactions, extreme indicators contain NAs (old version)

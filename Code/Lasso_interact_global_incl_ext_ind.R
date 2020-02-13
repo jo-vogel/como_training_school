@@ -13,22 +13,22 @@ library(raster)
 
 # Get the data ####
 ###################
-# path_to_NH_files <- "C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/Data/Global"
+# # path_to_NH_files <- "C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/Data/Global"
 path_to_NH_files <- "D:/user/vogelj/Data/Group project Como"
 nh_files <- list.files(path=path_to_NH_files,pattern="NH_yield*") # all files from northern hemisphere
 nh_data <- lapply(1:length(nh_files),
                   FUN = function(x){nc_open(paste0(path_to_NH_files,"/",nh_files[x]))})
-yield <- ncvar_get(nh_data[[1]],"yield")
-tasmax <- ncvar_get(nh_data[[1]],"tasmax")
-vpd <- ncvar_get(nh_data[[1]],"vpd")
-pr <- ncvar_get(nh_data[[1]],"pr")
-yield_stand <- ncvar_get(nh_data[[2]],"yield")
-tasmax_stand <- ncvar_get(nh_data[[2]],"tasmax")
-vpd_stand <- ncvar_get(nh_data[[2]],"vpd")
-pr_stand <- ncvar_get(nh_data[[2]],"pr")
+# yield <- ncvar_get(nh_data[[1]],"yield")
+# tasmax <- ncvar_get(nh_data[[1]],"tasmax")
+# vpd <- ncvar_get(nh_data[[1]],"vpd")
+# pr <- ncvar_get(nh_data[[1]],"pr")
+# yield_stand <- ncvar_get(nh_data[[2]],"yield")
+# tasmax_stand <- ncvar_get(nh_data[[2]],"tasmax")
+# vpd_stand <- ncvar_get(nh_data[[2]],"vpd")
+# pr_stand <- ncvar_get(nh_data[[2]],"pr")
 lat_subset <- ncvar_get(nh_data[[1]],"lat")
 lon_subset <- ncvar_get(nh_data[[1]],"lon")
-lapply(1:length(nh_files),function(x){nc_close(nh_data[[x]])})
+# lapply(1:length(nh_files),function(x){nc_close(nh_data[[x]])})
 coord_subset <- cbind(lon_subset,lat_subset)
 
 # load all coordinates of northern hemisphere
@@ -75,8 +75,8 @@ colnames(Model_data_stand) <- c("Yield", "dtr", "frs", "txx", "tnn", "rx5", "tx9
 
 threshold <- 0.05
 pix_num <- dim(Model_data_stand)[1]
-low_yield <- sapply(1:pix_num,function(x) {quantile(yield[x,],threshold,na.rm=T)})
-cy <- t(sapply(1:pix_num,function(x){ifelse(yield[x,]<low_yield[x],0,1)})) # identical for standardised and non-standardised yield
+low_yield <- sapply(1:pix_num,function(x) {quantile(yield_3dim[x,1,],threshold,na.rm=T)})
+cy <- t(sapply(1:pix_num,function(x){ifelse(yield_3dim[x,1,]<low_yield[x],0,1)})) # identical for standardised and non-standardised yield
 
 
 cy_reshaped <- array(data=cy,dim=c(dim(cy)[1],1,1600))
@@ -188,7 +188,7 @@ for (i in 1:pix_num){
 # Lasso model ####
 ##################
 
-message('This small section if meant for reruns with the preferential lambda')
+# message('This small section if meant for reruns with the preferential lambda')
 # load("D:/user/vogelj/Group_project/Code/Workspaces/cv_fit_complete.RData") # load model output (if you want to recalculate it based on the preferential lambda)
 # failed_pixels <- which(sapply(1:965, function(x) {is.character(cv_fit[[x]])})==1)
 # work_pix <- pix_in[-failed_pixels] # working pixels
@@ -212,14 +212,13 @@ set.seed(100)
 cv_fit <- foreach (i=1:dim(Model_data_stand)[1],.multicombine=TRUE) %dopar% {
   # for (i in 1:dim(Model_data)[1]){
   # normal run
-  # tryCatch(glinternet.cv(x1_train_list[[i]], y1_train_list[[i]], numLevels_list[[i]],family = "binomial",interactionCandidates=""), error=function(e) paste0("Error in iteration ",i))
-  tryCatch(glinternet.cv(x1_train_list[[i]], y1_train_list[[i]], numLevels_list[[i]],family = "binomial"), error=function(e) paste0("Error in iteration ",i))
+  tryCatch(glinternet.cv(x1_train_list[[i]], y1_train_list[[i]], numLevels_list[[i]],family = "binomial",interactionCandidates=""), error=function(e) paste0("Error in iteration ",i))
+  # tryCatch(glinternet.cv(x1_train_list[[i]], y1_train_list[[i]], numLevels_list[[i]],family = "binomial"), error=function(e) paste0("Error in iteration ",i))
   
   # run with the preferential lambda from the normal run
   # tryCatch(glinternet.cv(x1_train_list[[i]], y1_train_list[[i]], numLevels_list[[i]],family = "binomial",lambda=pref_lam[i]), error=function(e) paste0("Error in iteration ",i))
   
-  # print(i)
-  # # cv_fit <- try(glinternet.cv(x1_train_list[[i]], y1_train_list[[i]], numLevels_list[[i]],family = "binomial"))
+  # without parallelisation
   # cv_fit <- glinternet.cv(x1_train_list[[i]], y1_train_list[[i]], numLevels_list[[i]],family = "binomial",lambda=pref_lam[i])
   # cv_fit <- tryCatch(glinternet.cv(x1_train_list[[i]], y1_train_list[[i]], numLevels_list[[i]],family = "binomial",lambda=pref_lam[i]), error=function(e) paste0("Error in iteration ",i))
   # cv_fit_list[[i]] <- cv_fit
@@ -235,7 +234,9 @@ toc()
 
 # Identify pixels with failed runs
 failed_pixels <- which(sapply(1:965, function(x) {is.character(cv_fit[[x]])})==1)
+# work_pix <- ifelse(length(failed_pixels)==0, pix_in, pix_in[-failed_pixels]) # working pixels
 work_pix <- pix_in[-failed_pixels] # working pixels
+work_pix <- pix_in
 
 
 i_1Std <- sapply(work_pix, function(x){ which(cv_fit[[x]]$lambdaHat1Std == cv_fit[[x]]$lambda)}) # the preferential lambda (tuning parameter)
