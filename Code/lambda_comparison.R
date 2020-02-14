@@ -56,5 +56,5 @@ ggsave(file="D:/user/vogelj/Group_project/Output/Plots/lambda_map.png")
 
 boxplot(lambda_gl$x,LAMBDAS[[2]],names=c("glinternet","glmnet"),ylab="Lambda (1 Std)")
 
-# boxplot(lambda_gl$x,LAMBDAS[[2]],LAMBDAS[[1]])
+boxplot(lambda_gl$x,LAMBDAS[[2]],LAMBDAS[[1]],names=c("glinternet (1Std)","glmnet (1Std)", "glmnet (Min)"))
 

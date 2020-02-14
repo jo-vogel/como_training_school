@@ -419,14 +419,14 @@ cor(mean_yield, speci)
     # colours=c(gray.colors(1),topo.colors(20)[-c(13:20)],rev(heat.colors(10))) ,values=rescale(0:22,c(0,1))) + # mixed visualisation v1
    
     # lambdaHat1Std
-    #  scale_color_gradientn(limits=c(0,15),
-    # colours=c(gray.colors(1),topo.colors(9)[-c(8,9)],rev(heat.colors(7))) ,values=rescale(0:15,c(0,1)),
-    # breaks=c(0,3,6,9,12,15),labels=c("0","3","6","9","12",">=15")) + # mixed visualisation with cutoff
+     scale_color_gradientn(limits=c(0,15),
+    colours=c(gray.colors(1),topo.colors(9)[-c(8,9)],rev(heat.colors(7))) ,values=rescale(0:15,c(0,1)),
+    breaks=c(0,3,6,9,12,15),labels=c("0","3","6","9","12",">=15")) + # mixed visualisation with cutoff
     
     # lambdaHat
-    scale_color_gradientn(limits=c(0,40),
-                          colours=c(gray.colors(1),topo.colors(9)[-c(8,9)],rev(heat.colors(7))) ,values=rescale(0:40,c(0,1)),
-                          breaks=c(0,10,20,30,40),labels=c("0","10","20","30","40")) + # mixed visualisation with cutoff
+    # scale_color_gradientn(limits=c(0,40),
+    #                       colours=c(gray.colors(1),topo.colors(9)[-c(8,9)],rev(heat.colors(7))) ,values=rescale(0:40,c(0,1)),
+    #                       breaks=c(0,10,20,30,40),labels=c("0","10","20","30","40")) + # mixed visualisation with cutoff
    
      # scale_color_gradientn(limits=c(0,15), # cut off high values for better visualisation of the rest
                           # colours=c(gray.colors(1),topo.colors(14)) ,values=rescale(0:15,c(0,1))) + # topo color scheme
@@ -444,7 +444,7 @@ cor(mean_yield, speci)
                 ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
                 ratio = 1.3)+
     labs(color="Nb of coefficients",
-         title = paste("Number of coefficients kept, simple",model_name,"regression"),
+         title = paste("Number of coefficients kept",model_name),
          subtitle = paste("Bad yield threshold=", threshold, sep = ""))+
     theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
           legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
@@ -513,8 +513,13 @@ cor(mean_yield, speci)
     str_var <- vector(mode="character",length=length(coefs_str))
     for (i in seq_along(coefs_str)){
       str_var[i] <- strsplit(coefs_str[i],split="_")[[1]][1]
-      nb_of_var[j] <- length(unique(str_var))
     }
+
+    # account for extreme indicators  
+    str_var[str_var %in% c("dtr","frs","tn10p","tnn","tx90p","txx")] <- "tmax"     # Group all extreme temperature indicators into same group as tmax
+    str_var[str_var %in% "rx5"] <- "pr" # Group all extreme precipitation indicators into same group as precipitation
+    
+    nb_of_var[j] <- length(unique(str_var))
   }
   plot(table(nb_of_var))
   
@@ -644,6 +649,25 @@ cor(mean_yield, speci)
           legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
     X11(width = 20, height = 7)
   ggsave(file="D:/user/vogelj/Group_project/Output/Plots/Cutoff_lasso_interact_map.png")
+  
+  
+  # Plots of singular extreme indicators ####
+  
+  # number of variables: which are included
+  nb_of_var <- vector("numeric",length=length(coefs))
+  for (j in  1:length(coefs)){
+    coefs_str <- names(numLevels_list[[j]])[coefs[[j]]$mainEffects$cont]
+    str_var <- vector(mode="character",length=length(coefs_str))
+    for (i in seq_along(coefs_str)){
+      str_var[i] <- strsplit(coefs_str[i],split="_")[[1]][1]
+  }
+    
+    # account for extreme indicators  
+    str_var[str_var %in% c("dtr","frs","tn10p","tnn","tx90p","txx")] <- "tmax"     # Group all extreme temperature indicators into same group as tmax
+    str_var[str_var %in% "rx5"] <- "pr" # Group all extreme precipitation indicators into same group as precipitation
+    
+    nb_of_var[j] <- length(unique(str_var))
+  
   
   
   # ROC ####
