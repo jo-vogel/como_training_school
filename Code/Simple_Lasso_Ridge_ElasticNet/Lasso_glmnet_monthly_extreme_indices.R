@@ -140,19 +140,19 @@ for (i in 1:pix_num){
 
 
 
-# #### Run the CrossValidation #####
+#### Run the CrossValidation #####
 # tic()
 # model_cv_fitting <- list()
 # nbyears_final_training_data <- numeric()
 # for (pixel in 1:pix_num) {
 #   # for (pixel in 1:5) {
-#   
+# 
 #   var_pix <- as.matrix(x1_train_list[[pixel]])
 #   yield_pix <- as.matrix(y1_train_list[[pixel]])
 #   which_na_xtrm <- which(is.na(var_pix[,1]))
 #   nbyears_final_training_data[pixel] <- (dim(var_pix)[1]-length(which_na_xtrm))
-#   
-#     if (sum(yield_pix[-which_na_xtrm,])<=nbyears_final_training_data[pixel] & 
+# 
+#     if (sum(yield_pix[-which_na_xtrm,])<=nbyears_final_training_data[pixel] &
 #         sum(yield_pix[-which_na_xtrm,])>=nbyears_final_training_data[pixel]-8){
 #       #if all the year kept are actually good years, not prediction possible, or there are only 1 or 2 bad years : not possible
 #       model_cv_fitting[[pixel]] <- "Training years w/o na in extremes have less than 8 bad years"
@@ -165,7 +165,7 @@ for (i in 1:pix_num){
 #         model_cv_fitting[[pixel]] <- cv.glmnet(x = var_pix,
 #                                                y = yield_pix,
 #                                                family = "binomial", alpha = no_model, nfolds = 10)
-#         
+# 
 #       }#end if exists na else
 # 
 #     }#end if all years kept are good else
@@ -173,7 +173,7 @@ for (i in 1:pix_num){
 #   print(paste(pixel, "out of", pix_num))
 # }#end for pixel
 # 
-# toc() #3.6h for Lasso
+# toc() #3.9h for Lasso
 # 
 # save(model_cv_fitting, file = paste0("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/cv_month_xtrm_",
 #                                    model_name,"_threshbadyield", str_pad(threshold*100, 3, pad = "0"),".RData"))
@@ -199,26 +199,26 @@ for (i in 1:pix_num){
 #       yield_pix <- as.matrix(y1_train_list[[pixel]])
 #       which_na_xtrm <- which(is.na(var_pix[,1]))
 #       nbyears_final_training_data[pixel] <- (dim(var_pix)[1]-length(which_na_xtrm))
-#       
+# 
 #       training_years_wo_na <- which(!is.na(x1_train_list[[pixel]]$dtr))
-#       
+# 
 #       if(length(which_na_xtrm)>0){
-#         
+# 
 #         lasso_model_lambdamin[[pixel]] <- glmnet(x = var_pix[-which_na_xtrm,],
 #                                                  y = yield_pix[-which_na_xtrm,],
 #                                                  family = "binomial", alpha = no_model,
 #                                                  lambda = model_cv_fitting[[pixel]]$lambda.min)
-#         
+# 
 #         lasso_model_lambda1se[[pixel]] <- glmnet(x = var_pix[-which_na_xtrm,],
 #                                                  y = yield_pix[-which_na_xtrm,],
 #                                                  family = "binomial", alpha = no_model,
 #                                                  lambda = model_cv_fitting[[pixel]]$lambda.1se)
 #       } else {
-#         
+# 
 #         lasso_model_lambdamin[[pixel]] <- glmnet(x = var_pix, y = yield_pix,
 #                                                  family = "binomial", alpha = no_model,
 #                                                  lambda = model_cv_fitting[[pixel]]$lambda.min)
-#         
+# 
 #         lasso_model_lambda1se[[pixel]] <- glmnet(x = var_pix, y = yield_pix,
 #                                                  family = "binomial", alpha = no_model,
 #                                                  lambda = model_cv_fitting[[pixel]]$lambda.1se)
@@ -281,7 +281,7 @@ save(LAMBDAS,
 ##### Model performance assessment #####
 
 
-Model_chosen <- lasso_model_lambda1se
+Model_chosen <- lasso_model_lambdamin
 
 pix_model_failed <- numeric(length = pix_num)
 coeff  <-list()
@@ -533,11 +533,11 @@ dev.off()
 
 ##### Adjust cutoff level #####
 
-# Model_chosen <- lasso_model_lambda1se
-# lambda_val <- lambda_VALS[2]
+Model_chosen <- lasso_model_lambda1se
+lambda_val <- lambda_VALS[2]
 
-Model_chosen <- lasso_model_lambdamin
-lambda_val <- lambda_VALS[1]
+# Model_chosen <- lasso_model_lambdamin
+# lambda_val <- lambda_VALS[1]
 
 source("./Code/Simple_Lasso_Ridge_ElasticNet/cutoff_adj_glmnet_lambda1se.R")
 y1_train_list_simple_lasso <- y1_train_list
@@ -558,8 +558,8 @@ cutoff_simple_lasso <- adjust_cutoff(model_vector = Model_chosen,x1_train_list =
 # segreg_th_adj_1se <- cutoff_simple_lasso # replace the default threshold = 0.5, by the calculated optimal cutoff
 # segreg_th_adj_min <- cutoff_simple_lasso # replace the default threshold = 0.5, by the calculated optimal cutoff
 
-segreg_th_adj_1se <- 0.6599446
-segreg_th_adj_min <- 0.5975667
+segreg_th_adj_1se <- 0.6612744
+segreg_th_adj_min <- 0.5986209
 
 ##### Model performance assessment #####
 
