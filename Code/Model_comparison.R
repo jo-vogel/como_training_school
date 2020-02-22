@@ -36,7 +36,7 @@ path_to_NH_files <- "D:/user/vogelj/Data/Group project Como"
 output_path <- "D:/user/vogelj/Group_project/Output/Plots/"
 
 # source('./Code/Lasso_interact_global_preparation.R') # load necessary files
-source('./Code/Lasso_interact_global_preparation_incl_ext_ind.R') # monthly data including extreme indices
+# source('./Code/Lasso_interact_global_preparation_incl_ext_ind.R') # monthly data including extreme indices
 
 
 # Load Model output for Ridge ####
@@ -456,6 +456,12 @@ for(pix in 1:nb_pix_bestglm){
 # Load Model output for Lasso glinternet (with and without) interactions ####
 ###################################################
 
+# model_name <- cv_fit_monthly_no_int # monthly model without interactions
+# model_name <- cv_fit_monthly_without_int_incl_ext # monthly model including extreme indices without interactions
+model_names <- c("cv_fit_monthly_no_int","cv_fit_monthly_without_int_incl_ext")
+
+for (model_name in model_names){
+
 # On the Drive you can find my data in:
 # with interactions
 # folder: Models/Lasso (glinternet)/LASSO_with_interactions/cv_fit_complete.RData
@@ -465,9 +471,15 @@ for(pix in 1:nb_pix_bestglm){
 
 # without interactions
 # folder: Models/Lasso (glinternet)/LASSO_without_interactions/cv_fit_no_int.RData
-# load("D:/user/vogelj/Group_project/Code/Workspaces/cv_fit_no_int.RData") # monthly model without interactions
+  if (model_name == "cv_fit_monthly_no_int") {
+    source('./Code/Lasso_interact_global_preparation.R') # load necessary files
+    load("D:/user/vogelj/Group_project/Code/Workspaces/cv_fit_no_int.RData") # monthly model without interactions
+  }
 # load("D:/user/vogelj/Group_project/Code/Workspaces/cv_fit_seasonal_no_int.RData") # seasonal model without interactions
-load("D:/user/vogelj/Group_project/Code/Workspaces/cv_fit_monthly_without_int_incl_ext.RData") # monthly model including extreme indices without interactions
+  if (model_name == "cv_fit_monthly_without_int_incl_ext") {
+    source('./Code/Lasso_interact_global_preparation_incl_ext_ind.R') # monthly data including extreme indices
+    load("D:/user/vogelj/Group_project/Code/Workspaces/cv_fit_monthly_without_int_incl_ext.RData") # monthly model including extreme indices without interactions
+  } 
 
 #location on Pauline's Laptop
 # load("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/OtherModels/cv_fit_complete.Rdata")
@@ -547,6 +559,11 @@ csi_lwi[work_pix_lwi] <- sapply(seq_along(work_pix_lwi), function(x){tn_lwi[x]/(
 csi_adj_lwi <- rep(NA,965)
 csi_adj_lwi[work_pix_lwi] <- sapply(seq_along(work_pix_lwi), function(x){tn_adj_lwi[x]/(tn_adj_lwi[x]+fp_adj_lwi[x]+fn_adj_lwi[x])})
 
+
+if (model_name == "cv_fit_monthly_no_int") csi_adj_lwi_monthly_no_int <- csi_adj_lwi
+if (model_name == "cv_fit_monthly_without_int_incl_ext") csi_adj_lwi_monthly_without_int_incl_ext <- csi_adj_lwi
+
+
 #If without interact
 csi_lasso_wo_int_glmint <- csi_lwi
 csi_lasso_wo_int_glmint_adj <- csi_adj_lwi
@@ -593,6 +610,9 @@ pref_lam <- rep(NA,965)
 pref_lam[work_pix_lwi] <- sapply(work_pix_lwi, function(x) cv_fit[[x]]$lambdaHat1Std)
   # write.csv(pref_lam,file="glinternet_lasso_without_interactions_lambdaHat1Std.csv")
 
+
+
+}
 
 
 # Create comparison maps ####
@@ -659,15 +679,19 @@ ggsave(paste(output_path, score,"_",model_1,"VS",model_2,".png", sep = ""), widt
 
 # CSI map ####
 ##############
-pairs(cbind(csi_bestglm, csi_lwi, csi_ridge, csi_simplelasso, csi_elastic))
+# pairs(cbind(csi_bestglm, csi_lwi, csi_ridge, csi_simplelasso, csi_elastic))
 
 score <- "CSI"
-model_1 <- "Lasso_wo_int_lambda1se_adj"
-score_1 <- csi_simplelasso_adj
-model_2 <- "Lasso_wo_int_glinternet_adj"
-score_2 <- csi_lasso_wo_int_glmint_adj
+# model_1 <- "Lasso_wo_int_lambda1se_adj"
+# score_1 <- csi_simplelasso_adj
+# model_2 <- "Lasso_wo_int_glinternet_adj"
+# score_2 <- csi_lasso_wo_int_glmint_adj
+model_1 <- model_names[1]
+score_1 <- csi_adj_lwi_monthly_no_int
+model_2 <- model_names[2]
+score_2 <- csi_adj_lwi_monthly_without_int_incl_ext
 
-pairs(cbind(csi_simplelasso, csi_simplelasso_adj, csi_lasso_wo_int_glmint, csi_lasso_wo_int_glmint_adj))
+# pairs(cbind(csi_simplelasso, csi_simplelasso_adj, csi_lasso_wo_int_glmint, csi_lasso_wo_int_glmint_adj))
 
 substract_score_plot(score_name = score,
                      score_1 = score_1, model1_name = model_1,
