@@ -19,8 +19,9 @@ cm_info_all <-  pblapply(1:length(work_pix), function(x){ConfusionMatrixInfo( da
 # Calculate ROC curve and cost function
 roc_info_all <- pblapply(1:length(work_pix), function(x){ROCInfo( data = cm_info_all[[x]]$data, predict = "predict", 
                                                                   actual = "actual", cost.fp = cost_fp, cost.fn = cost_fn )}) # note: the cutoff from cm_info_all has no role here
-cutoff_avg <- pbsapply(1:length(work_pix), function(x){roc_info_all[[x]]$cutoff}) # find the cutoff value
-return(mean(cutoff_avg)) # calculate the average cutoff value
+cutoff <- pbsapply(1:length(work_pix), function(x){roc_info_all[[x]]$cutoff}) # find the cutoff value
+return(cutoff)
+# return(mean(cutoff_avg)) # calculate the average cutoff value
 # boxplot(cutoff_avg)
 
 

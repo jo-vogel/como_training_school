@@ -1,207 +1,3 @@
-##########################################
-# Visualisation of results 
-# by Pauline and Johannes
-##########################################
-
-library(ggplot2)
-library(scales)
-library(viridis)
-library(maps)
-library(glmnet)
-library(pbapply)
-
-# Load model output ####
-########################
-
-# source('./Code/Lasso_interact_global.R') # takes ca. 3 hours
-path_to_NH_files <- "D:/user/vogelj/Data/Group project Como"
-# source('./Code/Lasso_interact_global_preparation.R') # monthly data
-source('./Code/Lasso_interact_global_preparation_incl_ext_ind.R') # monthly data including extreme indices
-
-# with interactions
-# Models/Lasso (glinternet)/LASSO_with_interactions/cv_fit_complete.RData
-# load("D:/user/vogelj/Group_project/Code/Workspaces/cv_fit_complete.RData") # load monthly model output
-# load("D:/user/vogelj/Group_project/Code/Workspaces/cv_fit_seasonal.RData") # load seasonal model output
-# load("D:/user/vogelj/Group_project/Code/Workspaces/cv_fit_monthly_with_int_incl_ext.RData") # monthly model including extreme indices with interactions
-
-# without interactions
-# Models/Lasso (glinternet)/LASSO_without_interactions/cv_fit_no_int.RData
-# load("D:/user/vogelj/Group_project/Code/Workspaces/cv_fit_no_int.RData") # monthly model without interactions
-# load("D:/user/vogelj/Group_project/Code/Workspaces/cv_fit_seasonal_no_int.RData") # seasonal model without interactions
-load("D:/user/vogelj/Group_project/Code/Workspaces/cv_fit_monthly_without_int_incl_ext.RData") # monthly model including extreme indices without interactions
-
-
-# model_name <- "Lasso with interactions"
-model_name <- "Lasso without interactions"
-
-# Model performance assessment ####
-###################################
-
-# Identify pixels with failed runs
-failed_pixels <- which(sapply(1:965, function(x) {is.character(cv_fit[[x]])})==1)
-# work_pix <- pix_in[-failed_pixels] # working pixels
-work_pix <- if (length(failed_pixels)==0) {work_pix <- pix_in
-} else  {work_pix <- pix_in[-failed_pixels]} # working pixels
-
-
-i_1Std <- sapply(work_pix, function(x){ which(cv_fit[[x]]$lambdaHat1Std == cv_fit[[x]]$lambda)}) # the preferential lambda (tuning parameter) lambdaHat1Std
-# i_1Std <- sapply(work_pix, function(x){ which(cv_fit[[x]]$lambdaHat == cv_fit[[x]]$lambda)}) # the preferential lambda (tuning parameter) lambdaHat
-i_1Std_all_pix <- rep(NA,965)
-i_1Std_all_pix[work_pix] <- i_1Std # needed as a workaround (to have an object of lenght=965)
-
-coefs <- vector("list",length=965)
-coefs[work_pix] <- lapply(work_pix, function(x){coef(cv_fit[[x]]$glinternetFit)[[i_1Std_all_pix[[x]]]]})
-
-# coefs$mainEffects # model part without interactions
-# names(numLevels)[coefs$mainEffects$cont] # Main effect variables (without interactions)
-# 
-# coefs$interactions # model part with interactions pairs
-# names(numLevels)[coefs$interactions$contcont] # Main effect variables (with interactions)
-
-
-#which segregation threshold for the model?
-segreg_th <- 0.5
-mypred <- lapply(work_pix, function(x){predict(cv_fit[[x]],x1_test_list[[x]],type="response", lambdaType="lambdaHat1Std")})
-# mypred <- lapply(work_pix, function(x){predict(cv_fit[[x]],x1_test_list[[x]],type="response", lambdaType="lambdaHat")}) 
-fitted.results_model <- lapply(seq_along(work_pix), function(x){ifelse(mypred[[x]] > segreg_th,1,0)})
-
-y1_test_list_red <- lapply(work_pix,function(work_pix){y1_test_list[[work_pix]]})
-mis_clas_err <- rep(NA,965)
-# mis_clas_err[work_pix] <- sapply(seq_along(work_pix), function(x){misClassError(y1_test_list_red[[x]],mypred[[x]])})
-mis_clas_err[work_pix] <- sapply(seq_along(work_pix), function(x){misClassError(actuals = y1_test_list_red[[x]],
-                                                                                predictedScores=mypred[[x]],
-                                                                                threshold = segreg_th)})
-
-
-
-con_tab <-  lapply(seq_along(work_pix), function(x){InformationValue::confusionMatrix(y1_test_list_red[[x]],fitted.results_model[[x]])})
-sensi <- rep(NA,965)
-speci <- rep(NA,965)
-sensi[work_pix] <- sapply(seq_along(work_pix), function(x){InformationValue::sensitivity(y1_test_list_red[[x]],fitted.results_model[[x]],
-                                                                                         threshold = segreg_th)})
-speci[work_pix] <- sapply(seq_along(work_pix), function(x){InformationValue::specificity(y1_test_list_red[[x]],fitted.results_model[[x]],
-                                                                                         threshold = segreg_th)})
-
-obs_pred <- lapply(seq_along(work_pix), function(x){cbind(y1_test_list_red[[x]],fitted.results_model[[x]])})
-tp <- sapply(seq_along(work_pix), function(x){sum(rowSums(obs_pred[[x]])==2)}) # Correct rejections
-tn <- sapply(seq_along(work_pix), function(x){sum(rowSums(obs_pred[[x]])==0)}) # Hits
-fp <- sapply(seq_along(work_pix), function(x){sum(obs_pred[[x]][,1]==0 & obs_pred[[x]][,2]==1)}) # Misses
-fn <- sapply(seq_along(work_pix), function(x){sum(obs_pred[[x]][,1]==1 & obs_pred[[x]][,2]==0)}) # False alarm
-con_tab1 <- sapply(seq_along(work_pix), function(x){matrix(c(tp[x],fn[x],fp[x],tn[x]),nrow=2,ncol=2)})
-# spec <- tn/(tn+fp) 
-# sens <- tp/(tp+fn) 
-csi <- rep(NA,965)
-csi[work_pix] <- sapply(seq_along(work_pix), function(x){tn[x]/(tn[x]+fp[x]+fn[x])})
-
-
-
-# Finding appropriate cutoff level ####
-#######################################
-# Pauline did similar investigations (however without a criterion for determining the cutoff): see her email from 31.10.19
-
-source("./Code/unbalanced_funtions.R") 
-
-
-# Example for one pixel ####
-
-exam_pixels <- sample(length(work_pix),10) # Choose some examplary pixels
-mypix <- 6 # decide by having a look at "con_tab" or see later in summary(cm_info$data$type)
-mypix <- exam_pixels[4] # decide by having a look at "con_tab" or see later in summary(cm_info$data$type)
-# data_test <- data.frame("Actuals"=y1_test_list_red[[mypix]], "Predictions"=fitted.results_model[[mypix]])
-# data_test <- data.frame("Actuals"=as.factor(y1_test_list_red[[mypix]]), "Predictions"=as.factor(fitted.results_model[[mypix]]))
-data_test <- data.frame("Actuals"=y1_test_list_red[[mypix]], "Predictions"=mypred[[mypix]])
-cm_info <- ConfusionMatrixInfo( data = data_test, predict = "Predictions", 
-                                actual = "Actuals", cutoff = .79 )
-cm_info$plot
-
-cost_fp <- 100 # Misses: this should be associated with a higher cost, as it is more detrimental
-cost_fn <- 100 # False alarms
-roc_info <- ROCInfo( data = cm_info$data, predict = "predict", 
-                     actual = "actual", cost.fp = cost_fp, cost.fn = cost_fn )
-x11()
-grid.draw(roc_info$plot)
-
-
-# Procedure for whole training data set ####
-
-y1_train_list_red <- lapply(work_pix,function(work_pix){y1_train_list[[work_pix]]})  
-mypred_train <- lapply(work_pix, function(x){predict(cv_fit[[x]],x1_train_list[[x]],type="response", lambdaType="lambdaHat1Std")})
-# mypred_train <- lapply(work_pix, function(x){predict(cv_fit[[x]],x1_train_list[[x]],type="response", lambdaType="lambdaHat")}) 
-
-# Data set with actuals and predictions
-# data_test_all <- pblapply(1:length(work_pix), function(x){ data.frame("Actuals"=y1_test_list_red[[x]], "Predictions"=mypred[[x]])}) # test data
-data_train_all <- pblapply(1:length(work_pix), function(x){ data.frame("Actuals"=y1_train_list_red[[x]], "Predictions"=mypred_train[[x]])}) # train data
-# Calculate confusion matrix
-cm_info_all <-  pblapply(1:length(work_pix), function(x){ConfusionMatrixInfo( data = data_train_all[[x]], predict = "Predictions", 
-                                                                              actual = "Actuals", cutoff = .5 )})
-# Calculate ROC curve and cost function
-roc_info_all <- pblapply(1:length(work_pix), function(x){ROCInfo( data = cm_info_all[[x]]$data, predict = "predict", 
-                                                                  actual = "actual", cost.fp = cost_fp, cost.fn = cost_fn )}) # note: the cutoff from cm_info_all has no role here
-# x11()
-pblapply(exam_pixels, function(x){x11();grid.draw(roc_info_all[[x]]$plot)}) # plot ROC and cost function
-cutoff_avg <- pbsapply(1:length(work_pix), function(x){roc_info_all[[x]]$cutoff}) # find the cutoff value
-mean(cutoff_avg) # calculate the average cutoff value
-boxplot(cutoff_avg)
-
-
-# Assess performance with adjusted cutoff in test data set ####
-# The performance i assessed in the test data set using the cutoff value determined with the training data set
-data_test_all <- pblapply(1:length(work_pix), function(x){ data.frame("Actuals"=y1_test_list_red[[x]], "Predictions"=mypred[[x]])})
-
-cm_info_all_test<-  pblapply(1:length(work_pix), function(x){ConfusionMatrixInfo( data = data_test_all[[x]], predict = "Predictions", 
-                                                                                  actual = "Actuals", cutoff = 0.5 )})
-tp_pre <- sapply(seq_along(work_pix), function(x){sum(cm_info_all_test[[x]]$data$type=="TP")}) # True positive, Correct rejections
-tn_pre <- sapply(seq_along(work_pix), function(x){sum(cm_info_all_test[[x]]$data$type=="TN")}) # True negative, Hits
-fp_pre <- sapply(seq_along(work_pix), function(x){sum(cm_info_all_test[[x]]$data$type=="FP")}) # False positive, Misses
-fn_pre <- sapply(seq_along(work_pix), function(x){sum(cm_info_all_test[[x]]$data$type=="FN")}) # False negative, False alarm
-# Adjust confusion matrix for test data using the suggested cutoff value
-cm_info_all_adj <-  pblapply(1:length(work_pix), function(x){ConfusionMatrixInfo( data = data_test_all[[x]], predict = "Predictions", 
-                                                                                  actual = "Actuals", cutoff = mean(cutoff_avg) )})
-
-tp_adj <- sapply(seq_along(work_pix), function(x){sum(cm_info_all_adj[[x]]$data$type=="TP")}) # True positive, Correct rejections
-tn_adj <- sapply(seq_along(work_pix), function(x){sum(cm_info_all_adj[[x]]$data$type=="TN")}) # True negative, Hits
-fp_adj <- sapply(seq_along(work_pix), function(x){sum(cm_info_all_adj[[x]]$data$type=="FP")}) # False positive, Misses
-fn_adj <- sapply(seq_along(work_pix), function(x){sum(cm_info_all_adj[[x]]$data$type=="FN")}) # False negative, False alarm
-
-# Plotting of performance metrices before and after
-mean(tp_adj,na.rm=T);mean(tp_pre,na.rm=T) # less true positives after adjusting
-median(tp_adj,na.rm=T);median(tp_pre,na.rm=T) # less true positives after adjusting
-plot(tp_adj,col='green',ylim=c(100,950)); points(tp_pre,col='blue') # less true positives after adjusting
-mean(tn_adj,na.rm=T);mean(tn_pre,na.rm=T) # seems like less true negatives after adjusting, but this is due to outliers before
-median(tn_adj,na.rm=T);median(tn_pre,na.rm=T) # more true negatives after adjusting
-plot(tn_adj,col='green'); points(tn_pre,col='blue') # some weird outliers are produced
-plot(tn_adj,col='green',ylim=c(0,100)); points(tn_pre,col='blue') # more true negatives after adjusting
-mean(fp_adj,na.rm=T);mean(fp_pre,na.rm=T) # less false positives
-median(fp_adj,na.rm=T);median(fp_pre,na.rm=T) # less false positives
-plot(fp_adj,col='green'); points(fp_pre,col='blue') # some weird outliers are produced
-plot(fp_adj,col='green',ylim=c(0,100)); points(fp_pre,col='blue') # less false positives
-mean(fn_adj,na.rm=T);mean(fn_pre,na.rm=T) # more false negatives after adjusting
-median(fn_adj,na.rm = T);median(fn_pre,na.rm = T) # more false negatives after adjusting
-plot(fn_adj,col='green'); points(fn_pre,col='blue') # more false negatives after adjusting
-
-# CSI with adjusted cutoff
-csi_adj <- rep(NA,965)
-csi_adj[work_pix] <- sapply(seq_along(work_pix), function(x){tn_adj[x]/(tn_adj[x]+fp_adj[x]+fn_adj[x])})
-
-# Sensitivity and specificity with adjusted cutoff
-fitted.results_model_adj <- lapply(seq_along(work_pix), function(x){ifelse(mypred[[x]] > mean(cutoff_avg),1,0)})
-sensi_adj <- rep(NA,965)
-speci_adj <- rep(NA,965)
-sensi_adj[work_pix] <- sapply(seq_along(work_pix), function(x){InformationValue::sensitivity(y1_test_list_red[[x]],fitted.results_model_adj[[x]],
-                                                                                             threshold = mean(cutoff_avg))})
-speci_adj[work_pix] <- sapply(seq_along(work_pix), function(x){InformationValue::specificity(y1_test_list_red[[x]],fitted.results_model_adj[[x]],
-                                                                                             threshold = mean(cutoff_avg))})
-
-csi_diff <- csi_adj - csi
-plot(csi_diff);mean(csi_diff, na.rm=T)
-speci_diff <- speci_adj - speci
-plot(speci_diff);mean(speci_diff, na.rm=T)
-sensi_diff <- sensi_adj- sensi
-plot(sensi_diff);mean(sensi_diff, na.rm=T)
-
-
-
-
 
 # Visualisation ####
 ####################
@@ -211,33 +7,46 @@ plot(sensi_diff);mean(sensi_diff, na.rm=T)
 world <- map_data("world")
 
 
-# Plot miscla error ####
+# Rename to fit variable names (lwi)
+csi <- csi_lwi
+csi_adj <- csi_adj_lwi
+speci <- speci_lwi
+speci_adj <- speci_adj_lwi
+sensi <- sensi_lwi
+sensi_adj <- sensi_adj_lwi
+coeff_kep <- coeff_kep_lwi
+coefs <- coefs_lwi
+cutoff_avg <- cutoff_lwi
+work_pix <- work_pix_lwi
 
-DF_miscla <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], miscla = mis_clas_err)
 
-ggplot(data = DF_miscla, aes(x=lon, y=lat)) +
-  geom_polygon(data = world, aes(long, lat, group=group),
-               fill="white", color="black", size=0.1) +
-  geom_point(shape=15, aes(color=miscla),size=0.7) +
-  scale_color_gradient2(limits=c(min(mis_clas_err,na.rm=T),max(mis_clas_err,na.rm=T)),midpoint=min(mis_clas_err,na.rm=T)+(max(mis_clas_err,na.rm=T)-min(mis_clas_err,na.rm=T))/2,
-                        low = "yellow", mid = "red3", high = "black") +
-  theme(panel.ontop = F, panel.grid = element_blank(),
-        panel.border = element_rect(colour = "black", fill = NA),
-        axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
-  ylab("Lat (°N)") +
-  xlab("Lon (°E)") +
-  coord_fixed(xlim = c(-120, 135),
-              ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
-              ratio = 1.3)+
-  labs(color="Misclass.\nerror",
-       title = paste("Misclassification error, simple",model_name,"regression"),
-       subtitle = paste("Bad yield threshold=", threshold,
-                        ", segregation threshold=", segreg_th, sep = ""))+
-  theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
-        legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
-  X11(width = 20, height = 7)
-ggsave(file="D:/user/vogelj/Group_project/Output/Plots/Mis_class_error_lasso_interact_map.png")
-# ggsave(file="D:/user/vogelj/Group_project/Output/Plots/Mis_class_error_lasso_interact_seasonal_map.png")
+# # Plot miscla error ####
+# 
+# DF_miscla <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], miscla = mis_clas_err)
+# 
+# ggplot(data = DF_miscla, aes(x=lon, y=lat)) +
+#   geom_polygon(data = world, aes(long, lat, group=group),
+#                fill="white", color="black", size=0.1) +
+#   geom_point(shape=15, aes(color=miscla),size=0.7) +
+#   scale_color_gradient2(limits=c(min(mis_clas_err,na.rm=T),max(mis_clas_err,na.rm=T)),midpoint=min(mis_clas_err,na.rm=T)+(max(mis_clas_err,na.rm=T)-min(mis_clas_err,na.rm=T))/2,
+#                         low = "yellow", mid = "red3", high = "black") +
+#   theme(panel.ontop = F, panel.grid = element_blank(),
+#         panel.border = element_rect(colour = "black", fill = NA),
+#         axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
+#   ylab("Lat (°N)") +
+#   xlab("Lon (°E)") +
+#   coord_fixed(xlim = c(-120, 135),
+#               ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
+#               ratio = 1.3)+
+#   labs(color="Misclass.\nerror",
+#        title = paste("Misclassification error, simple",model_name,"regression"),
+#        subtitle = paste("Bad yield threshold=", threshold,
+#                         ", segregation threshold=", segreg_th, sep = ""))+
+#   theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
+#         legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
+#   X11(width = 20, height = 7)
+# ggsave(file="D:/user/vogelj/Group_project/Output/Plots/Mis_class_error_lasso_interact_map.png")
+# # ggsave(file="D:/user/vogelj/Group_project/Output/Plots/Mis_class_error_lasso_interact_seasonal_map.png")
 
 
 # Plot specificity ####
@@ -247,9 +56,11 @@ DF_speci <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], specificity
 ggplot(data = DF_speci, aes(x=lon, y=lat)) +
   geom_polygon(data = world, aes(long, lat, group=group),
                fill="white", color="black", size=0.3) +
-  geom_point(shape=15, aes(color=speci),size=0.7) +
-  scale_color_gradient2(limits=c(min(speci,na.rm=T),max(speci,na.rm=T)),midpoint=min(speci,na.rm=T)+(max(speci,na.rm=T)-min(speci,na.rm=T))/2,
-                        low = "black", mid = "red3", high = "yellow") +
+  # geom_point(shape=15, aes(color=speci),size=0.7) +
+  # scale_color_gradient2(limits=c(min(speci,na.rm=T),max(speci,na.rm=T)),midpoint=min(speci,na.rm=T)+(max(speci,na.rm=T)-min(speci,na.rm=T))/2,
+  #                       low = "black", mid = "red3", high = "yellow") +
+  geom_tile(aes(fill=speci)) +
+  scale_fill_viridis(na.value="grey50")+
   theme(panel.ontop = F, panel.grid = element_blank(),
         panel.border = element_rect(colour = "black", fill = NA),
         axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
@@ -273,9 +84,11 @@ DF_speci_adj <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], specifi
 ggplot(data = DF_speci_adj, aes(x=lon, y=lat)) +
   geom_polygon(data = world, aes(long, lat, group=group),
                fill="white", color="black", size=0.3) +
-  geom_point(shape=15, aes(color=speci_adj),size=0.7) +
-  scale_color_gradient2(limits=c(min(speci_adj,na.rm=T),max(speci_adj,na.rm=T)),midpoint=min(speci_adj,na.rm=T)+(max(speci_adj,na.rm=T)-min(speci_adj,na.rm=T))/2,
-                        low = "black", mid = "red3", high = "yellow") +
+  # geom_point(shape=15, aes(color=speci_adj),size=0.7) +
+  # scale_color_gradient2(limits=c(min(speci_adj,na.rm=T),max(speci_adj,na.rm=T)),midpoint=min(speci_adj,na.rm=T)+(max(speci_adj,na.rm=T)-min(speci_adj,na.rm=T))/2,
+  #                       low = "black", mid = "red3", high = "yellow") +
+  geom_tile(aes(fill=speci_adj)) +
+  scale_fill_viridis(na.value="grey50")+
   theme(panel.ontop = F, panel.grid = element_blank(),
         panel.border = element_rect(colour = "black", fill = NA),
         axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
@@ -301,9 +114,11 @@ DF_sensi <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], sensitivity
 ggplot(data = DF_sensi, aes(x=lon, y=lat)) +
   geom_polygon(data = world, aes(long, lat, group=group),
                fill="white", color="black", size=0.3) +
-  geom_point(shape=15, aes(color=sensi),size=0.7) +
-  scale_color_gradient2(limits=c(min(sensi,na.rm=T),max(sensi,na.rm=T)),midpoint=min(sensi,na.rm=T)+(max(sensi,na.rm=T)-min(sensi,na.rm=T))/2,
-                        low = "black", mid = "red3", high = "yellow") +
+  # geom_point(shape=15, aes(color=sensi),size=0.7) +
+  # scale_color_gradient2(limits=c(min(sensi,na.rm=T),max(sensi,na.rm=T)),midpoint=min(sensi,na.rm=T)+(max(sensi,na.rm=T)-min(sensi,na.rm=T))/2,
+  #                       low = "black", mid = "red3", high = "yellow") +
+  geom_tile(aes(fill=sensi)) +
+  scale_fill_viridis(na.value="grey50")+
   theme(panel.ontop = F, panel.grid = element_blank(),
         panel.border = element_rect(colour = "black", fill = NA),
         axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
@@ -330,9 +145,11 @@ DF_csi <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], Critical_succ
 ggplot(data = DF_csi, aes(x=lon, y=lat)) +
   geom_polygon(data = world, aes(long, lat, group=group),
                fill="white", color="black", size=0.3) +
-  geom_point(shape=15, aes(color=csi),size=0.7) +
-  scale_color_gradient2(limits=c(min(csi,na.rm=T),max(csi,na.rm=T)),midpoint=min(csi,na.rm=T)+(max(csi,na.rm=T)-min(csi,na.rm=T))/2,
-                        low = "black", mid = "red3", high = "yellow") +
+  # geom_point(shape=15, aes(color=csi),size=0.7) +
+  # scale_color_gradient2(limits=c(min(csi,na.rm=T),max(csi,na.rm=T)),midpoint=min(csi,na.rm=T)+(max(csi,na.rm=T)-min(csi,na.rm=T))/2,
+  #                       low = "black", mid = "red3", high = "yellow") +
+  geom_tile(aes(fill=csi)) +
+  scale_fill_viridis(na.value="grey50")+
   theme(panel.ontop = F, panel.grid = element_blank(),
         panel.border = element_rect(colour = "black", fill = NA),
         axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
@@ -378,8 +195,9 @@ ggplot(data = DF_csi_adj, aes(x=lon, y=lat)) +
 ggsave(file="D:/user/vogelj/Group_project/Output/Plots/CSI_adj_lasso_interact_map.png")
 
 
-# Correlation between yield and specificity or miscla error ####
+# # Correlation between yield and specificity or miscla error ####
 
+yield <- matrix(Data_standardized$yield,965,1600)
 mean_yield <- apply(X=yield, MARGIN = 1, FUN = mean, na.rm=T)
 plot(mean_yield, mis_clas_err,
      xlab="Mean Yield (kg/yr)", ylab="Miss-classification error",
@@ -391,22 +209,15 @@ plot(mean_yield, speci,
                 "\nsegregation threshold=", segreg_th, sep = ""))
 
 
-pairs(cbind(mean_yield, mis_clas_err, speci),
-      main=paste(model_name, " regression, bad yield thr.=", threshold,
-                 "\nsegreg. thr.=", segreg_th, sep = ""))
+# pairs(cbind(mean_yield, mis_clas_err, speci),
+#       main=paste(model_name, " regression, bad yield thr.=", threshold,
+#                  "\nsegreg. thr.=", segreg_th, sep = ""))
 
-cor(mean_yield, mis_clas_err)
+# cor(mean_yield, mis_clas_err)
 cor(mean_yield, speci)
 
 
 # Map of the number of coefficients kept (Lasso) #####
-# if(model_name=="Lasso"){
-coeff_kep <- numeric()
-
-for (pix in 1:pix_num) {
-  coeff_kep[pix] <- length(coefs[[pix]]$mainEffects$cont)
-  # coeff_kep[pix] <- sum(coefs[[pix]][row.names(coefs[[pix]])!="(Intercept)"]!=0)
-}#end for pix
 
 
 DF_numbcoeff <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], coeff_kep = coeff_kep)
@@ -414,15 +225,15 @@ DF_numbcoeff <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], coeff_k
 ggplot(data = DF_numbcoeff, aes(x=lon, y=lat)) +
   geom_polygon(data = world, aes(long, lat, group=group),
                fill="white", color="black", size=0.3) +
-  geom_point(shape=15, aes(color=coeff_kep),size=0.7) +
+  # geom_point(shape=15, aes(color=coeff_kep),size=0.7) +
   # scale_color_gradientn(limits=c(0,max(DF_numbcoeff[,3])), 
   # colours=c(gray.colors(1),topo.colors(23)[-c(1,3,5,16:23)],rev(heat.colors(10))) ,values=rescale(0:22,c(0,1))) + # mixed visualisation
   # colours=c(gray.colors(1),topo.colors(20)[-c(13:20)],rev(heat.colors(10))) ,values=rescale(0:22,c(0,1))) + # mixed visualisation v1
   
   # lambdaHat1Std
-  scale_color_gradientn(limits=c(0,15),
-                        colours=c(gray.colors(1),topo.colors(9)[-c(8,9)],rev(heat.colors(7))) ,values=rescale(0:15,c(0,1)),
-                        breaks=c(0,3,6,9,12,15),labels=c("0","3","6","9","12",">=15")) + # mixed visualisation with cutoff
+  # scale_color_gradientn(limits=c(0,15),
+  #                       colours=c(gray.colors(1),topo.colors(9)[-c(8,9)],rev(heat.colors(7))) ,values=rescale(0:15,c(0,1)),
+  #                       breaks=c(0,3,6,9,12,15),labels=c("0","3","6","9","12",">=15")) + # mixed visualisation with cutoff
   
   # lambdaHat
   # scale_color_gradientn(limits=c(0,40),
@@ -436,6 +247,8 @@ ggplot(data = DF_numbcoeff, aes(x=lon, y=lat)) +
   #                      low = "blue", mid = "yellow", high = "red3") +
 # scale_color_gradient2(limits=c(0,max(DF_numbcoeff[,3])),midpoint=max(DF_numbcoeff[,3])/2,
 # low = "blue", mid = "yellow", high = "red3") +
+  geom_tile(aes(fill=coeff_kep)) +
+  scale_fill_viridis(na.value="grey50")+
 theme(panel.ontop = F, panel.grid = element_blank(),
       panel.border = element_rect(colour = "black", fill = NA),
       axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
@@ -460,30 +273,20 @@ plot(table(coeff_kep))  # overview of distribution of the number of coefficients
 
 # Map of number of interactions ####
 
-num_interact <- numeric()
-
-for (pix in 1:pix_num) {
-  if (is.null(dim(coefs[[pix]]$interactions$contcont)[1])){
-    num_interact[pix] <- 0
-  } else {
-    
-    num_interact[pix] <-  dim(coefs[[pix]]$interactions$contcont)[1]
-  }
-}
-
-
 DF_numb_interact <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], num_interact = num_interact)
 
 ggplot(data = DF_numb_interact, aes(x=lon, y=lat)) +
   geom_polygon(data = world, aes(long, lat, group=group),
                fill="white", color="black", size=0.3) +
-  geom_point(shape=15, aes(color=num_interact),size=0.7) +
+  # geom_point(shape=15, aes(color=num_interact),size=0.7) +
   # scale_color_gradient2(limits=c(0,max(DF_numb_interact[,3])),midpoint=max(DF_numb_interact[,3]/2),
   # low = "blue", mid = "yellow", high = "red3") +
   # scale_color_gradientn(limits=c(0,16), breaks=c(0,4,8,12,16),labels=c("0","4","8","12",">=16"), # lamdaHat1Std
   #                       colours=c(gray.colors(1),topo.colors(10)[-c(9,10)],rev(heat.colors(7))) ,values=rescale(0:16,c(0,1))) + # mixed visualisation with cutoff
-  scale_color_gradientn(limits=c(0,64), breaks=c(0,12,24,36,48),labels=c("0","12","24","36",">=48"), # lambdaHat
-                        colours=c(gray.colors(1),topo.colors(10)[-c(9,10)],rev(heat.colors(7))) ,values=rescale(0:64,c(0,1))) + # mixed visualisation with cutoff
+  # scale_color_gradientn(limits=c(0,64), breaks=c(0,12,24,36,48),labels=c("0","12","24","36",">=48"), # lambdaHat
+  #                       colours=c(gray.colors(1),topo.colors(10)[-c(9,10)],rev(heat.colors(7))) ,values=rescale(0:64,c(0,1))) + # mixed visualisation with cutoff
+  geom_tile(aes(fill=num_interact)) +
+  scale_fill_viridis(na.value="grey50")+
   theme(panel.ontop = F, panel.grid = element_blank(),
         panel.border = element_rect(colour = "black", fill = NA),
         axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
@@ -577,8 +380,9 @@ DF_nbdiffmeteo$nb_meteo <- as.factor(DF_nbdiffmeteo$nb_meteo)
 ggplot(data = DF_nbdiffmeteo, aes(x=lon, y=lat)) +
   geom_polygon(data = world, aes(long, lat, group=group),
                fill="white", color="black", size=0.3) +
-  geom_point(shape=15, aes(color=DF_nbdiffmeteo$nb_meteo),size=0.7) +
-  scale_color_manual(values = c("0"=rainbow(4)[1],"1"=rainbow(4)[2], "2"=rainbow(4)[3], "3"=rainbow(4)[4])) +
+  # geom_point(shape=15, aes(color=DF_nbdiffmeteo$nb_meteo),size=0.7) +
+  # scale_color_manual(values = c("0"=rainbow(4)[1],"1"=rainbow(4)[2], "2"=rainbow(4)[3], "3"=rainbow(4)[4])) +
+  geom_tile(aes(fill=DF_nbdiffmeteo$nb_meteo)) +
   theme(panel.ontop = F, panel.grid = element_blank(),
         panel.border = element_rect(colour = "black", fill = NA),
         axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
@@ -603,8 +407,9 @@ DF_nbdiffseason$nb_season <- as.factor(DF_nbdiffseason$nb_season)
 ggplot(data = DF_nbdiffseason, aes(x=lon, y=lat)) +
   geom_polygon(data = world, aes(long, lat, group=group),
                fill="white", color="black", size=0.3) +
-  geom_point(shape=15, aes(color=DF_nbdiffseason$nb_season),size=0.7) +
-  scale_color_manual(values = c("0"=rainbow(5)[1],"1"=rainbow(5)[2], "2"=rainbow(5)[3], "3"=rainbow(5)[4], "4"=rainbow(5)[5])) +
+  # geom_point(shape=15, aes(color=DF_nbdiffseason$nb_season),size=0.7) +
+  # scale_color_manual(values = c("0"=rainbow(5)[1],"1"=rainbow(5)[2], "2"=rainbow(5)[3], "3"=rainbow(5)[4], "4"=rainbow(5)[5])) +
+  geom_tile(aes(fill=DF_nbdiffseason$nb_season)) +
   theme(panel.ontop = F, panel.grid = element_blank(),
         panel.border = element_rect(colour = "black", fill = NA),
         axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
@@ -632,9 +437,11 @@ DF_cutoff <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], cutoff = c
 ggplot(data = DF_cutoff, aes(x=lon, y=lat)) +
   geom_polygon(data = world, aes(long, lat, group=group),
                fill="white", color="black", size=0.3) +
-  geom_point(shape=15, aes(color=cutoffs),size=0.7) +
-  scale_color_gradient2(limits=c(min(cutoffs,na.rm=T),max(cutoffs,na.rm=T)),midpoint=min(cutoffs,na.rm=T)+(max(cutoffs,na.rm=T)-min(cutoffs,na.rm=T))/2,
-                        low = "black", mid = "red3", high = "yellow") +
+  # geom_point(shape=15, aes(color=cutoffs),size=0.7) +
+  # scale_color_gradient2(limits=c(min(cutoffs,na.rm=T),max(cutoffs,na.rm=T)),midpoint=min(cutoffs,na.rm=T)+(max(cutoffs,na.rm=T)-min(cutoffs,na.rm=T))/2,
+  #                       low = "black", mid = "red3", high = "yellow") +
+  geom_tile(aes(fill=cutoffs)) +
+  scale_fill_viridis(na.value="grey50")+
   theme(panel.ontop = F, panel.grid = element_blank(),
         panel.border = element_rect(colour = "black", fill = NA),
         axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
@@ -676,14 +483,21 @@ apply(DF_ext_ind,2,sum)
 ggplot(data = DF_nbdiffmeteo, aes(x=lon, y=lat)) +
   geom_polygon(data = world, aes(long, lat, group=group),
                fill="white", color="black", size=0.3) +
-  geom_point(shape=15, size=0.7, 
+  # geom_point(shape=15, size=0.7, 
              # aes(color=DF_ext_ind$dtr)) +
              # aes(color=DF_ext_ind$frs)) +
              # aes(color=DF_ext_ind$rx5)) +
              # aes(color=DF_ext_ind$tn10p)) +
              # aes(color=DF_ext_ind$tnn)) +
              # aes(color=DF_ext_ind$tx90p)) +
-             aes(color=DF_ext_ind$txx)) +
+             # aes(color=DF_ext_ind$txx)) +
+  # geom_tile(aes(fill=DF_ext_ind$dtr)) +
+  # geom_tile(aes(fill=DF_ext_ind$frs)) +
+  # geom_tile(aes(fill=DF_ext_ind$rx5)) +
+  # geom_tile(aes(fill=DF_ext_ind$tn10p)) +
+  # geom_tile(aes(fill=DF_ext_ind$tnn)) +
+  # geom_tile(aes(fill=DF_ext_ind$tx90p)) +
+  geom_tile(aes(fill=DF_ext_ind$txx)) +
   theme(panel.ontop = F, panel.grid = element_blank(),
         panel.border = element_rect(colour = "black", fill = NA),
         axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
@@ -718,17 +532,17 @@ ggsave(file="D:/user/vogelj/Group_project/Output/Plots/Pixels_txx.png")
 # ROC ####
 ########## 
 
-pred <- sapply(seq_along(work_pix), function(x) prediction(mypred[[x]], y1_test_list_red[[x]]))
-prf <- sapply(seq_along(work_pix), function(x) performance(pred[[x]], measure = "tpr", x.measure = "fpr"))
-par(mfrow=c(5,5))
-# plot(prf[[3]])
-for (i in sample(1:963,25)) (plot(prf[[3]]))
-# takes long
-# ROCs <- sapply(seq_along(work_pix), function(x) plotROC(actuals=y1_test_list_red[[x]],predictedScores=fitted.results_model[[x]]))
-# for (i in sample(1:963,25)) (plot(ROCs[[3]]))
-auc2 <- sapply(seq_along(work_pix), function(x) auc(y1_test_list_red[[x]],fitted.results_model[[x]]))
-auc <- sapply(seq_along(work_pix), function(x) performance(pred[[x]], measure = "auc"))
-# auc@y.values[[1]]
+# pred <- sapply(seq_along(work_pix), function(x) prediction(mypred[[x]], y1_test_list_red[[x]]))
+# prf <- sapply(seq_along(work_pix), function(x) performance(pred[[x]], measure = "tpr", x.measure = "fpr"))
+# par(mfrow=c(5,5))
+# # plot(prf[[3]])
+# for (i in sample(1:963,25)) (plot(prf[[3]]))
+# # takes long
+# # ROCs <- sapply(seq_along(work_pix), function(x) plotROC(actuals=y1_test_list_red[[x]],predictedScores=fitted.results_model[[x]]))
+# # for (i in sample(1:963,25)) (plot(ROCs[[3]]))
+# auc2 <- sapply(seq_along(work_pix), function(x) auc(y1_test_list_red[[x]],fitted.results_model[[x]]))
+# auc <- sapply(seq_along(work_pix), function(x) performance(pred[[x]], measure = "auc"))
+# # auc@y.values[[1]]
 
 
 

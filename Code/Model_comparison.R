@@ -460,7 +460,8 @@ for(pix in 1:nb_pix_bestglm){
 # model_name <- cv_fit_monthly_without_int_incl_ext # monthly model including extreme indices without interactions
 model_names <- c("cv_fit_monthly_no_int","cv_fit_monthly_without_int_incl_ext")
 
-for (model_name in model_names){
+model_name <- "cv_fit_monthly_without_int_incl_ext"
+# for (model_name in model_names){
 
 # On the Drive you can find my data in:
 # with interactions
@@ -498,14 +499,13 @@ y1_train_list_lwi <- y1_train_list
 x1_train_list_lwi <- x1_train_list
 cost_fp_lwi <- 100 # Misses: this should be associated with a higher cost, as it is more detrimental
 cost_fn_lwi <- 100 # False alarms 
-mypred_train_lwi <- lapply(work_pix_lwi,
-                           function(x){predict(cv_fit[[x]],x1_train_list_lwi[[x]],type="response", lambdaType="lambdaHat1Std")}) # recommended lambdaType
-# mypred_train_lwi <- lapply(work_pix_lwi,
-                            # function(x){predict(cv_fit[[x]],x1_train_list_lwi[[x]],type="response", lambdaType="lambdaHat")}) # default lambdaType
+mypred_train_lwi <- lapply(work_pix_lwi, function(x){predict(cv_fit[[x]],x1_train_list_lwi[[x]],type="response", lambdaType="lambdaHat1Std")}) # recommended lambdaType
+# mypred_train_lwi <- lapply(work_pix_lwi, function(x){predict(cv_fit[[x]],x1_train_list_lwi[[x]],type="response", lambdaType="lambdaHat")}) # default lambdaType
 
 cutoff_lwi <- adjust_cutoff(x1_train_list = x1_train_list_lwi, y1_train_list = y1_train_list_lwi, mypred_train = mypred_train_lwi,
                             work_pix = work_pix_lwi, cost_fp = cost_fp_lwi, cost_fn= cost_fn_lwi)
-segreg_th_adj <- cutoff_lwi # replace the default threshold = 0.5, by the calculated optimal cutoff
+cutoff_avg_lwi <- mean(cutoff_lwi)
+segreg_th_adj <- cutoff_avg_lwi # replace the default threshold = 0.5, by the calculated optimal cutoff
 segreg_th <- 0.5 # default
 
 i_1Std <- sapply(work_pix_lwi, function(x){ which(cv_fit[[x]]$lambdaHat1Std == cv_fit[[x]]$lambda)}) # the preferential lambda (tuning parameter): lambdaHat1Std
@@ -516,7 +516,8 @@ i_1Std_all_pix[work_pix_lwi] <- i_1Std # needed as a workaround (to have an obje
 # Create specificity, CSI and EDI for Lasso w interactions ####
 ################################################################
 
-mypred_lwi <- lapply(work_pix_lwi, function(x){predict(cv_fit[[x]],x1_test_list[[x]],type="response")}) 
+# mypred_lwi <- lapply(work_pix_lwi, function(x){predict(cv_fit[[x]],x1_test_list[[x]],type="response",lambdaType="lambdaHat1Std")}) # recommended lambdaType
+mypred_lwi <- lapply(work_pix_lwi, function(x){predict(cv_fit[[x]],x1_test_list[[x]],type="response",lambdaType="lambdaHat")}) # default lambdaType
 fitted.results_model_lwi <- lapply(seq_along(work_pix_lwi), function(x){ifelse(mypred_lwi[[x]] > segreg_th,1,0)})
 fitted.results_model_adj_lwi <- lapply(seq_along(work_pix_lwi), function(x){ifelse(mypred_lwi[[x]] > mean(segreg_th_adj),1,0)})
 y1_test_list_red_lwi <- lapply(work_pix_lwi,function(work_pix_lwi){y1_test_list[[work_pix_lwi]]})
@@ -610,9 +611,10 @@ pref_lam <- rep(NA,965)
 pref_lam[work_pix_lwi] <- sapply(work_pix_lwi, function(x) cv_fit[[x]]$lambdaHat1Std)
   # write.csv(pref_lam,file="glinternet_lasso_without_interactions_lambdaHat1Std.csv")
 
+source("./Code/Plots_performance_and_variables.r")
 
 
-}
+# }
 
 
 # Create comparison maps ####
