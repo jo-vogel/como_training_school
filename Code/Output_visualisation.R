@@ -1,6 +1,6 @@
 ##########################################
 # Visualisation of results 
-# by Pauline, partially edited by Johannes
+# by Pauline and Johannes
 ##########################################
 
 library(ggplot2)
@@ -150,18 +150,18 @@ data_test_all <- pblapply(1:length(work_pix), function(x){ data.frame("Actuals"=
 
 cm_info_all_test<-  pblapply(1:length(work_pix), function(x){ConfusionMatrixInfo( data = data_test_all[[x]], predict = "Predictions", 
                                                                                   actual = "Actuals", cutoff = 0.5 )})
-tp_pre <- sapply(seq_along(work_pix), function(x){summary(cm_info_all_test[[x]]$data$type)[4]}) # True positive, Correct rejections
-tn_pre <- sapply(seq_along(work_pix), function(x){summary(cm_info_all_test[[x]]$data$type)[3]}) # True negative, Hits
-fp_pre <- sapply(seq_along(work_pix), function(x){summary(cm_info_all_test[[x]]$data$type)[2]}) # False positive, Misses
-fn_pre <- sapply(seq_along(work_pix), function(x){summary(cm_info_all_test[[x]]$data$type)[1]}) # False negative, False alarm
+tp_pre <- sapply(seq_along(work_pix), function(x){sum(cm_info_all_test[[x]]$data$type=="TP")}) # True positive, Correct rejections
+tn_pre <- sapply(seq_along(work_pix), function(x){sum(cm_info_all_test[[x]]$data$type=="TN")}) # True negative, Hits
+fp_pre <- sapply(seq_along(work_pix), function(x){sum(cm_info_all_test[[x]]$data$type=="FP")}) # False positive, Misses
+fn_pre <- sapply(seq_along(work_pix), function(x){sum(cm_info_all_test[[x]]$data$type=="FN")}) # False negative, False alarm
 # Adjust confusion matrix for test data using the suggested cutoff value
 cm_info_all_adj <-  pblapply(1:length(work_pix), function(x){ConfusionMatrixInfo( data = data_test_all[[x]], predict = "Predictions", 
                                                                                   actual = "Actuals", cutoff = mean(cutoff_avg) )})
 
-tp_adj <- sapply(seq_along(work_pix), function(x){summary(cm_info_all_adj[[x]]$data$type)[4]}) # True positive, Correct rejections
-tn_adj <- sapply(seq_along(work_pix), function(x){summary(cm_info_all_adj[[x]]$data$type)[3]}) # True negative, Hits
-fp_adj <- sapply(seq_along(work_pix), function(x){summary(cm_info_all_adj[[x]]$data$type)[2]}) # False positive, Misses
-fn_adj <- sapply(seq_along(work_pix), function(x){summary(cm_info_all_adj[[x]]$data$type)[1]}) # False negative, False alarm
+tp_adj <- sapply(seq_along(work_pix), function(x){sum(cm_info_all_adj[[x]]$data$type=="TP")}) # True positive, Correct rejections
+tn_adj <- sapply(seq_along(work_pix), function(x){sum(cm_info_all_adj[[x]]$data$type=="TN")}) # True negative, Hits
+fp_adj <- sapply(seq_along(work_pix), function(x){sum(cm_info_all_adj[[x]]$data$type=="FP")}) # False positive, Misses
+fn_adj <- sapply(seq_along(work_pix), function(x){sum(cm_info_all_adj[[x]]$data$type=="FN")}) # False negative, False alarm
 
 # Plotting of performance metrices before and after
 mean(tp_adj,na.rm=T);mean(tp_pre,na.rm=T) # less true positives after adjusting
@@ -356,7 +356,7 @@ DF_csi_adj <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], Critical_
 ggplot(data = DF_csi_adj, aes(x=lon, y=lat)) +
   geom_polygon(data = world, aes(long, lat, group=group),
                fill="white", color="black", size=0.3) +
-  geom_raster(aes(fill=csi_adj)) +
+  geom_tile(aes(fill=csi_adj)) +
   # scale_fill_gradient2(limits=c(min(csi_adj,na.rm=T),max(csi_adj,na.rm=T)),midpoint=min(csi_adj,na.rm=T)+(max(csi_adj,na.rm=T)-min(csi_adj,na.rm=T))/2,
   # low = "black", mid = "red3", high = "yellow") +
   scale_fill_viridis(na.value="grey50")+
