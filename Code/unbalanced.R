@@ -1,3 +1,5 @@
+# This file is an example file from http://ethen8181.github.io/machine-learning/unbalanced/unbalanced.html and https://github.com/ethen8181/machine-learning/tree/master/unbalanced
+
 # logistic regression
 
 # environment setting 

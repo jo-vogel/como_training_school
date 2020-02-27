@@ -686,10 +686,10 @@ score <- "CSI"
 # score_1 <- csi_simplelasso_adj
 # model_2 <- "Lasso_wo_int_glinternet_adj"
 # score_2 <- csi_lasso_wo_int_glmint_adj
-model_1 <- model_names[1]
-score_1 <- csi_adj_lwi_monthly_no_int
-model_2 <- model_names[2]
-score_2 <- csi_adj_lwi_monthly_without_int_incl_ext
+model_1 <- model_names[2]
+score_1 <- csi_adj_lwi_monthly_without_int_incl_ext
+model_2 <- model_names[1]
+score_2 <- csi_adj_lwi_monthly_no_int
 
 # pairs(cbind(csi_simplelasso, csi_simplelasso_adj, csi_lasso_wo_int_glmint, csi_lasso_wo_int_glmint_adj))
 

@@ -104,100 +104,100 @@ source("./Code/unbalanced_funtions.R")
 
 # Example for one pixel ####
 
-  exam_pixels <- sample(length(work_pix),10) # Choose some examplary pixels
-  mypix <- 6 # decide by having a look at "con_tab" or see later in summary(cm_info$data$type)
-  mypix <- exam_pixels[4] # decide by having a look at "con_tab" or see later in summary(cm_info$data$type)
-  # data_test <- data.frame("Actuals"=y1_test_list_red[[mypix]], "Predictions"=fitted.results_model[[mypix]])
-  # data_test <- data.frame("Actuals"=as.factor(y1_test_list_red[[mypix]]), "Predictions"=as.factor(fitted.results_model[[mypix]]))
-  data_test <- data.frame("Actuals"=y1_test_list_red[[mypix]], "Predictions"=mypred[[mypix]])
-  cm_info <- ConfusionMatrixInfo( data = data_test, predict = "Predictions", 
-                                  actual = "Actuals", cutoff = .79 )
-  cm_info$plot
-  
-  cost_fp <- 100 # Misses: this should be associated with a higher cost, as it is more detrimental
-  cost_fn <- 100 # False alarms
-  roc_info <- ROCInfo( data = cm_info$data, predict = "predict", 
-                       actual = "actual", cost.fp = cost_fp, cost.fn = cost_fn )
-  x11()
-  grid.draw(roc_info$plot)
+exam_pixels <- sample(length(work_pix),10) # Choose some examplary pixels
+mypix <- 6 # decide by having a look at "con_tab" or see later in summary(cm_info$data$type)
+mypix <- exam_pixels[4] # decide by having a look at "con_tab" or see later in summary(cm_info$data$type)
+# data_test <- data.frame("Actuals"=y1_test_list_red[[mypix]], "Predictions"=fitted.results_model[[mypix]])
+# data_test <- data.frame("Actuals"=as.factor(y1_test_list_red[[mypix]]), "Predictions"=as.factor(fitted.results_model[[mypix]]))
+data_test <- data.frame("Actuals"=y1_test_list_red[[mypix]], "Predictions"=mypred[[mypix]])
+cm_info <- ConfusionMatrixInfo( data = data_test, predict = "Predictions", 
+                                actual = "Actuals", cutoff = .79 )
+cm_info$plot
+
+cost_fp <- 100 # Misses: this should be associated with a higher cost, as it is more detrimental
+cost_fn <- 100 # False alarms
+roc_info <- ROCInfo( data = cm_info$data, predict = "predict", 
+                     actual = "actual", cost.fp = cost_fp, cost.fn = cost_fn )
+x11()
+grid.draw(roc_info$plot)
 
 
 # Procedure for whole training data set ####
 
-  y1_train_list_red <- lapply(work_pix,function(work_pix){y1_train_list[[work_pix]]})  
-  mypred_train <- lapply(work_pix, function(x){predict(cv_fit[[x]],x1_train_list[[x]],type="response", lambdaType="lambdaHat1Std")})
-  # mypred_train <- lapply(work_pix, function(x){predict(cv_fit[[x]],x1_train_list[[x]],type="response", lambdaType="lambdaHat")}) 
-  
-  # Data set with actuals and predictions
-  # data_test_all <- pblapply(1:length(work_pix), function(x){ data.frame("Actuals"=y1_test_list_red[[x]], "Predictions"=mypred[[x]])}) # test data
-  data_train_all <- pblapply(1:length(work_pix), function(x){ data.frame("Actuals"=y1_train_list_red[[x]], "Predictions"=mypred_train[[x]])}) # train data
-  # Calculate confusion matrix
-  cm_info_all <-  pblapply(1:length(work_pix), function(x){ConfusionMatrixInfo( data = data_train_all[[x]], predict = "Predictions", 
-                                                                                actual = "Actuals", cutoff = .5 )})
-  # Calculate ROC curve and cost function
-  roc_info_all <- pblapply(1:length(work_pix), function(x){ROCInfo( data = cm_info_all[[x]]$data, predict = "predict", 
-                                                                    actual = "actual", cost.fp = cost_fp, cost.fn = cost_fn )}) # note: the cutoff from cm_info_all has no role here
-  # x11()
-  pblapply(exam_pixels, function(x){x11();grid.draw(roc_info_all[[x]]$plot)}) # plot ROC and cost function
-  cutoff_avg <- pbsapply(1:length(work_pix), function(x){roc_info_all[[x]]$cutoff}) # find the cutoff value
-  mean(cutoff_avg) # calculate the average cutoff value
-  boxplot(cutoff_avg)
+y1_train_list_red <- lapply(work_pix,function(work_pix){y1_train_list[[work_pix]]})  
+mypred_train <- lapply(work_pix, function(x){predict(cv_fit[[x]],x1_train_list[[x]],type="response", lambdaType="lambdaHat1Std")})
+# mypred_train <- lapply(work_pix, function(x){predict(cv_fit[[x]],x1_train_list[[x]],type="response", lambdaType="lambdaHat")}) 
+
+# Data set with actuals and predictions
+# data_test_all <- pblapply(1:length(work_pix), function(x){ data.frame("Actuals"=y1_test_list_red[[x]], "Predictions"=mypred[[x]])}) # test data
+data_train_all <- pblapply(1:length(work_pix), function(x){ data.frame("Actuals"=y1_train_list_red[[x]], "Predictions"=mypred_train[[x]])}) # train data
+# Calculate confusion matrix
+cm_info_all <-  pblapply(1:length(work_pix), function(x){ConfusionMatrixInfo( data = data_train_all[[x]], predict = "Predictions", 
+                                                                              actual = "Actuals", cutoff = .5 )})
+# Calculate ROC curve and cost function
+roc_info_all <- pblapply(1:length(work_pix), function(x){ROCInfo( data = cm_info_all[[x]]$data, predict = "predict", 
+                                                                  actual = "actual", cost.fp = cost_fp, cost.fn = cost_fn )}) # note: the cutoff from cm_info_all has no role here
+# x11()
+pblapply(exam_pixels, function(x){x11();grid.draw(roc_info_all[[x]]$plot)}) # plot ROC and cost function
+cutoff_avg <- pbsapply(1:length(work_pix), function(x){roc_info_all[[x]]$cutoff}) # find the cutoff value
+mean(cutoff_avg) # calculate the average cutoff value
+boxplot(cutoff_avg)
 
 
 # Assess performance with adjusted cutoff in test data set ####
-  # The performance i assessed in the test data set using the cutoff value determined with the training data set
-  data_test_all <- pblapply(1:length(work_pix), function(x){ data.frame("Actuals"=y1_test_list_red[[x]], "Predictions"=mypred[[x]])})
-  
-  cm_info_all_test<-  pblapply(1:length(work_pix), function(x){ConfusionMatrixInfo( data = data_test_all[[x]], predict = "Predictions", 
-                                                                                    actual = "Actuals", cutoff = 0.5 )})
-  tp_pre <- sapply(seq_along(work_pix), function(x){summary(cm_info_all_test[[x]]$data$type)[4]}) # True positive, Correct rejections
-  tn_pre <- sapply(seq_along(work_pix), function(x){summary(cm_info_all_test[[x]]$data$type)[3]}) # True negative, Hits
-  fp_pre <- sapply(seq_along(work_pix), function(x){summary(cm_info_all_test[[x]]$data$type)[2]}) # False positive, Misses
-  fn_pre <- sapply(seq_along(work_pix), function(x){summary(cm_info_all_test[[x]]$data$type)[1]}) # False negative, False alarm
-  # Adjust confusion matrix for test data using the suggested cutoff value
-  cm_info_all_adj <-  pblapply(1:length(work_pix), function(x){ConfusionMatrixInfo( data = data_test_all[[x]], predict = "Predictions", 
-                                                                                    actual = "Actuals", cutoff = mean(cutoff_avg) )})
-  
-  tp_adj <- sapply(seq_along(work_pix), function(x){summary(cm_info_all_adj[[x]]$data$type)[4]}) # True positive, Correct rejections
-  tn_adj <- sapply(seq_along(work_pix), function(x){summary(cm_info_all_adj[[x]]$data$type)[3]}) # True negative, Hits
-  fp_adj <- sapply(seq_along(work_pix), function(x){summary(cm_info_all_adj[[x]]$data$type)[2]}) # False positive, Misses
-  fn_adj <- sapply(seq_along(work_pix), function(x){summary(cm_info_all_adj[[x]]$data$type)[1]}) # False negative, False alarm
-  
-  # Plotting of performance metrices before and after
-  mean(tp_adj,na.rm=T);mean(tp_pre,na.rm=T) # less true positives after adjusting
-  median(tp_adj,na.rm=T);median(tp_pre,na.rm=T) # less true positives after adjusting
-  plot(tp_adj,col='green',ylim=c(100,950)); points(tp_pre,col='blue') # less true positives after adjusting
-  mean(tn_adj,na.rm=T);mean(tn_pre,na.rm=T) # seems like less true negatives after adjusting, but this is due to outliers before
-  median(tn_adj,na.rm=T);median(tn_pre,na.rm=T) # more true negatives after adjusting
-  plot(tn_adj,col='green'); points(tn_pre,col='blue') # some weird outliers are produced
-  plot(tn_adj,col='green',ylim=c(0,100)); points(tn_pre,col='blue') # more true negatives after adjusting
-  mean(fp_adj,na.rm=T);mean(fp_pre,na.rm=T) # less false positives
-  median(fp_adj,na.rm=T);median(fp_pre,na.rm=T) # less false positives
-  plot(fp_adj,col='green'); points(fp_pre,col='blue') # some weird outliers are produced
-  plot(fp_adj,col='green',ylim=c(0,100)); points(fp_pre,col='blue') # less false positives
-  mean(fn_adj,na.rm=T);mean(fn_pre,na.rm=T) # more false negatives after adjusting
-  median(fn_adj,na.rm = T);median(fn_pre,na.rm = T) # more false negatives after adjusting
-  plot(fn_adj,col='green'); points(fn_pre,col='blue') # more false negatives after adjusting
-  
-  # CSI with adjusted cutoff
-  csi_adj <- rep(NA,965)
-  csi_adj[work_pix] <- sapply(seq_along(work_pix), function(x){tn_adj[x]/(tn_adj[x]+fp_adj[x]+fn_adj[x])})
-  
-  # Sensitivity and specificity with adjusted cutoff
-  fitted.results_model_adj <- lapply(seq_along(work_pix), function(x){ifelse(mypred[[x]] > mean(cutoff_avg),1,0)})
-  sensi_adj <- rep(NA,965)
-  speci_adj <- rep(NA,965)
-  sensi_adj[work_pix] <- sapply(seq_along(work_pix), function(x){InformationValue::sensitivity(y1_test_list_red[[x]],fitted.results_model_adj[[x]],
-                                                                                               threshold = mean(cutoff_avg))})
-  speci_adj[work_pix] <- sapply(seq_along(work_pix), function(x){InformationValue::specificity(y1_test_list_red[[x]],fitted.results_model_adj[[x]],
-                                                                                               threshold = mean(cutoff_avg))})
-  
-  csi_diff <- csi_adj - csi
-  plot(csi_diff);mean(csi_diff, na.rm=T)
-  speci_diff <- speci_adj - speci
-  plot(speci_diff);mean(speci_diff, na.rm=T)
-  sensi_diff <- sensi_adj- sensi
-  plot(sensi_diff);mean(sensi_diff, na.rm=T)
+# The performance i assessed in the test data set using the cutoff value determined with the training data set
+data_test_all <- pblapply(1:length(work_pix), function(x){ data.frame("Actuals"=y1_test_list_red[[x]], "Predictions"=mypred[[x]])})
+
+cm_info_all_test<-  pblapply(1:length(work_pix), function(x){ConfusionMatrixInfo( data = data_test_all[[x]], predict = "Predictions", 
+                                                                                  actual = "Actuals", cutoff = 0.5 )})
+tp_pre <- sapply(seq_along(work_pix), function(x){summary(cm_info_all_test[[x]]$data$type)[4]}) # True positive, Correct rejections
+tn_pre <- sapply(seq_along(work_pix), function(x){summary(cm_info_all_test[[x]]$data$type)[3]}) # True negative, Hits
+fp_pre <- sapply(seq_along(work_pix), function(x){summary(cm_info_all_test[[x]]$data$type)[2]}) # False positive, Misses
+fn_pre <- sapply(seq_along(work_pix), function(x){summary(cm_info_all_test[[x]]$data$type)[1]}) # False negative, False alarm
+# Adjust confusion matrix for test data using the suggested cutoff value
+cm_info_all_adj <-  pblapply(1:length(work_pix), function(x){ConfusionMatrixInfo( data = data_test_all[[x]], predict = "Predictions", 
+                                                                                  actual = "Actuals", cutoff = mean(cutoff_avg) )})
+
+tp_adj <- sapply(seq_along(work_pix), function(x){summary(cm_info_all_adj[[x]]$data$type)[4]}) # True positive, Correct rejections
+tn_adj <- sapply(seq_along(work_pix), function(x){summary(cm_info_all_adj[[x]]$data$type)[3]}) # True negative, Hits
+fp_adj <- sapply(seq_along(work_pix), function(x){summary(cm_info_all_adj[[x]]$data$type)[2]}) # False positive, Misses
+fn_adj <- sapply(seq_along(work_pix), function(x){summary(cm_info_all_adj[[x]]$data$type)[1]}) # False negative, False alarm
+
+# Plotting of performance metrices before and after
+mean(tp_adj,na.rm=T);mean(tp_pre,na.rm=T) # less true positives after adjusting
+median(tp_adj,na.rm=T);median(tp_pre,na.rm=T) # less true positives after adjusting
+plot(tp_adj,col='green',ylim=c(100,950)); points(tp_pre,col='blue') # less true positives after adjusting
+mean(tn_adj,na.rm=T);mean(tn_pre,na.rm=T) # seems like less true negatives after adjusting, but this is due to outliers before
+median(tn_adj,na.rm=T);median(tn_pre,na.rm=T) # more true negatives after adjusting
+plot(tn_adj,col='green'); points(tn_pre,col='blue') # some weird outliers are produced
+plot(tn_adj,col='green',ylim=c(0,100)); points(tn_pre,col='blue') # more true negatives after adjusting
+mean(fp_adj,na.rm=T);mean(fp_pre,na.rm=T) # less false positives
+median(fp_adj,na.rm=T);median(fp_pre,na.rm=T) # less false positives
+plot(fp_adj,col='green'); points(fp_pre,col='blue') # some weird outliers are produced
+plot(fp_adj,col='green',ylim=c(0,100)); points(fp_pre,col='blue') # less false positives
+mean(fn_adj,na.rm=T);mean(fn_pre,na.rm=T) # more false negatives after adjusting
+median(fn_adj,na.rm = T);median(fn_pre,na.rm = T) # more false negatives after adjusting
+plot(fn_adj,col='green'); points(fn_pre,col='blue') # more false negatives after adjusting
+
+# CSI with adjusted cutoff
+csi_adj <- rep(NA,965)
+csi_adj[work_pix] <- sapply(seq_along(work_pix), function(x){tn_adj[x]/(tn_adj[x]+fp_adj[x]+fn_adj[x])})
+
+# Sensitivity and specificity with adjusted cutoff
+fitted.results_model_adj <- lapply(seq_along(work_pix), function(x){ifelse(mypred[[x]] > mean(cutoff_avg),1,0)})
+sensi_adj <- rep(NA,965)
+speci_adj <- rep(NA,965)
+sensi_adj[work_pix] <- sapply(seq_along(work_pix), function(x){InformationValue::sensitivity(y1_test_list_red[[x]],fitted.results_model_adj[[x]],
+                                                                                             threshold = mean(cutoff_avg))})
+speci_adj[work_pix] <- sapply(seq_along(work_pix), function(x){InformationValue::specificity(y1_test_list_red[[x]],fitted.results_model_adj[[x]],
+                                                                                             threshold = mean(cutoff_avg))})
+
+csi_diff <- csi_adj - csi
+plot(csi_diff);mean(csi_diff, na.rm=T)
+speci_diff <- speci_adj - speci
+plot(speci_diff);mean(speci_diff, na.rm=T)
+sensi_diff <- sensi_adj- sensi
+plot(sensi_diff);mean(sensi_diff, na.rm=T)
 
 
 
@@ -207,7 +207,7 @@ source("./Code/unbalanced_funtions.R")
 ####################
 
 
-  
+
 world <- map_data("world")
 
 
@@ -356,9 +356,10 @@ DF_csi_adj <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], Critical_
 ggplot(data = DF_csi_adj, aes(x=lon, y=lat)) +
   geom_polygon(data = world, aes(long, lat, group=group),
                fill="white", color="black", size=0.3) +
-  geom_point(shape=15, aes(color=csi_adj),size=0.7) +
-  scale_color_gradient2(limits=c(min(csi_adj,na.rm=T),max(csi_adj,na.rm=T)),midpoint=min(csi_adj,na.rm=T)+(max(csi_adj,na.rm=T)-min(csi_adj,na.rm=T))/2,
-                        low = "black", mid = "red3", high = "yellow") +
+  geom_raster(aes(fill=csi_adj)) +
+  # scale_fill_gradient2(limits=c(min(csi_adj,na.rm=T),max(csi_adj,na.rm=T)),midpoint=min(csi_adj,na.rm=T)+(max(csi_adj,na.rm=T)-min(csi_adj,na.rm=T))/2,
+  # low = "black", mid = "red3", high = "yellow") +
+  scale_fill_viridis(na.value="grey50")+
   theme(panel.ontop = F, panel.grid = element_blank(),
         panel.border = element_rect(colour = "black", fill = NA),
         axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
@@ -400,334 +401,334 @@ cor(mean_yield, speci)
 
 # Map of the number of coefficients kept (Lasso) #####
 # if(model_name=="Lasso"){
-  coeff_kep <- numeric()
-  
-  for (pix in 1:pix_num) {
-    coeff_kep[pix] <- length(coefs[[pix]]$mainEffects$cont)
-    # coeff_kep[pix] <- sum(coefs[[pix]][row.names(coefs[[pix]])!="(Intercept)"]!=0)
-  }#end for pix
-  
+coeff_kep <- numeric()
 
-  DF_numbcoeff <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], coeff_kep = coeff_kep)
-  
-  ggplot(data = DF_numbcoeff, aes(x=lon, y=lat)) +
-    geom_polygon(data = world, aes(long, lat, group=group),
-                 fill="white", color="black", size=0.3) +
-    geom_point(shape=15, aes(color=coeff_kep),size=0.7) +
-    # scale_color_gradientn(limits=c(0,max(DF_numbcoeff[,3])), 
-    # colours=c(gray.colors(1),topo.colors(23)[-c(1,3,5,16:23)],rev(heat.colors(10))) ,values=rescale(0:22,c(0,1))) + # mixed visualisation
-    # colours=c(gray.colors(1),topo.colors(20)[-c(13:20)],rev(heat.colors(10))) ,values=rescale(0:22,c(0,1))) + # mixed visualisation v1
-   
-    # lambdaHat1Std
-     scale_color_gradientn(limits=c(0,15),
-    colours=c(gray.colors(1),topo.colors(9)[-c(8,9)],rev(heat.colors(7))) ,values=rescale(0:15,c(0,1)),
-    breaks=c(0,3,6,9,12,15),labels=c("0","3","6","9","12",">=15")) + # mixed visualisation with cutoff
-    
-    # lambdaHat
-    # scale_color_gradientn(limits=c(0,40),
-    #                       colours=c(gray.colors(1),topo.colors(9)[-c(8,9)],rev(heat.colors(7))) ,values=rescale(0:40,c(0,1)),
-    #                       breaks=c(0,10,20,30,40),labels=c("0","10","20","30","40")) + # mixed visualisation with cutoff
-   
-     # scale_color_gradientn(limits=c(0,15), # cut off high values for better visualisation of the rest
-                          # colours=c(gray.colors(1),topo.colors(14)) ,values=rescale(0:15,c(0,1))) + # topo color scheme
-    #                      colours=c(gray.colors(1),rainbow(14)) ,values=rescale(0:15,c(0,1))) + # rainbow color scheme
-    # scale_color_gradient2(limits=c(0,15),midpoint=15/2, # cut off high values for better visualisation of the rest
-    #                      low = "blue", mid = "yellow", high = "red3") +
-    # scale_color_gradient2(limits=c(0,max(DF_numbcoeff[,3])),midpoint=max(DF_numbcoeff[,3])/2,
-                          # low = "blue", mid = "yellow", high = "red3") +
-    theme(panel.ontop = F, panel.grid = element_blank(),
-          panel.border = element_rect(colour = "black", fill = NA),
-          axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
-    ylab("Lat (°N)") +
-    xlab("Lon (°E)") +
-    coord_fixed(xlim = c(-120, 135),
-                ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
-                ratio = 1.3)+
-    labs(color="Nb of coefficients",
-         title = paste("Number of coefficients kept",model_name),
-         subtitle = paste("Bad yield threshold=", threshold, sep = ""))+
-    theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
-          legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
-    X11(width = 20, height = 7)
-    # d + scale_fill_discrete(breaks=c(2,4,6,8,10), labels = c("A", "B", "C", "D", "E"))
+for (pix in 1:pix_num) {
+  coeff_kep[pix] <- length(coefs[[pix]]$mainEffects$cont)
+  # coeff_kep[pix] <- sum(coefs[[pix]][row.names(coefs[[pix]])!="(Intercept)"]!=0)
+}#end for pix
 
-  ggsave(file="D:/user/vogelj/Group_project/Output/Plots/Number_of_coefficients_lasso_interact_map.png")
-  # ggsave(file="D:/user/vogelj/Group_project/Output/Plots/Number_of_coefficients_lasso_interact_seasonal_map.png")
+
+DF_numbcoeff <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], coeff_kep = coeff_kep)
+
+ggplot(data = DF_numbcoeff, aes(x=lon, y=lat)) +
+  geom_polygon(data = world, aes(long, lat, group=group),
+               fill="white", color="black", size=0.3) +
+  geom_point(shape=15, aes(color=coeff_kep),size=0.7) +
+  # scale_color_gradientn(limits=c(0,max(DF_numbcoeff[,3])), 
+  # colours=c(gray.colors(1),topo.colors(23)[-c(1,3,5,16:23)],rev(heat.colors(10))) ,values=rescale(0:22,c(0,1))) + # mixed visualisation
+  # colours=c(gray.colors(1),topo.colors(20)[-c(13:20)],rev(heat.colors(10))) ,values=rescale(0:22,c(0,1))) + # mixed visualisation v1
+  
+  # lambdaHat1Std
+  scale_color_gradientn(limits=c(0,15),
+                        colours=c(gray.colors(1),topo.colors(9)[-c(8,9)],rev(heat.colors(7))) ,values=rescale(0:15,c(0,1)),
+                        breaks=c(0,3,6,9,12,15),labels=c("0","3","6","9","12",">=15")) + # mixed visualisation with cutoff
+  
+  # lambdaHat
+  # scale_color_gradientn(limits=c(0,40),
+  #                       colours=c(gray.colors(1),topo.colors(9)[-c(8,9)],rev(heat.colors(7))) ,values=rescale(0:40,c(0,1)),
+  #                       breaks=c(0,10,20,30,40),labels=c("0","10","20","30","40")) + # mixed visualisation with cutoff
+  
+  # scale_color_gradientn(limits=c(0,15), # cut off high values for better visualisation of the rest
+  # colours=c(gray.colors(1),topo.colors(14)) ,values=rescale(0:15,c(0,1))) + # topo color scheme
+  #                      colours=c(gray.colors(1),rainbow(14)) ,values=rescale(0:15,c(0,1))) + # rainbow color scheme
+  # scale_color_gradient2(limits=c(0,15),midpoint=15/2, # cut off high values for better visualisation of the rest
+  #                      low = "blue", mid = "yellow", high = "red3") +
+# scale_color_gradient2(limits=c(0,max(DF_numbcoeff[,3])),midpoint=max(DF_numbcoeff[,3])/2,
+# low = "blue", mid = "yellow", high = "red3") +
+theme(panel.ontop = F, panel.grid = element_blank(),
+      panel.border = element_rect(colour = "black", fill = NA),
+      axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
+  ylab("Lat (°N)") +
+  xlab("Lon (°E)") +
+  coord_fixed(xlim = c(-120, 135),
+              ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
+              ratio = 1.3)+
+  labs(color="Nb of coefficients",
+       title = paste("Number of coefficients kept",model_name),
+       subtitle = paste("Bad yield threshold=", threshold, sep = ""))+
+  theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
+        legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
+  X11(width = 20, height = 7)
+# d + scale_fill_discrete(breaks=c(2,4,6,8,10), labels = c("A", "B", "C", "D", "E"))
+
+ggsave(file="D:/user/vogelj/Group_project/Output/Plots/Number_of_coefficients_lasso_interact_map.png")
+# ggsave(file="D:/user/vogelj/Group_project/Output/Plots/Number_of_coefficients_lasso_interact_seasonal_map.png")
 # }
-  plot(table(coeff_kep))  # overview of distribution of the number of coefficients
-  
+plot(table(coeff_kep))  # overview of distribution of the number of coefficients
+
 
 # Map of number of interactions ####
-  
-  num_interact <- numeric()
-  
-  for (pix in 1:pix_num) {
-    if (is.null(dim(coefs[[pix]]$interactions$contcont)[1])){
-      num_interact[pix] <- 0
-    } else {
-      
+
+num_interact <- numeric()
+
+for (pix in 1:pix_num) {
+  if (is.null(dim(coefs[[pix]]$interactions$contcont)[1])){
+    num_interact[pix] <- 0
+  } else {
+    
     num_interact[pix] <-  dim(coefs[[pix]]$interactions$contcont)[1]
-    }
+  }
+}
+
+
+DF_numb_interact <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], num_interact = num_interact)
+
+ggplot(data = DF_numb_interact, aes(x=lon, y=lat)) +
+  geom_polygon(data = world, aes(long, lat, group=group),
+               fill="white", color="black", size=0.3) +
+  geom_point(shape=15, aes(color=num_interact),size=0.7) +
+  # scale_color_gradient2(limits=c(0,max(DF_numb_interact[,3])),midpoint=max(DF_numb_interact[,3]/2),
+  # low = "blue", mid = "yellow", high = "red3") +
+  # scale_color_gradientn(limits=c(0,16), breaks=c(0,4,8,12,16),labels=c("0","4","8","12",">=16"), # lamdaHat1Std
+  #                       colours=c(gray.colors(1),topo.colors(10)[-c(9,10)],rev(heat.colors(7))) ,values=rescale(0:16,c(0,1))) + # mixed visualisation with cutoff
+  scale_color_gradientn(limits=c(0,64), breaks=c(0,12,24,36,48),labels=c("0","12","24","36",">=48"), # lambdaHat
+                        colours=c(gray.colors(1),topo.colors(10)[-c(9,10)],rev(heat.colors(7))) ,values=rescale(0:64,c(0,1))) + # mixed visualisation with cutoff
+  theme(panel.ontop = F, panel.grid = element_blank(),
+        panel.border = element_rect(colour = "black", fill = NA),
+        axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
+  ylab("Lat (°N)") +
+  xlab("Lon (°E)") +
+  coord_fixed(xlim = c(-120, 135),
+              ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
+              ratio = 1.3)+
+  labs(color="Nb of int.",
+       title = paste("Number of coefficient interactions from",model_name,"regression"),
+       subtitle = paste("Bad yield threshold=", threshold, sep = ""))+
+  theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
+        legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
+  X11(width = 20, height = 7)
+ggsave(file="D:/user/vogelj/Group_project/Output/Plots/Number_of_coefficient_interactions_lasso_interact_map.png")
+# ggsave(file="D:/user/vogelj/Group_project/Output/Plots/Number_of_coefficient_interactions_lasso_interact_seasonal_map.png")
+plot(table(num_interact))  # overview of distribution of the number of interactions of coefficients
+
+
+####################
+# Number of variables and seasons per pixel
+####################
+
+# number of variables: which are included
+nb_of_var <- vector("numeric",length=length(coefs))
+for (j in  1:length(coefs)){
+  coefs_str <- names(numLevels_list[[j]])[coefs[[j]]$mainEffects$cont]
+  str_var <- vector(mode="character",length=length(coefs_str))
+  for (i in seq_along(coefs_str)){
+    str_var[i] <- strsplit(coefs_str[i],split="_")[[1]][1]
   }
   
-
-  DF_numb_interact <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], num_interact = num_interact)
+  # account for extreme indicators  
+  str_var[str_var %in% c("dtr","frs","tn10p","tnn","tx90p","txx")] <- "tmax"     # Group all extreme temperature indicators into same group as tmax
+  str_var[str_var %in% "rx5"] <- "pr" # Group all extreme precipitation indicators into same group as precipitation
   
-  ggplot(data = DF_numb_interact, aes(x=lon, y=lat)) +
-    geom_polygon(data = world, aes(long, lat, group=group),
-                 fill="white", color="black", size=0.3) +
-    geom_point(shape=15, aes(color=num_interact),size=0.7) +
-    # scale_color_gradient2(limits=c(0,max(DF_numb_interact[,3])),midpoint=max(DF_numb_interact[,3]/2),
-                          # low = "blue", mid = "yellow", high = "red3") +
-    # scale_color_gradientn(limits=c(0,16), breaks=c(0,4,8,12,16),labels=c("0","4","8","12",">=16"), # lamdaHat1Std
-    #                       colours=c(gray.colors(1),topo.colors(10)[-c(9,10)],rev(heat.colors(7))) ,values=rescale(0:16,c(0,1))) + # mixed visualisation with cutoff
-    scale_color_gradientn(limits=c(0,64), breaks=c(0,12,24,36,48),labels=c("0","12","24","36",">=48"), # lambdaHat
-                          colours=c(gray.colors(1),topo.colors(10)[-c(9,10)],rev(heat.colors(7))) ,values=rescale(0:64,c(0,1))) + # mixed visualisation with cutoff
-    theme(panel.ontop = F, panel.grid = element_blank(),
-          panel.border = element_rect(colour = "black", fill = NA),
-          axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
-    ylab("Lat (°N)") +
-    xlab("Lon (°E)") +
-    coord_fixed(xlim = c(-120, 135),
-                ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
-                ratio = 1.3)+
-    labs(color="Nb of int.",
-         title = paste("Number of coefficient interactions from",model_name,"regression"),
-         subtitle = paste("Bad yield threshold=", threshold, sep = ""))+
-    theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
-          legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
-    X11(width = 20, height = 7)
-  ggsave(file="D:/user/vogelj/Group_project/Output/Plots/Number_of_coefficient_interactions_lasso_interact_map.png")
-  # ggsave(file="D:/user/vogelj/Group_project/Output/Plots/Number_of_coefficient_interactions_lasso_interact_seasonal_map.png")
-  plot(table(num_interact))  # overview of distribution of the number of interactions of coefficients
+  nb_of_var[j] <- length(unique(str_var))
+}
+plot(table(nb_of_var))
 
-  
-  ####################
-  # Number of variables and seasons per pixel
-  ####################
-  
-  # number of variables: which are included
-  nb_of_var <- vector("numeric",length=length(coefs))
-  for (j in  1:length(coefs)){
-    coefs_str <- names(numLevels_list[[j]])[coefs[[j]]$mainEffects$cont]
-    str_var <- vector(mode="character",length=length(coefs_str))
-    for (i in seq_along(coefs_str)){
-      str_var[i] <- strsplit(coefs_str[i],split="_")[[1]][1]
-    }
 
-    # account for extreme indicators  
-    str_var[str_var %in% c("dtr","frs","tn10p","tnn","tx90p","txx")] <- "tmax"     # Group all extreme temperature indicators into same group as tmax
-    str_var[str_var %in% "rx5"] <- "pr" # Group all extreme precipitation indicators into same group as precipitation
-    
-    nb_of_var[j] <- length(unique(str_var))
+# number of months: list of variables, select months
+num_months <- vector("numeric",length=length(coefs))
+months_all_pix <- vector("list",length=length(coefs))
+for (j in  1:length(coefs)){
+  coefs_str <- names(numLevels_list[[j]])[coefs[[j]]$mainEffects$cont]
+  str_months <- vector(mode="character",length=length(coefs_str))
+  str_months_short <- vector("character",length(coefs_str))
+  for (i in seq_along(coefs_str)){
+    str_months[i] <- paste(strsplit(coefs_str[i],split="_")[[1]][2],strsplit(coefs_str[i],split="_")[[1]][3])
+    num_months[j] <- length(unique(str_months))
+    str_months_short[i] <- strsplit(coefs_str[i],split="_")[[1]][2]
   }
-  plot(table(nb_of_var))
-  
-  
-  # number of months: list of variables, select months
-  num_months <- vector("numeric",length=length(coefs))
-  months_all_pix <- vector("list",length=length(coefs))
-  for (j in  1:length(coefs)){
-    coefs_str <- names(numLevels_list[[j]])[coefs[[j]]$mainEffects$cont]
-    str_months <- vector(mode="character",length=length(coefs_str))
-    str_months_short <- vector("character",length(coefs_str))
-    for (i in seq_along(coefs_str)){
-      str_months[i] <- paste(strsplit(coefs_str[i],split="_")[[1]][2],strsplit(coefs_str[i],split="_")[[1]][3])
-      num_months[j] <- length(unique(str_months))
-      str_months_short[i] <- strsplit(coefs_str[i],split="_")[[1]][2]
-    }
-    months_all_pix[[j]] <- str_months_short
-  }
-  plot(table(num_months))
-  
-  # combinations of months and variables
-  coefs_seas <- sapply(1:length(coefs), function(x) names(numLevels_list[[x]])[coefs[[x]]$mainEffects$cont])
-  coefs_seas_vec <- unlist(coefs_seas)
-  png(filename="D:/user/vogelj/Group_project/Output/Plots/Combination_variable_season_barplot.png",res=2000,units="cm",width=15,height=22)
-  par(mar=c(5,7,4,2))
-  barplot(sort(table(coefs_seas_vec)),horiz=T,las=1,col="ForestGreen",xlab="Number of pixels, where variable is included in the model",cex.names=0.8)
-  dev.off()
-  
-  nb_of_seas <- vector("numeric",length=length(coefs))
-  for (i in 1:length(coefs)){
-    if(sum(months_all_pix[[i]] %in% c("Feb", "Dec", "Jan","win"))){
-      nb_of_seas[i] <- nb_of_seas[i] + 1
-    }
-    
-    if(sum(months_all_pix[[i]] %in% c("May", "Mar", "Apr","spr"))){
-      nb_of_seas[i] <- nb_of_seas[i] + 1
-    }
-    
-    if(sum(months_all_pix[[i]] %in% c("Jun", "Jul", "Aug","sum"))){
-      nb_of_seas[i] <- nb_of_seas[i] + 1
-    }
-    
-    if(sum(months_all_pix[[i]] %in% c("Sep", "Nov", "Oct","aut"))){
-      nb_of_seas[i] <- nb_of_seas[i] + 1
-    }
-  }  
-  count_seans_and_var <- data.frame("nb_of_seas" = nb_of_seas, "nb_of_var" = nb_of_var)
-  
-  
-  # Plot number of variables
-  DF_nbdiffmeteo <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], nb_meteo = nb_of_var)
-  DF_nbdiffmeteo$nb_meteo <- as.factor(DF_nbdiffmeteo$nb_meteo)
-  
-  ggplot(data = DF_nbdiffmeteo, aes(x=lon, y=lat)) +
-    geom_polygon(data = world, aes(long, lat, group=group),
-                 fill="white", color="black", size=0.3) +
-    geom_point(shape=15, aes(color=DF_nbdiffmeteo$nb_meteo),size=0.7) +
-    scale_color_manual(values = c("0"=rainbow(4)[1],"1"=rainbow(4)[2], "2"=rainbow(4)[3], "3"=rainbow(4)[4])) +
-    theme(panel.ontop = F, panel.grid = element_blank(),
-          panel.border = element_rect(colour = "black", fill = NA),
-          axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
-    ylab("Lat (°N)") +
-    xlab("Lon (°E)") +
-    coord_fixed(xlim = c(-120, 135),
-                ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
-                ratio = 1.3)+
-    labs(color="Nb of different \nmeteo. variables",
-         title = paste("Number of different meteorological variables, simple",model_name,"regression"),
-         subtitle = paste("Bad yield threshold=", threshold, sep = ""))+
-    theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
-          legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
-    X11(width = 20, height = 7)
-  ggsave(file="D:/user/vogelj/Group_project/Output/Plots/Number_of_variables_vpd_tmax_prec.png")
-  # ggsave(file="D:/user/vogelj/Group_project/Output/Plots/Number_of_variables_vpd_tmax_prec_seasonal.png")
-  
-  # Plot number of months  
-  DF_nbdiffseason <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], nb_season = nb_of_seas)
-  DF_nbdiffseason$nb_season <- as.factor(DF_nbdiffseason$nb_season)
-  
-  ggplot(data = DF_nbdiffseason, aes(x=lon, y=lat)) +
-    geom_polygon(data = world, aes(long, lat, group=group),
-                 fill="white", color="black", size=0.3) +
-    geom_point(shape=15, aes(color=DF_nbdiffseason$nb_season),size=0.7) +
-    scale_color_manual(values = c("0"=rainbow(5)[1],"1"=rainbow(5)[2], "2"=rainbow(5)[3], "3"=rainbow(5)[4], "4"=rainbow(5)[5])) +
-    theme(panel.ontop = F, panel.grid = element_blank(),
-          panel.border = element_rect(colour = "black", fill = NA),
-          axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
-    ylab("Lat (°N)") +
-    xlab("Lon (°E)") +
-    coord_fixed(xlim = c(-120, 135),
-                ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
-                ratio = 1.3)+
-    labs(color="Nb of different \nseasons",
-         title = paste("Number of different seasons, simple",model_name,"regression"),
-         subtitle = paste("Bad yield threshold=", threshold, sep = ""))+
-    theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
-          legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
-    X11(width = 20, height = 7)
-  ggsave(file="D:/user/vogelj/Group_project/Output/Plots/Number_of_seasons.png")
-  # ggsave(file="D:/user/vogelj/Group_project/Output/Plots/Number_of_seasons_seasonal.png")
-  
-  
-  
-  # Cutoff level plot
-  cutoffs <- rep(NA,965)
-  cutoffs[work_pix] <- sapply(work_pix, function(x){cutoff_avg[x]})
-  DF_cutoff <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], cutoff = cutoffs)
-  
-  ggplot(data = DF_cutoff, aes(x=lon, y=lat)) +
-    geom_polygon(data = world, aes(long, lat, group=group),
-                 fill="white", color="black", size=0.3) +
-    geom_point(shape=15, aes(color=cutoffs),size=0.7) +
-    scale_color_gradient2(limits=c(min(cutoffs,na.rm=T),max(cutoffs,na.rm=T)),midpoint=min(cutoffs,na.rm=T)+(max(cutoffs,na.rm=T)-min(cutoffs,na.rm=T))/2,
-                          low = "black", mid = "red3", high = "yellow") +
-    theme(panel.ontop = F, panel.grid = element_blank(),
-          panel.border = element_rect(colour = "black", fill = NA),
-          axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
-    ylab("Lat (°N)") +
-    xlab("Lon (°E)") +
-    coord_fixed(xlim = c(-120, 135),
-                ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
-                ratio = 1.3)+
-    labs(color="Cutoff",
-         title = paste("Cutoff",model_name,"regression"),
-         subtitle = paste("Bad yield threshold=", threshold, sep = ""))+
-    theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
-          legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
-    X11(width = 20, height = 7)
-  ggsave(file="D:/user/vogelj/Group_project/Output/Plots/Cutoff_lasso_interact_map.png")
-  
-  
-  # Plots of singular extreme indicators ####
-  
-  # number of variables: which are included
-  dtr_all <- rep(NA,965);  frs_all <- rep(NA,965); rx5_all <- rep(NA,965)
-  tn10p_all <- rep(NA,965); tnn_all <- rep(NA,965);  tx90p_all <- rep(NA,965);  
-  txx_all <- rep(NA,965)
-   for (j in  1:length(coefs)){
-    coefs_str <- names(numLevels_list[[j]])[coefs[[j]]$mainEffects$cont]
+  months_all_pix[[j]] <- str_months_short
+}
+plot(table(num_months))
 
-    dtr_all[j] <- ifelse(sum(coefs_str %in% "dtr")==1,T,F)
-    frs_all[j] <- ifelse(sum(coefs_str %in% "frs")==1,T,F)
-    rx5_all[j] <- ifelse(sum(coefs_str %in% "rx5")==1,T,F)
-    tn10p_all[j] <- ifelse(sum(coefs_str %in% "tn10p")==1,T,F)
-    tnn_all[j] <- ifelse(sum(coefs_str %in% "tnn")==1,T,F)
-    tx90p_all[j] <- ifelse(sum(coefs_str %in% "tx90p")==1,T,F)
-    txx_all[j] <- ifelse(sum(coefs_str %in% "txx")==1,T,F)
+# combinations of months and variables
+coefs_seas <- sapply(1:length(coefs), function(x) names(numLevels_list[[x]])[coefs[[x]]$mainEffects$cont])
+coefs_seas_vec <- unlist(coefs_seas)
+png(filename="D:/user/vogelj/Group_project/Output/Plots/Combination_variable_season_barplot.png",res=2000,units="cm",width=15,height=22)
+par(mar=c(5,7,4,2))
+barplot(sort(table(coefs_seas_vec)),horiz=T,las=1,col="ForestGreen",xlab="Number of pixels, where variable is included in the model",cex.names=0.8)
+dev.off()
+
+nb_of_seas <- vector("numeric",length=length(coefs))
+for (i in 1:length(coefs)){
+  if(sum(months_all_pix[[i]] %in% c("Feb", "Dec", "Jan","win"))){
+    nb_of_seas[i] <- nb_of_seas[i] + 1
   }
- 
-  DF_ext_ind<- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], dtr = dtr_all, frs=frs_all,rx5=rx5_all,tn10p=tn10p_all,tnn=tnn_all,tx90p=tx90p_all,txx=txx_all)
-  apply(DF_ext_ind,2,sum)
   
-  ggplot(data = DF_nbdiffmeteo, aes(x=lon, y=lat)) +
-    geom_polygon(data = world, aes(long, lat, group=group),
-                 fill="white", color="black", size=0.3) +
-    geom_point(shape=15, size=0.7, 
-               # aes(color=DF_ext_ind$dtr)) +
-               # aes(color=DF_ext_ind$frs)) +
-              # aes(color=DF_ext_ind$rx5)) +
-               # aes(color=DF_ext_ind$tn10p)) +
-              # aes(color=DF_ext_ind$tnn)) +
-               # aes(color=DF_ext_ind$tx90p)) +
-                aes(color=DF_ext_ind$txx)) +
-    theme(panel.ontop = F, panel.grid = element_blank(),
-          panel.border = element_rect(colour = "black", fill = NA),
-          axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
-    ylab("Lat (°N)") +
-    xlab("Lon (°E)") +
-    coord_fixed(xlim = c(-120, 135),
-                ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
-                ratio = 1.3)+
-    labs(color="Nb of different \nmeteo. variables",
-         # title = paste("Pixels with dtr",model_name),
-         # title = paste("Pixels with frs",model_name),
-         # title = paste("Pixels with rx5",model_name),
-         # title = paste("Pixels with tn10p",model_name),
-         # title = paste("Pixels with tnn",model_name),
-         # title = paste("Pixels with tx90p",model_name),
-         title = paste("Pixels with txx",model_name),
-         subtitle = paste("Bad yield threshold=", threshold, sep = ""))+
-    theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
-          legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
-    X11(width = 20, height = 7)
-  # ggsave(file="D:/user/vogelj/Group_project/Output/Plots/Pixels_dtr.png")
-  # ggsave(file="D:/user/vogelj/Group_project/Output/Plots/Pixels_frs.png")
-  # ggsave(file="D:/user/vogelj/Group_project/Output/Plots/Pixels_rx5.png")
-  # ggsave(file="D:/user/vogelj/Group_project/Output/Plots/Pixels_tn10p.png")
-  # ggsave(file="D:/user/vogelj/Group_project/Output/Plots/Pixels_tnn.png")
-  # ggsave(file="D:/user/vogelj/Group_project/Output/Plots/Pixels_tx90p.png")
-  ggsave(file="D:/user/vogelj/Group_project/Output/Plots/Pixels_txx.png")
+  if(sum(months_all_pix[[i]] %in% c("May", "Mar", "Apr","spr"))){
+    nb_of_seas[i] <- nb_of_seas[i] + 1
+  }
   
+  if(sum(months_all_pix[[i]] %in% c("Jun", "Jul", "Aug","sum"))){
+    nb_of_seas[i] <- nb_of_seas[i] + 1
+  }
   
+  if(sum(months_all_pix[[i]] %in% c("Sep", "Nov", "Oct","aut"))){
+    nb_of_seas[i] <- nb_of_seas[i] + 1
+  }
+}  
+count_seans_and_var <- data.frame("nb_of_seas" = nb_of_seas, "nb_of_var" = nb_of_var)
+
+
+# Plot number of variables
+DF_nbdiffmeteo <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], nb_meteo = nb_of_var)
+DF_nbdiffmeteo$nb_meteo <- as.factor(DF_nbdiffmeteo$nb_meteo)
+
+ggplot(data = DF_nbdiffmeteo, aes(x=lon, y=lat)) +
+  geom_polygon(data = world, aes(long, lat, group=group),
+               fill="white", color="black", size=0.3) +
+  geom_point(shape=15, aes(color=DF_nbdiffmeteo$nb_meteo),size=0.7) +
+  scale_color_manual(values = c("0"=rainbow(4)[1],"1"=rainbow(4)[2], "2"=rainbow(4)[3], "3"=rainbow(4)[4])) +
+  theme(panel.ontop = F, panel.grid = element_blank(),
+        panel.border = element_rect(colour = "black", fill = NA),
+        axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
+  ylab("Lat (°N)") +
+  xlab("Lon (°E)") +
+  coord_fixed(xlim = c(-120, 135),
+              ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
+              ratio = 1.3)+
+  labs(color="Nb of different \nmeteo. variables",
+       title = paste("Number of different meteorological variables, simple",model_name,"regression"),
+       subtitle = paste("Bad yield threshold=", threshold, sep = ""))+
+  theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
+        legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
+  X11(width = 20, height = 7)
+ggsave(file="D:/user/vogelj/Group_project/Output/Plots/Number_of_variables_vpd_tmax_prec.png")
+# ggsave(file="D:/user/vogelj/Group_project/Output/Plots/Number_of_variables_vpd_tmax_prec_seasonal.png")
+
+# Plot number of months  
+DF_nbdiffseason <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], nb_season = nb_of_seas)
+DF_nbdiffseason$nb_season <- as.factor(DF_nbdiffseason$nb_season)
+
+ggplot(data = DF_nbdiffseason, aes(x=lon, y=lat)) +
+  geom_polygon(data = world, aes(long, lat, group=group),
+               fill="white", color="black", size=0.3) +
+  geom_point(shape=15, aes(color=DF_nbdiffseason$nb_season),size=0.7) +
+  scale_color_manual(values = c("0"=rainbow(5)[1],"1"=rainbow(5)[2], "2"=rainbow(5)[3], "3"=rainbow(5)[4], "4"=rainbow(5)[5])) +
+  theme(panel.ontop = F, panel.grid = element_blank(),
+        panel.border = element_rect(colour = "black", fill = NA),
+        axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
+  ylab("Lat (°N)") +
+  xlab("Lon (°E)") +
+  coord_fixed(xlim = c(-120, 135),
+              ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
+              ratio = 1.3)+
+  labs(color="Nb of different \nseasons",
+       title = paste("Number of different seasons, simple",model_name,"regression"),
+       subtitle = paste("Bad yield threshold=", threshold, sep = ""))+
+  theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
+        legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
+  X11(width = 20, height = 7)
+ggsave(file="D:/user/vogelj/Group_project/Output/Plots/Number_of_seasons.png")
+# ggsave(file="D:/user/vogelj/Group_project/Output/Plots/Number_of_seasons_seasonal.png")
+
+
+
+# Cutoff level plot
+cutoffs <- rep(NA,965)
+cutoffs[work_pix] <- sapply(work_pix, function(x){cutoff_avg[x]})
+DF_cutoff <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], cutoff = cutoffs)
+
+ggplot(data = DF_cutoff, aes(x=lon, y=lat)) +
+  geom_polygon(data = world, aes(long, lat, group=group),
+               fill="white", color="black", size=0.3) +
+  geom_point(shape=15, aes(color=cutoffs),size=0.7) +
+  scale_color_gradient2(limits=c(min(cutoffs,na.rm=T),max(cutoffs,na.rm=T)),midpoint=min(cutoffs,na.rm=T)+(max(cutoffs,na.rm=T)-min(cutoffs,na.rm=T))/2,
+                        low = "black", mid = "red3", high = "yellow") +
+  theme(panel.ontop = F, panel.grid = element_blank(),
+        panel.border = element_rect(colour = "black", fill = NA),
+        axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
+  ylab("Lat (°N)") +
+  xlab("Lon (°E)") +
+  coord_fixed(xlim = c(-120, 135),
+              ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
+              ratio = 1.3)+
+  labs(color="Cutoff",
+       title = paste("Cutoff",model_name,"regression"),
+       subtitle = paste("Bad yield threshold=", threshold, sep = ""))+
+  theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
+        legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
+  X11(width = 20, height = 7)
+ggsave(file="D:/user/vogelj/Group_project/Output/Plots/Cutoff_lasso_interact_map.png")
+
+
+# Plots of singular extreme indicators ####
+
+# number of variables: which are included
+dtr_all <- rep(NA,965);  frs_all <- rep(NA,965); rx5_all <- rep(NA,965)
+tn10p_all <- rep(NA,965); tnn_all <- rep(NA,965);  tx90p_all <- rep(NA,965);  
+txx_all <- rep(NA,965)
+for (j in  1:length(coefs)){
+  coefs_str <- names(numLevels_list[[j]])[coefs[[j]]$mainEffects$cont]
   
-  
-  # ROC ####
-  ########## 
-  
-  pred <- sapply(seq_along(work_pix), function(x) prediction(mypred[[x]], y1_test_list_red[[x]]))
-  prf <- sapply(seq_along(work_pix), function(x) performance(pred[[x]], measure = "tpr", x.measure = "fpr"))
-  par(mfrow=c(5,5))
-  # plot(prf[[3]])
-  for (i in sample(1:963,25)) (plot(prf[[3]]))
-  # takes long
-  # ROCs <- sapply(seq_along(work_pix), function(x) plotROC(actuals=y1_test_list_red[[x]],predictedScores=fitted.results_model[[x]]))
-  # for (i in sample(1:963,25)) (plot(ROCs[[3]]))
-  auc2 <- sapply(seq_along(work_pix), function(x) auc(y1_test_list_red[[x]],fitted.results_model[[x]]))
-  auc <- sapply(seq_along(work_pix), function(x) performance(pred[[x]], measure = "auc"))
-  # auc@y.values[[1]]
-  
-  
-  
+  dtr_all[j] <- ifelse(sum(coefs_str %in% "dtr")==1,T,F)
+  frs_all[j] <- ifelse(sum(coefs_str %in% "frs")==1,T,F)
+  rx5_all[j] <- ifelse(sum(coefs_str %in% "rx5")==1,T,F)
+  tn10p_all[j] <- ifelse(sum(coefs_str %in% "tn10p")==1,T,F)
+  tnn_all[j] <- ifelse(sum(coefs_str %in% "tnn")==1,T,F)
+  tx90p_all[j] <- ifelse(sum(coefs_str %in% "tx90p")==1,T,F)
+  txx_all[j] <- ifelse(sum(coefs_str %in% "txx")==1,T,F)
+}
+
+DF_ext_ind<- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], dtr = dtr_all, frs=frs_all,rx5=rx5_all,tn10p=tn10p_all,tnn=tnn_all,tx90p=tx90p_all,txx=txx_all)
+apply(DF_ext_ind,2,sum)
+
+ggplot(data = DF_nbdiffmeteo, aes(x=lon, y=lat)) +
+  geom_polygon(data = world, aes(long, lat, group=group),
+               fill="white", color="black", size=0.3) +
+  geom_point(shape=15, size=0.7, 
+             # aes(color=DF_ext_ind$dtr)) +
+             # aes(color=DF_ext_ind$frs)) +
+             # aes(color=DF_ext_ind$rx5)) +
+             # aes(color=DF_ext_ind$tn10p)) +
+             # aes(color=DF_ext_ind$tnn)) +
+             # aes(color=DF_ext_ind$tx90p)) +
+             aes(color=DF_ext_ind$txx)) +
+  theme(panel.ontop = F, panel.grid = element_blank(),
+        panel.border = element_rect(colour = "black", fill = NA),
+        axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
+  ylab("Lat (°N)") +
+  xlab("Lon (°E)") +
+  coord_fixed(xlim = c(-120, 135),
+              ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
+              ratio = 1.3)+
+  labs(color="Nb of different \nmeteo. variables",
+       # title = paste("Pixels with dtr",model_name),
+       # title = paste("Pixels with frs",model_name),
+       # title = paste("Pixels with rx5",model_name),
+       # title = paste("Pixels with tn10p",model_name),
+       # title = paste("Pixels with tnn",model_name),
+       # title = paste("Pixels with tx90p",model_name),
+       title = paste("Pixels with txx",model_name),
+       subtitle = paste("Bad yield threshold=", threshold, sep = ""))+
+  theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
+        legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
+  X11(width = 20, height = 7)
+# ggsave(file="D:/user/vogelj/Group_project/Output/Plots/Pixels_dtr.png")
+# ggsave(file="D:/user/vogelj/Group_project/Output/Plots/Pixels_frs.png")
+# ggsave(file="D:/user/vogelj/Group_project/Output/Plots/Pixels_rx5.png")
+# ggsave(file="D:/user/vogelj/Group_project/Output/Plots/Pixels_tn10p.png")
+# ggsave(file="D:/user/vogelj/Group_project/Output/Plots/Pixels_tnn.png")
+# ggsave(file="D:/user/vogelj/Group_project/Output/Plots/Pixels_tx90p.png")
+ggsave(file="D:/user/vogelj/Group_project/Output/Plots/Pixels_txx.png")
+
+
+
+
+# ROC ####
+########## 
+
+pred <- sapply(seq_along(work_pix), function(x) prediction(mypred[[x]], y1_test_list_red[[x]]))
+prf <- sapply(seq_along(work_pix), function(x) performance(pred[[x]], measure = "tpr", x.measure = "fpr"))
+par(mfrow=c(5,5))
+# plot(prf[[3]])
+for (i in sample(1:963,25)) (plot(prf[[3]]))
+# takes long
+# ROCs <- sapply(seq_along(work_pix), function(x) plotROC(actuals=y1_test_list_red[[x]],predictedScores=fitted.results_model[[x]]))
+# for (i in sample(1:963,25)) (plot(ROCs[[3]]))
+auc2 <- sapply(seq_along(work_pix), function(x) auc(y1_test_list_red[[x]],fitted.results_model[[x]]))
+auc <- sapply(seq_along(work_pix), function(x) performance(pred[[x]], measure = "auc"))
+# auc@y.values[[1]]
+
+
+

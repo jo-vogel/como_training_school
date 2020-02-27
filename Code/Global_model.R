@@ -1,6 +1,9 @@
 # Data processing for northern hemisphere
 # Author: Johannes Vogel
 
+# This file was replaced by Lasso_interact_global.R
+
+
 library(ncdf4)
 library(rgdal)
 library(raster)
