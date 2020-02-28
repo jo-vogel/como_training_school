@@ -615,7 +615,7 @@ pref_lam[work_pix_lwi] <- sapply(work_pix_lwi, function(x) cv_fit[[x]]$lambdaHat
   # write.csv(pref_lam,file="glinternet_lasso_without_interactions_lambdaHat1Std.csv")
 pref_lam_hat <- rep(NA,965)
 pref_lam_hat[work_pix_lwi] <- sapply(work_pix_lwi, function(x) cv_fit[[x]]$lambdaHat)
-  # write.csv(pref_lam,file="glinternet_lasso_without_interactions_lambdaHat.csv")
+  # write.csv(pref_lam_hat,file="glinternet_lasso_without_interactions_lambdaHat.csv")
 
 source("./Code/Plots_performance_and_variables.r")
 
