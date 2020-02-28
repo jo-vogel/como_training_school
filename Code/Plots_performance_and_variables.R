@@ -197,12 +197,13 @@ ggsave(file="D:/user/vogelj/Group_project/Output/Plots/CSI_adj_lasso_interact_ma
 
 # # Correlation between yield and specificity or miscla error ####
 
-yield <- matrix(Data_standardized$yield,965,1600)
+if (model_name == "cv_fit_monthly_without_int_incl_ext") {yield <- matrix(Data_standardized$yield,965,1600)}
+
 mean_yield <- apply(X=yield, MARGIN = 1, FUN = mean, na.rm=T)
-plot(mean_yield, mis_clas_err,
-     xlab="Mean Yield (kg/yr)", ylab="Miss-classification error",
-     main=paste("Scatterplot mean yield, miss-classification error\nbad yield threshold=", threshold,
-                "\nsegregation threshold=", segreg_th, sep = ""))
+# plot(mean_yield, mis_clas_err,
+#      xlab="Mean Yield (kg/yr)", ylab="Miss-classification error",
+#      main=paste("Scatterplot mean yield, miss-classification error\nbad yield threshold=", threshold,
+#                 "\nsegregation threshold=", segreg_th, sep = ""))
 plot(mean_yield, speci,
      xlab="Mean Yield (kg/yr)", ylab="Specificity",
      main=paste("Scatterplot mean yield, Specificity\nbad yield threshold=", threshold,
@@ -460,73 +461,78 @@ ggsave(file="D:/user/vogelj/Group_project/Output/Plots/Cutoff_lasso_interact_map
 
 
 # Plots of singular extreme indicators ####
-
-# number of variables: which are included
-dtr_all <- rep(NA,965);  frs_all <- rep(NA,965); rx5_all <- rep(NA,965)
-tn10p_all <- rep(NA,965); tnn_all <- rep(NA,965);  tx90p_all <- rep(NA,965);  
-txx_all <- rep(NA,965)
-for (j in  1:length(coefs)){
-  coefs_str <- names(numLevels_list[[j]])[coefs[[j]]$mainEffects$cont]
+if (model_name == "cv_fit_monthly_without_int_incl_ext"){
   
-  dtr_all[j] <- ifelse(sum(coefs_str %in% "dtr")==1,T,F)
-  frs_all[j] <- ifelse(sum(coefs_str %in% "frs")==1,T,F)
-  rx5_all[j] <- ifelse(sum(coefs_str %in% "rx5")==1,T,F)
-  tn10p_all[j] <- ifelse(sum(coefs_str %in% "tn10p")==1,T,F)
-  tnn_all[j] <- ifelse(sum(coefs_str %in% "tnn")==1,T,F)
-  tx90p_all[j] <- ifelse(sum(coefs_str %in% "tx90p")==1,T,F)
-  txx_all[j] <- ifelse(sum(coefs_str %in% "txx")==1,T,F)
+
+  # number of variables: which are included
+  dtr_all <- rep(NA,965);  frs_all <- rep(NA,965); rx5_all <- rep(NA,965)
+  tn10p_all <- rep(NA,965); tnn_all <- rep(NA,965);  tx90p_all <- rep(NA,965);  
+  txx_all <- rep(NA,965)
+  for (j in  1:length(coefs)){
+    coefs_str <- names(numLevels_list[[j]])[coefs[[j]]$mainEffects$cont]
+    
+    dtr_all[j] <- ifelse(sum(coefs_str %in% "dtr")==1,T,F)
+    frs_all[j] <- ifelse(sum(coefs_str %in% "frs")==1,T,F)
+    rx5_all[j] <- ifelse(sum(coefs_str %in% "rx5")==1,T,F)
+    tn10p_all[j] <- ifelse(sum(coefs_str %in% "tn10p")==1,T,F)
+    tnn_all[j] <- ifelse(sum(coefs_str %in% "tnn")==1,T,F)
+    tx90p_all[j] <- ifelse(sum(coefs_str %in% "tx90p")==1,T,F)
+    txx_all[j] <- ifelse(sum(coefs_str %in% "txx")==1,T,F)
+  }
+  
+  DF_ext_ind<- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], dtr = dtr_all, frs=frs_all,rx5=rx5_all,tn10p=tn10p_all,tnn=tnn_all,tx90p=tx90p_all,txx=txx_all)
+  apply(DF_ext_ind,2,sum)
+  
+  ggplot(data = DF_ext_ind, aes(x=lon, y=lat)) +
+    geom_polygon(data = world, aes(long, lat, group=group),
+                 fill="white", color="black", size=0.3) +
+    # geom_point(shape=15, size=0.7, 
+               # aes(color=DF_ext_ind$dtr)) +
+               # aes(color=DF_ext_ind$frs)) +
+               # aes(color=DF_ext_ind$rx5)) +
+               # aes(color=DF_ext_ind$tn10p)) +
+               # aes(color=DF_ext_ind$tnn)) +
+               # aes(color=DF_ext_ind$tx90p)) +
+               # aes(color=DF_ext_ind$txx)) +
+    geom_tile(aes(fill=DF_ext_ind$dtr)) +
+    # geom_tile(aes(fill=DF_ext_ind$frs)) +
+    # geom_tile(aes(fill=DF_ext_ind$rx5)) +
+    # geom_tile(aes(fill=DF_ext_ind$tn10p)) +
+    # geom_tile(aes(fill=DF_ext_ind$tnn)) +
+    # geom_tile(aes(fill=DF_ext_ind$tx90p)) +
+    # geom_tile(aes(fill=DF_ext_ind$txx)) +
+    theme(panel.ontop = F, panel.grid = element_blank(),
+          panel.border = element_rect(colour = "black", fill = NA),
+          axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
+    ylab("Lat (°N)") +
+    xlab("Lon (°E)") +
+    coord_fixed(xlim = c(-120, 135),
+                ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
+                ratio = 1.3)+
+    labs(color="Nb of different \nmeteo. variables",
+         title = paste("Pixels with dtr",model_name),
+         # title = paste("Pixels with frs",model_name),
+         # title = paste("Pixels with rx5",model_name),
+         # title = paste("Pixels with tn10p",model_name),
+         # title = paste("Pixels with tnn",model_name),
+         # title = paste("Pixels with tx90p",model_name),
+         # title = paste("Pixels with txx",model_name),
+         subtitle = paste("Bad yield threshold=", threshold, sep = ""))+
+    theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
+          legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
+    X11(width = 20, height = 7)
+  ggsave(file="D:/user/vogelj/Group_project/Output/Plots/Pixels_dtr.png")
+  # ggsave(file="D:/user/vogelj/Group_project/Output/Plots/Pixels_frs.png")
+  # ggsave(file="D:/user/vogelj/Group_project/Output/Plots/Pixels_rx5.png")
+  # ggsave(file="D:/user/vogelj/Group_project/Output/Plots/Pixels_tn10p.png")
+  # ggsave(file="D:/user/vogelj/Group_project/Output/Plots/Pixels_tnn.png")
+  # ggsave(file="D:/user/vogelj/Group_project/Output/Plots/Pixels_tx90p.png")
+  # ggsave(file="D:/user/vogelj/Group_project/Output/Plots/Pixels_txx.png")
+
 }
 
-DF_ext_ind<- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], dtr = dtr_all, frs=frs_all,rx5=rx5_all,tn10p=tn10p_all,tnn=tnn_all,tx90p=tx90p_all,txx=txx_all)
-apply(DF_ext_ind,2,sum)
 
-ggplot(data = DF_nbdiffmeteo, aes(x=lon, y=lat)) +
-  geom_polygon(data = world, aes(long, lat, group=group),
-               fill="white", color="black", size=0.3) +
-  # geom_point(shape=15, size=0.7, 
-             # aes(color=DF_ext_ind$dtr)) +
-             # aes(color=DF_ext_ind$frs)) +
-             # aes(color=DF_ext_ind$rx5)) +
-             # aes(color=DF_ext_ind$tn10p)) +
-             # aes(color=DF_ext_ind$tnn)) +
-             # aes(color=DF_ext_ind$tx90p)) +
-             # aes(color=DF_ext_ind$txx)) +
-  # geom_tile(aes(fill=DF_ext_ind$dtr)) +
-  # geom_tile(aes(fill=DF_ext_ind$frs)) +
-  # geom_tile(aes(fill=DF_ext_ind$rx5)) +
-  # geom_tile(aes(fill=DF_ext_ind$tn10p)) +
-  # geom_tile(aes(fill=DF_ext_ind$tnn)) +
-  # geom_tile(aes(fill=DF_ext_ind$tx90p)) +
-  geom_tile(aes(fill=DF_ext_ind$txx)) +
-  theme(panel.ontop = F, panel.grid = element_blank(),
-        panel.border = element_rect(colour = "black", fill = NA),
-        axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
-  ylab("Lat (°N)") +
-  xlab("Lon (°E)") +
-  coord_fixed(xlim = c(-120, 135),
-              ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
-              ratio = 1.3)+
-  labs(color="Nb of different \nmeteo. variables",
-       # title = paste("Pixels with dtr",model_name),
-       # title = paste("Pixels with frs",model_name),
-       # title = paste("Pixels with rx5",model_name),
-       # title = paste("Pixels with tn10p",model_name),
-       # title = paste("Pixels with tnn",model_name),
-       # title = paste("Pixels with tx90p",model_name),
-       title = paste("Pixels with txx",model_name),
-       subtitle = paste("Bad yield threshold=", threshold, sep = ""))+
-  theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
-        legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
-  X11(width = 20, height = 7)
-# ggsave(file="D:/user/vogelj/Group_project/Output/Plots/Pixels_dtr.png")
-# ggsave(file="D:/user/vogelj/Group_project/Output/Plots/Pixels_frs.png")
-# ggsave(file="D:/user/vogelj/Group_project/Output/Plots/Pixels_rx5.png")
-# ggsave(file="D:/user/vogelj/Group_project/Output/Plots/Pixels_tn10p.png")
-# ggsave(file="D:/user/vogelj/Group_project/Output/Plots/Pixels_tnn.png")
-# ggsave(file="D:/user/vogelj/Group_project/Output/Plots/Pixels_tx90p.png")
-ggsave(file="D:/user/vogelj/Group_project/Output/Plots/Pixels_txx.png")
-
-
+source("./Code/Problematic_pixels.r")
 
 
 # ROC ####

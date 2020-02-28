@@ -466,7 +466,10 @@ model_name <- "cv_fit_monthly_without_int_incl_ext"
 # On the Drive you can find my data in:
 # with interactions
 # folder: Models/Lasso (glinternet)/LASSO_with_interactions/cv_fit_complete.RData
-# load("D:/user/vogelj/Group_project/Code/Workspaces/cv_fit_complete.RData") # load monthly model output
+if (model_name == "cv_fit_monthly_with_int") {
+  source('./Code/Lasso_interact_global_preparation.R') # load necessary files
+  load("D:/user/vogelj/Group_project/Code/Workspaces/cv_fit_complete.RData") # load monthly model output
+}
 # load("D:/user/vogelj/Group_project/Code/Workspaces/cv_fit_seasonal.RData") # load seasonal model output
 # load("D:/user/vogelj/Group_project/Code/Workspaces/cv_fit_monthly_with_int_incl_ext.RData") # monthly model including extreme indices with interactions
 
@@ -516,8 +519,8 @@ i_1Std_all_pix[work_pix_lwi] <- i_1Std # needed as a workaround (to have an obje
 # Create specificity, CSI and EDI for Lasso w interactions ####
 ################################################################
 
-# mypred_lwi <- lapply(work_pix_lwi, function(x){predict(cv_fit[[x]],x1_test_list[[x]],type="response",lambdaType="lambdaHat1Std")}) # recommended lambdaType
-mypred_lwi <- lapply(work_pix_lwi, function(x){predict(cv_fit[[x]],x1_test_list[[x]],type="response",lambdaType="lambdaHat")}) # default lambdaType
+mypred_lwi <- lapply(work_pix_lwi, function(x){predict(cv_fit[[x]],x1_test_list[[x]],type="response",lambdaType="lambdaHat1Std")}) # recommended lambdaType
+# mypred_lwi <- lapply(work_pix_lwi, function(x){predict(cv_fit[[x]],x1_test_list[[x]],type="response",lambdaType="lambdaHat")}) # default lambdaType
 fitted.results_model_lwi <- lapply(seq_along(work_pix_lwi), function(x){ifelse(mypred_lwi[[x]] > segreg_th,1,0)})
 fitted.results_model_adj_lwi <- lapply(seq_along(work_pix_lwi), function(x){ifelse(mypred_lwi[[x]] > mean(segreg_th_adj),1,0)})
 y1_test_list_red_lwi <- lapply(work_pix_lwi,function(work_pix_lwi){y1_test_list[[work_pix_lwi]]})
@@ -610,6 +613,9 @@ mean(num_interact,na.rm=T)
 pref_lam <- rep(NA,965)
 pref_lam[work_pix_lwi] <- sapply(work_pix_lwi, function(x) cv_fit[[x]]$lambdaHat1Std)
   # write.csv(pref_lam,file="glinternet_lasso_without_interactions_lambdaHat1Std.csv")
+pref_lam_hat <- rep(NA,965)
+pref_lam_hat[work_pix_lwi] <- sapply(work_pix_lwi, function(x) cv_fit[[x]]$lambdaHat)
+  # write.csv(pref_lam,file="glinternet_lasso_without_interactions_lambdaHat.csv")
 
 source("./Code/Plots_performance_and_variables.r")
 
