@@ -618,6 +618,7 @@ pref_lam_hat[work_pix_lwi] <- sapply(work_pix_lwi, function(x) cv_fit[[x]]$lambd
   # write.csv(pref_lam_hat,file="glinternet_lasso_without_interactions_lambdaHat.csv")
 
 source("./Code/Plots_performance_and_variables.r")
+source("./Code/Problematic_pixels.r")
 
 
 # }

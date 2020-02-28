@@ -532,7 +532,7 @@ if (model_name == "cv_fit_monthly_without_int_incl_ext"){
 }
 
 
-source("./Code/Problematic_pixels.r")
+# source("./Code/Problematic_pixels.r")
 
 
 # ROC ####
