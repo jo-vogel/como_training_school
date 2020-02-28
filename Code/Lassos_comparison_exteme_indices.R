@@ -17,8 +17,9 @@ rm(list=ls(all=TRUE))
 #threshold for bad yields in c(0.025,0.05,0.1)
 threshold <- 0.05
 
-#which cutoff level?
-segreg_th <- 0.5
+#which cutoff level for lambda1se or 1sd
+segreg_th_glmnet <- 0.661
+segreg_th_glinternet <- 0.7424705
 
 ##### Initialisation, librairies, data #####
 
@@ -126,7 +127,7 @@ for (i in 1:pix_num){
 }
 
 
-##### Usefull functions ####
+##### Useful functions ####
 number_coeff_kept <- function(coeff_list){#give number of coeff !=0
   return(length(which(abs(coeff_list[-1,])>0)))
 }
@@ -171,18 +172,18 @@ for (pixel in 1:pix_num) {
     
     mypred <- predict(lasso_model_lambda1se[[pixel]], as.matrix(x1_test_list[[pixel]]),type="response")
     
-    fitted_bad_yield <- ifelse(mypred > segreg_th,1,0)
+    fitted_bad_yield <- ifelse(mypred > segreg_th_glmnet,1,0)
     
     speci_glmnet[pixel] <- specificity(actuals = as.matrix(y1_test_list[[pixel]]),
                                 predictedScores = fitted_bad_yield,
-                                threshold = segreg_th)
+                                threshold = segreg_th_glmnet)
     sensi_glmnet[pixel] <- sensitivity(actuals = as.matrix(y1_test_list[[pixel]]),
                                 predictedScores = fitted_bad_yield,
-                                threshold = segreg_th)
+                                threshold = segreg_th_glmnet)
     
     con_tab <- confusionMatrix(actuals = as.matrix(y1_test_list[[pixel]]),
                                predictedScores = fitted_bad_yield,
-                               threshold = segreg_th)
+                               threshold = segreg_th_glmnet)
     csi_glmnet[pixel] <- con_tab["0","0"]/(con_tab["0","0"] + con_tab["1","0"] + con_tab["0","1"])
     if(is.na(con_tab["0","0"])){
       csi_glmnet[pixel] <- 0
