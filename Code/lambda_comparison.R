@@ -1,7 +1,8 @@
 library(ggplot2)
 
 load("D:/user/vogelj/Group_project/Data/lambda_values_Lasso_glmnet_monthly_xtrm_indices.Rdata")
-lambda_gl <- read.csv("D:/user/vogelj/Group_project/Data/glinternet_lasso_without_interactions_lambdaHat1Std.csv")
+lambda_gl_hat1std <- read.csv("D:/user/vogelj/Group_project/Data/glinternet_lasso_without_interactions_lambdaHat1Std.csv")
+lambda_gl_hat <- read.csv("D:/user/vogelj/Group_project/Data/glinternet_lasso_without_interactions_lambdaHat.csv")
 # in folder Models on gdrive
 
 # make sure the coordinates are the same
@@ -54,7 +55,13 @@ ggplot(data = DF_lambda, aes(x=lon, y=lat)) +
   X11(width = 20, height = 7)
 ggsave(file="D:/user/vogelj/Group_project/Output/Plots/lambda_map.png")
 
-boxplot(lambda_gl$x,LAMBDAS[[2]],names=c("glinternet","glmnet"),ylab="Lambda (1 Std)")
+boxplot(lambda_gl_hat1std$x,LAMBDAS[[2]],names=c("glinternet","glmnet"),ylab="Lambda (1 Std)")
 
-boxplot(lambda_gl$x,LAMBDAS[[2]],LAMBDAS[[1]],names=c("glinternet (1Std)","glmnet (1Std)", "glmnet (Min)"))
+boxplot(lambda_gl_hat1std$x,LAMBDAS[[2]],LAMBDAS[[1]],names=c("glinternet (1Std)","glmnet (1Std)", "glmnet (Min)"))
+
+boxplot(lambda_gl_hat1std$x,LAMBDAS[[2]],lambda_gl_hat$x, LAMBDAS[[1]],names=c("glinternet (1Std)","glmnet (1Std)", "glinternet (Hat)", "glmnet (Min)"))
+
+boxplot(lambda_gl_hat1std$x,lambda_gl_hat$x,names=c("glinternet (1Std)", "glinternet (Hat)"))
+
+boxplot(LAMBDAS[[2]], LAMBDAS[[1]],names=c("glmnet (1Std)", "glmnet (Min)"))
 
