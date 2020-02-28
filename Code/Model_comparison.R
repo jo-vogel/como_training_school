@@ -36,7 +36,7 @@ path_to_NH_files <- "D:/user/vogelj/Data/Group project Como"
 output_path <- "D:/user/vogelj/Group_project/Output/Plots/"
 
 # source('./Code/Lasso_interact_global_preparation.R') # load necessary files
-# source('./Code/Lasso_interact_global_preparation_incl_ext_ind.R') # monthly data including extreme indices
+source('./Code/Lasso_interact_global_preparation_incl_ext_ind.R') # monthly data including extreme indices
 
 
 # Load Model output for Ridge ####
@@ -112,7 +112,8 @@ colnames(Result_matrix_Ridge) = c("speci", "CSI", "EDI", "lon", "lat")
 # On the Drive you can find my data in:
 # Models/LASSO-Ridge regression/regression_results_Global_wo_interactions/Lasso_lambda1se_threshbadyield005.RData
 
-load(file = "C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/Lasso_lambda1se_threshbadyield005.RData")
+# load(file = "C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/Lasso_lambda1se_threshbadyield005.RData")
+load(file = "D:/user/vogelj/Group_project/Code/Workspaces/Lasso_lambda1se_month_xtrm_Lasso_threshbadyield005.RData")
 
 
 # Create specificity, CSI and EDI for Lasso w/o interactions ####
@@ -183,14 +184,17 @@ colnames(Result_matrix_simplelasso) = c("speci", "CSI", "EDI", "lon", "lat")
 # Create specificity, CSI and EDI for Lasso w/o interactions with cutoff level ####
 ###################################################################################
 # Adjust cutoff level
-source("./Code/cutoff_adj_glmnet_lambda1se.R")
+# source("./Code/cutoff_adj_glmnet_lambda1se.R")
+source("./Code/Simple_Lasso_Ridge_ElasticNet/cutoff_adj_glmnet_lambda1se.R")
 y1_train_list_simple_lasso <- y1_train_list
 x1_train_list_simple_lasso <- x1_train_list
 cost_fp_simple_lasso <- 100 # Misses: this should be associated with a higher cost, as it is more detrimental
 cost_fn_simple_lasso <- 100 # False alarms
 
 
-cutoff_simple_lasso <- adjust_cutoff(x1_train_list = x1_train_list_simple_lasso, y1_train_list = y1_train_list_simple_lasso,
+# cutoff_simple_lasso <- adjust_cutoff(x1_train_list = x1_train_list_simple_lasso, y1_train_list = y1_train_list_simple_lasso,
+#                                      work_pix = pix_in, cost_fp = cost_fp_simple_lasso, cost_fn= cost_fn_simple_lasso)
+cutoff_simple_lasso <- adjust_cutoff(model_vector=lasso_model_lambda1se, x1_train_list = x1_train_list_simple_lasso, y1_train_list = y1_train_list_simple_lasso,
                                      work_pix = pix_in, cost_fp = cost_fp_simple_lasso, cost_fn= cost_fn_simple_lasso)
 segreg_th_adj <- cutoff_simple_lasso # replace the default threshold = 0.5, by the calculated optimal cutoff
 
@@ -618,7 +622,7 @@ pref_lam_hat[work_pix_lwi] <- sapply(work_pix_lwi, function(x) cv_fit[[x]]$lambd
   # write.csv(pref_lam_hat,file="glinternet_lasso_without_interactions_lambdaHat.csv")
 
 source("./Code/Plots_performance_and_variables.r")
-source("./Code/Problematic_pixels.r")
+# source("./Code/Problematic_pixels.r")
 
 
 # }
