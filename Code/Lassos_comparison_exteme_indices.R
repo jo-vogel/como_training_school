@@ -1,5 +1,5 @@
 # Lasso Model comparison ###################
-# Authors: Pauline, Johannes
+# Authors: Pauline
 # This file is meant to compare the performance of LASSO  from glinternet and from glmnet (monthly meteovar + extreme indices)
 # It is structured in the following way:
 # a) recreate the training and testing dataset (should be the same as the one used to fit our model, thanks to set.seed(1994))
@@ -23,7 +23,8 @@ segreg_th_glinternet <- 0.7424705
 
 ##### Initialisation, librairies, data #####
 
-library(ncdf4);library(glmnet);library(InformationValue);library(ROCR)
+library(ncdf4);library(glmnet);library(glinternet)
+library(InformationValue);library(ROCR)
 library(abind);library(stringr);library(tictoc);library(ggplot2)
 
 
@@ -127,7 +128,22 @@ for (i in 1:pix_num){
 }
 
 
-##### Useful functions ####
+
+
+
+
+##### glmnet model performance #####
+
+# On the Drive you can find data in:
+# Models/LASSO-Ridge regression/regression_results_Global_wo_interactions/Lasso_lambda1se_month_xtrm_Lasso_threshbadyield005.RData
+
+# Pauline's Laptop
+load(paste0("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/Lasso_lambda1se_month_xtrm_Lasso_threshbadyield005.Rdata"))
+
+
+
+
+### Useful functions
 number_coeff_kept <- function(coeff_list){#give number of coeff !=0
   return(length(which(abs(coeff_list[-1,])>0)))
 }
@@ -142,18 +158,6 @@ extreme_in_coeff <- function(coeff_list){ #function to check how many extreme in
 }#end func extreme_in_coeff
 
 
-
-
-
-
-##### glmnet model performance #####
-
-# On the Drive you can find data in:
-# Models/LASSO-Ridge regression/regression_results_Global_wo_interactions/Lasso_lambda1se_month_xtrm_Lasso_threshbadyield005.RData
-
-# Pauline's Laptop
-load(paste0("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/Lasso_lambda1se_month_xtrm_Lasso_threshbadyield005.Rdata"))
-
 # extract performance measures
 
 lambda1se_glmnet <- numeric()
@@ -162,9 +166,8 @@ for (pix in 1:pix_num) {
 }#end for pix
 
 coeff_glmnet  <-list()
-speci_glmnet <- rep(NA, pix_num)
-sensi_glmnet <- rep(NA, pix_num)
-csi_glmnet <- rep(NA, pix_num)
+speci_glmnet <- rep(NA, pix_num) ; sensi_glmnet <- rep(NA, pix_num) ; csi_glmnet <- rep(NA, pix_num)
+nb_extr_kept_glmnet <- numeric() ; nb_coeff_kept_glmnet <- numeric()
 
 for (pixel in 1:pix_num) {
     
@@ -188,17 +191,12 @@ for (pixel in 1:pix_num) {
     if(is.na(con_tab["0","0"])){
       csi_glmnet[pixel] <- 0
     }
-}#end pixel
-
-
-
-nb_extr_kept_glmnet <- numeric()
-nb_coeff_kept_glmnet <- numeric()
-
-for (pixel in 1:pix_num) {
+    
+    
     nb_extr_kept_glmnet[pixel] <- extreme_in_coeff(coeff_glmnet[[pixel]])
     nb_coeff_kept_glmnet[pixel] <- number_coeff_kept(coeff_glmnet[[pixel]])
 }#end pixel
+
 
 
 
@@ -208,4 +206,151 @@ for (pixel in 1:pix_num) {
 # On the Drive you can find data in:
 # Models/Lasso(glinternet)/Lasso_without_interactions/cv_fit_monthly_without_int_incl_ext.Rdata
 
+
+#Pauline's Laptop
 load(paste0("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/OtherModels/cv_fit_monthly_without_int_incl_ext.Rdata"))
+
+
+# extract performance measures
+
+lambda1se_glinternet <- rep(NA, pix_num)
+for (pix in 1:pix_num) {
+  lambda1se_glinternet[pix] <- cv_fit[[pix]]$lambdaHat1Std
+}#end for pix
+
+
+coeff_glinternet  <-list()
+speci_glinternet <- rep(NA, pix_num) ; sensi_glinternet <- rep(NA, pix_num) ; csi_glinternet <- rep(NA, pix_num)
+nb_coeff_kept_glinternet <- rep(NA, pix_num) ; nb_extr_kept_glinternet <- numeric()
+
+extreme_indices <- c("dtr", "frs", "txx", "tnn", "rx5", "tx90p", "tn10p")
+
+for (pixel in 1:pix_num) {
+  
+  coeff_glinternet[[pixel]] <- matrix(data=unlist(coef(cv_fit[[pixel]])$mainEffectsCoef), ncol = 1)
+  
+  rownames(coeff_glinternet[[pixel]]) <- names(numLevels_list[[pixel]])[coef(cv_fit[[pixel]])$mainEffects$cont] 
+  
+  nb_coeff_kept_glinternet[pixel] <- length(coef(cv_fit[[pixel]])$mainEffects$cont)
+  
+  mypred <- predict(cv_fit[[pixel]],x1_test_list[[pixel]],type="response",lambdaType="lambdaHat1Std")
+  
+  fitted_bad_yield <- ifelse(mypred > segreg_th_glinternet,1,0)
+  
+  speci_glinternet[pixel] <- specificity(actuals = as.matrix(y1_test_list[[pixel]]),
+                                     predictedScores = fitted_bad_yield,
+                                     threshold = segreg_th_glinternet)
+  sensi_glinternet[pixel] <- sensitivity(actuals = as.matrix(y1_test_list[[pixel]]),
+                                     predictedScores = fitted_bad_yield,
+                                     threshold = segreg_th_glinternet)
+  
+  con_tab <- confusionMatrix(actuals = as.matrix(y1_test_list[[pixel]]),
+                             predictedScores = fitted_bad_yield,
+                             threshold = segreg_th_glinternet)
+  csi_glinternet[pixel] <- con_tab["0","0"]/(con_tab["0","0"] + con_tab["1","0"] + con_tab["0","1"])
+  if(is.na(con_tab["0","0"])){
+    csi_glinternet[pixel] <- 0
+  }
+  
+  nb_extr_kept_glinternet[pixel] <- sum(rownames(coeff_glinternet[[pixel]]) %in% extreme_indices)
+  
+  
+}#end pixel
+
+
+
+
+
+
+#### Create comparison maps ####
+world <- map_data("world")
+# load all coordinates of northern hemisphere
+#Pauline's Laptop
+path_to_NH_files <- "C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/Data/Global"
+nh_files <- list.files(path=path_to_NH_files,pattern="*NH.nc") # all files from northern hemisphere
+nh_data <- lapply(1:length(nh_files),function(x){nc_open(paste0(path_to_NH_files,"/",nh_files[x]))})
+lat_all <- ncvar_get(nh_data[[1]],"lat")
+lon_all <- ncvar_get(nh_data[[1]],"lon")
+lati_all <- rep(lat_all,each=length(lon_all))
+long_all <- rep(lon_all,length(lat_all)) # coordinates rearranged
+coord_all <- cbind(long_all,lati_all)
+
+lapply(1:length(nh_files),function(x){nc_close(nh_data[[x]])})
+
+coord_subset <- cbind(Data_standardized$longitudes,Data_standardized$latitudes)
+
+
+substract_score_plot <- function(score_name, score_1, model1_name, score_2, model2_name){#score name in c("speci","csi", EDI")
+  sub_score <- score_1 - score_2
+  DF_sub <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], sub_score = sub_score)
+  
+  ggplot(data = DF_sub, aes(x=DF_sub$lon, y=DF_sub$lat)) +
+    geom_polygon(data = world, aes(long, lat, group=group),
+                 fill="white", color="black", size=0.3) +
+    geom_tile(aes(fill=DF_sub$sub_score)) +
+    scale_fill_gradient2(low = "blue", high = "red", mid = rgb(0.8,0.8,0.8)) +
+    theme(panel.ontop = F, panel.grid = element_blank(),
+          panel.border = element_rect(colour = "black", fill = NA),
+          axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
+    ylab("Lat (°N)") +
+    xlab("Lon (°E)") +
+    coord_fixed(xlim = c(-120, 135),
+                ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
+                ratio = 1.3)+
+    labs(fill=paste0("Diff in ", score_name,
+                    "\nmean=",round(mean(sub_score, na.rm=T),2),
+                    "\nmed=",round(median(sub_score, na.rm=T),2)),
+         title = paste("Difference",score_name,model1_name, "-", model2_name),
+         subtitle = paste("lambda 1std/1se, adjusted cutoff"))+
+    theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
+          legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
+    X11(width = 20, height = 7)
+  
+}
+
+
+substract_number_plot <- function(score_name, score_1, model1_name, score_2, model2_name){#score name in c("nb_coeff_kept","nb_extr_kept")
+  sub_scoree <- score_1 - score_2
+  sub_score <- sub_scoree
+  # sub_score <- as.factor(sub_scoree)
+  DF_sub <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], sub_score = sub_score)
+  
+  ggplot(data = DF_sub, aes(x=DF_sub$lon, y=DF_sub$lat)) +
+    geom_polygon(data = world, aes(long, lat, group=group),
+                 fill="white", color="black", size=0.3) +
+    geom_tile(aes(fill=DF_sub$sub_score)) +
+    scale_fill_gradient2(low = "blue", high = "red", mid = rgb(0.8,0.8,0.8)) +
+    theme(panel.ontop = F, panel.grid = element_blank(),
+          panel.border = element_rect(colour = "black", fill = NA),
+          axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
+    ylab("Lat (°N)") +
+    xlab("Lon (°E)") +
+    coord_fixed(xlim = c(-120, 135),
+                ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
+                ratio = 1.3)+
+    labs(fill=paste0("Diff in ", score_name,
+                     "\nmean=",round(mean(sub_scoree, na.rm=T),2),
+                     "\nmed=",round(median(sub_scoree, na.rm=T),2)),
+         title = paste("Difference",score_name,model1_name, "-", model2_name),
+         subtitle = paste("lambda 1std/1se, adjusted cutoff"))+
+    theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
+          legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
+    X11(width = 20, height = 7)
+  
+}
+
+
+
+#Difference in csi
+substract_score_plot(score_name = "CSI", score_1 = csi_glinternet, model1_name = "glinternet",
+                     score_2 = csi_glmnet, model2_name = "glmnet")
+#Difference in specificity
+substract_score_plot(score_name = "Specificity", score_1 = speci_glinternet, model1_name = "glinternet",
+                     score_2 = speci_glmnet, model2_name = "glmnet")
+
+#Difference in number coeff kept
+substract_number_plot(score_name = "Variables kept number", score_1 = nb_coeff_kept_glinternet, model1_name = "glinternet",
+                      score_2 = nb_coeff_kept_glmnet, model2_name = "glmnet")
+
+substract_number_plot(score_name = "Extreme variables kept number", score_1 = nb_extr_kept_glinternet, model1_name = "glinternet",
+                      score_2 = nb_extr_kept_glmnet, model2_name = "glmnet")
