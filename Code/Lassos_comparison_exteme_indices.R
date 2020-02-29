@@ -309,48 +309,30 @@ substract_score_plot <- function(score_name, score_1, model1_name, score_2, mode
 }
 
 
-substract_number_plot <- function(score_name, score_1, model1_name, score_2, model2_name){#score name in c("nb_coeff_kept","nb_extr_kept")
-  sub_scoree <- score_1 - score_2
-  sub_score <- sub_scoree
-  # sub_score <- as.factor(sub_scoree)
-  DF_sub <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], sub_score = sub_score)
-  
-  ggplot(data = DF_sub, aes(x=DF_sub$lon, y=DF_sub$lat)) +
-    geom_polygon(data = world, aes(long, lat, group=group),
-                 fill="white", color="black", size=0.3) +
-    geom_tile(aes(fill=DF_sub$sub_score)) +
-    scale_fill_gradient2(low = "blue", high = "red", mid = rgb(0.8,0.8,0.8)) +
-    theme(panel.ontop = F, panel.grid = element_blank(),
-          panel.border = element_rect(colour = "black", fill = NA),
-          axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
-    ylab("Lat (°N)") +
-    xlab("Lon (°E)") +
-    coord_fixed(xlim = c(-120, 135),
-                ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
-                ratio = 1.3)+
-    labs(fill=paste0("Diff in ", score_name,
-                     "\nmean=",round(mean(sub_scoree, na.rm=T),2),
-                     "\nmed=",round(median(sub_scoree, na.rm=T),2)),
-         title = paste("Difference",score_name,model1_name, "-", model2_name),
-         subtitle = paste("lambda 1std/1se, adjusted cutoff"))+
-    theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
-          legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
-    X11(width = 20, height = 7)
-  
-}
-
-
 
 #Difference in csi
 substract_score_plot(score_name = "CSI", score_1 = csi_glinternet, model1_name = "glinternet",
                      score_2 = csi_glmnet, model2_name = "glmnet")
+plot(csi_glinternet,csi_glmnet, main="CSI, lambda1std/1se, adjusted cutoff")
+abline(b=1, a=0, col="green")
 #Difference in specificity
 substract_score_plot(score_name = "Specificity", score_1 = speci_glinternet, model1_name = "glinternet",
                      score_2 = speci_glmnet, model2_name = "glmnet")
+plot(speci_glinternet,speci_glmnet, main="Specificity, lambda1std/1se, adjusted cutoff")
+abline(b=1, a=0, col="green")
 
 #Difference in number coeff kept
-substract_number_plot(score_name = "Variables kept number", score_1 = nb_coeff_kept_glinternet, model1_name = "glinternet",
+substract_score_plot(score_name = "Variables kept number", score_1 = nb_coeff_kept_glinternet, model1_name = "glinternet",
                       score_2 = nb_coeff_kept_glmnet, model2_name = "glmnet")
+plot(nb_coeff_kept_glinternet+rnorm(965, sd=0.01),nb_coeff_kept_glmnet+rnorm(965, sd=0.01), xlab="glinternet",
+     ylab="glmnet", main="Nb of variables kept, lambda1std/1se")
+abline(b=1, a=0, col="green")
 
-substract_number_plot(score_name = "Extreme variables kept number", score_1 = nb_extr_kept_glinternet, model1_name = "glinternet",
+substract_score_plot(score_name = "Extreme variables kept number", score_1 = nb_extr_kept_glinternet, model1_name = "glinternet",
                       score_2 = nb_extr_kept_glmnet, model2_name = "glmnet")
+plot(nb_extr_kept_glinternet+rnorm(965, sd=0.01),nb_extr_kept_glmnet+rnorm(965, sd=0.01), xlab="glinternat",
+     ylab="glmnet", main="Nb of extreme indices kept, lambda1std/1se")
+abline(b=1, a=0, col="green")
+
+
+
