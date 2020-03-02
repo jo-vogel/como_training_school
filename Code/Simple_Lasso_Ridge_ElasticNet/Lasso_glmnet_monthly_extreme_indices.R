@@ -401,7 +401,7 @@ ggplot(data = DF_speci, aes(x=lon, y=lat)) +
 
 
 # plot CSI=(hits)/(hits + misses + false alarm) ###
-DF_sci <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], csi = csi)
+DF_sci <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], csi = csi_glmnet)
 
 ggplot(data = DF_sci, aes(x=lon, y=lat)) +
   geom_polygon(data = world, aes(long, lat, group=group),
@@ -444,7 +444,8 @@ ggplot(data = DF_numbcoeff, aes(x=lon, y=lat)) +
               ratio = 1.3)+
   labs(color="Nb of var.",
        title = paste("Number of variables kept, simple",model_name,"regression, monthly meteo var + extreme indices"),
-       subtitle = paste("Bad yield threshold=", threshold, ", lambda 1se", sep = ""))+
+       subtitle = paste("Bad yield threshold=", threshold,
+                        ", lambda 1se", sep = ""))+
   theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
         legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
   X11(width = 20, height = 7)
@@ -471,7 +472,7 @@ ggplot(data = DF_numbextr, aes(x=lon, y=lat)) +
               ratio = 1.3)+
   labs(color="Nb ind.",
        title = paste("Number of exteme indices kept, simple",model_name,"regression, monthly meteo var + extreme indices"),
-       subtitle = paste("Bad yield threshold=", threshold, ", lambda 1se", sep = ""))+
+       subtitle = paste("cutoff level=", segreg_th, ", lambda 1se", sep = ""))+
   theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
         legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
   X11(width = 20, height = 7)
