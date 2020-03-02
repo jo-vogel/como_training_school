@@ -140,6 +140,9 @@ for (i in 1:pix_num){
 # Pauline's Laptop
 load(paste0("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/Lasso_lambda1se_month_xtrm_Lasso_threshbadyield005.Rdata"))
 
+# Johannes
+load("D:/user/vogelj/Group_project/Code/Workspaces/Lasso_lambda1se_month_xtrm_Lasso_threshbadyield005.Rdata")
+
 
 
 
@@ -209,7 +212,8 @@ for (pixel in 1:pix_num) {
 
 #Pauline's Laptop
 load(paste0("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/OtherModels/cv_fit_monthly_without_int_incl_ext.Rdata"))
-
+# Johannes
+load("D:/user/vogelj/Group_project/Code/Workspaces/cv_fit_monthly_without_int_incl_ext.Rdata")
 
 # extract performance measures
 
@@ -224,14 +228,18 @@ speci_glinternet <- rep(NA, pix_num) ; sensi_glinternet <- rep(NA, pix_num) ; cs
 nb_coeff_kept_glinternet <- rep(NA, pix_num) ; nb_extr_kept_glinternet <- numeric()
 
 extreme_indices <- c("dtr", "frs", "txx", "tnn", "rx5", "tx90p", "tn10p")
+coefs <- vector("list",length=965)
+nb_coeff_kept_glinternet <- numeric()
+coefs_str <- vector("list",pix_num)
+i_1Std <- sapply(1:pix_num, function(x){ which(cv_fit[[x]]$lambdaHat1Std == cv_fit[[x]]$lambda)}) # the preferential lambda (tuning parameter): lambdaHat1Std
+
 
 for (pixel in 1:pix_num) {
   
-  coeff_glinternet[[pixel]] <- matrix(data=unlist(coef(cv_fit[[pixel]])$mainEffectsCoef), ncol = 1)
-  
-  rownames(coeff_glinternet[[pixel]]) <- names(numLevels_list[[pixel]])[coef(cv_fit[[pixel]])$mainEffects$cont] 
-  
-  nb_coeff_kept_glinternet[pixel] <- length(coef(cv_fit[[pixel]])$mainEffects$cont)
+  # Calculate number of coefficients
+  coefs[[pixel]] <- coef(cv_fit[[pixel]]$glinternetFit)[[i_1Std[[pixel]]]]
+  nb_coeff_kept_glinternet[pixel] <- length(coefs[[pixel]]$mainEffects$cont)
+  coefs_str[[pixel]] <- names(numLevels_list[[pixel]])[coefs[[pixel]]$mainEffects$cont]
   
   mypred <- predict(cv_fit[[pixel]],x1_test_list[[pixel]],type="response",lambdaType="lambdaHat1Std")
   
@@ -252,7 +260,7 @@ for (pixel in 1:pix_num) {
     csi_glinternet[pixel] <- 0
   }
   
-  nb_extr_kept_glinternet[pixel] <- sum(rownames(coeff_glinternet[[pixel]]) %in% extreme_indices)
+  nb_extr_kept_glinternet[pixel] <- sum(coefs_str[[pixel]] %in% extreme_indices)
   
   
 }#end pixel
@@ -324,15 +332,20 @@ abline(b=1, a=0, col="green")
 #Difference in number coeff kept
 substract_score_plot(score_name = "Variables kept number", score_1 = nb_coeff_kept_glinternet, model1_name = "glinternet",
                       score_2 = nb_coeff_kept_glmnet, model2_name = "glmnet")
+ggsave(filename="D:/user/vogelj/Group_project/Output/Plots/nbvar_kept_difference.png")
+png(filename="D:/user/vogelj/Group_project/Output/Plots/nb-var-kept_scatterplot.png")
 plot(nb_coeff_kept_glinternet+rnorm(965, sd=0.01),nb_coeff_kept_glmnet+rnorm(965, sd=0.01), xlab="glinternet",
      ylab="glmnet", main="Nb of variables kept, lambda1std/1se")
 abline(b=1, a=0, col="green")
+dev.off()
 
 substract_score_plot(score_name = "Extreme variables kept number", score_1 = nb_extr_kept_glinternet, model1_name = "glinternet",
                       score_2 = nb_extr_kept_glmnet, model2_name = "glmnet")
+ggsave(filename="D:/user/vogelj/Group_project/Output/Plots/nbextremevar_kept_difference.png")
+png(filename="D:/user/vogelj/Group_project/Output/Plots/nb-extr-kept_scatterplot.png")
 plot(nb_extr_kept_glinternet+rnorm(965, sd=0.01),nb_extr_kept_glmnet+rnorm(965, sd=0.01), xlab="glinternat",
      ylab="glmnet", main="Nb of extreme indices kept, lambda1std/1se")
 abline(b=1, a=0, col="green")
-
+dev.off()
 
 

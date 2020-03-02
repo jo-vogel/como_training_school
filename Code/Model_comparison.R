@@ -460,6 +460,7 @@ for(pix in 1:nb_pix_bestglm){
 # Load Model output for Lasso glinternet (with and without) interactions ####
 ###################################################
 
+message('Indicate model data set to be loaded here')
 # model_name <- cv_fit_monthly_no_int # monthly model without interactions
 # model_name <- cv_fit_monthly_without_int_incl_ext # monthly model including extreme indices without interactions
 model_names <- c("cv_fit_monthly_no_int","cv_fit_monthly_without_int_incl_ext")
