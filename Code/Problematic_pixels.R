@@ -10,7 +10,7 @@ if (model_name == "cv_fit_monthly_without_int_incl_ext" | model_name == "Lasso (
 mean_yield <- apply(X=yield, MARGIN = 1, FUN = mean, na.rm=T)
 
 
-# Rename to fit variable names (lwi)
+# Rename to fit variable names (lwi) for glinternet
 csi <- csi_lwi
 csi_adj <- csi_adj_lwi
 speci <- speci_lwi
@@ -23,15 +23,17 @@ coeff_kep <- coeff_kep_lwi
 work_pix <- work_pix_lwi
 fn_adj <- fn_adj_lwi
 tn_adj <- tn_adj_lwi
+mypred <- mppred_lwi
 
 
-# Rename to fit variable names (lwi)
+# Rename to fit variable names for glmnet
 csi <- csi_simplelasso
 csi_adj <- csi_simplelasso_adj
 speci <- speci_simplelasso
 speci_adj <- speci_simplelasso_adj
 sensi <- sensi_simplelasso
 sensi_adj <- sensi_simplelasso_adj
+mypred <- pred_simplelasso
 work_pix <- 965
 
 Model_chosen <- lasso_model_lambda1se
@@ -64,9 +66,11 @@ tn_adj_simpleLasso <- numeric(965)
 fn_adj_simpleLasso <- numeric(965)
 for(pix in 1:nb_pix_simplelasso){
   tn_adj_simpleLasso[pix] <- con_tab_simplelasso_adj[[pix]]["0","0"] 
-  fn_adj_simpleLasso[pix] <- con_tab_simplelasso_adj[[pix]]["1","0"]
+  # fn_adj_simpleLasso[pix] <- con_tab_simplelasso_adj[[pix]]["1","0"]
+  fn_adj_simpleLasso[pix] <- con_tab_simplelasso_adj[[pix]]["0","1"]
   if(is.na(con_tab_simplelasso_adj[[pix]]["0","0"])){ #no extreme event forecasted => no first line in contengency table
     tn_adj_simpleLasso[pix] <- 0
+    fn_adj_simpleLasso[pix] <- 0
   }
 }
 tn_adj <- tn_adj_simpleLasso
@@ -103,8 +107,21 @@ ggplot(data = DF_no_neg, aes(x=lon, y=lat)) +
   theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
         legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
   X11(width = 20, height = 7)
-ggsave(file="D:/user/vogelj/Group_project/Output/Plots/Pixels_no_neg_pred_glinternet.png")
+# ggsave(file="D:/user/vogelj/Group_project/Output/Plots/Pixels_no_neg_pred_glinternet.png")
+ggsave(file="D:/user/vogelj/Group_project/Output/Plots/Pixels_no_neg_pred_glmnet.png")
 
+pred_min <- sapply(mypred,min)
+
+# png(filename = "D:/user/vogelj/Group_project/Output/Plots/hist_min_pred_val_glinternet.png")
+png(filename = "D:/user/vogelj/Group_project/Output/Plots/hist_min_pred_val_glmnet.png")
+# hist(pred_min,main="Minimum predicted value for glinternet")
+hist(pred_min,main="Minimum predicted value for glmnet")
+dev.off()
+# png(filename = "D:/user/vogelj/Group_project/Output/Plots/boxplot_min_pred_val_glinternet.png")
+png(filename = "D:/user/vogelj/Group_project/Output/Plots/boxplot_min_pred_val_glmnet.png")
+# boxplot(pred_min,main="Minimum predicted value for glinternet")
+boxplot(pred_min,main="Minimum predicted value for glmnet")
+dev.off()
 
 
 # Pixels with only 1 or 2 variable-models
@@ -214,3 +231,6 @@ ggplot(data = DF_yield_low, aes(x=lon, y=lat)) +
   # ggsave(file="D:/user/vogelj/Group_project/Output/Plots/Pixels_no_neg_low yield_low_coeff_glinternet.png")
   ggsave(file="D:/user/vogelj/Group_project/Output/Plots/Pixels_no_neg_low_coeff_glinternet.png")
   # ggsave(file="D:/user/vogelj/Group_project/Output/Plots/Pixels_no_neg_low yield_glinternet.png")
+
+  
+  

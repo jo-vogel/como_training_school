@@ -171,6 +171,7 @@ for (pix in 1:pix_num) {
 coeff_glmnet  <-list()
 speci_glmnet <- rep(NA, pix_num) ; sensi_glmnet <- rep(NA, pix_num) ; csi_glmnet <- rep(NA, pix_num)
 nb_extr_kept_glmnet <- numeric() ; nb_coeff_kept_glmnet <- numeric()
+con_tab <- vector("list",length=965)
 
 for (pixel in 1:pix_num) {
     
@@ -187,11 +188,11 @@ for (pixel in 1:pix_num) {
                                 predictedScores = fitted_bad_yield,
                                 threshold = segreg_th_glmnet)
     
-    con_tab <- confusionMatrix(actuals = as.matrix(y1_test_list[[pixel]]),
+    con_tab[[pixel]] <- confusionMatrix(actuals = as.matrix(y1_test_list[[pixel]]),
                                predictedScores = fitted_bad_yield,
                                threshold = segreg_th_glmnet)
-    csi_glmnet[pixel] <- con_tab["0","0"]/(con_tab["0","0"] + con_tab["1","0"] + con_tab["0","1"])
-    if(is.na(con_tab["0","0"])){
+    csi_glmnet[pixel] <- con_tab[[pixel]]["0","0"]/(con_tab[[pixel]]["0","0"] + con_tab[[pixel]]["1","0"] + con_tab[[pixel]]["0","1"])
+    if(is.na(con_tab[[pixel]]["0","0"])){
       csi_glmnet[pixel] <- 0
     }
     
@@ -233,7 +234,7 @@ coefs <- vector("list",length=965)
 nb_coeff_kept_glinternet <- numeric()
 coefs_str <- vector("list",pix_num)
 i_1Std <- sapply(1:pix_num, function(x){ which(cv_fit[[x]]$lambdaHat1Std == cv_fit[[x]]$lambda)}) # the preferential lambda (tuning parameter): lambdaHat1Std
-
+con_tab <- vector("list",length=965)
 
 for (pixel in 1:pix_num) {
   
@@ -253,11 +254,11 @@ for (pixel in 1:pix_num) {
                                      predictedScores = fitted_bad_yield,
                                      threshold = segreg_th_glinternet)
   
-  con_tab <- confusionMatrix(actuals = as.matrix(y1_test_list[[pixel]]),
+  con_tab[[pixel]] <- confusionMatrix(actuals = as.matrix(y1_test_list[[pixel]]),
                              predictedScores = fitted_bad_yield,
                              threshold = segreg_th_glinternet)
-  csi_glinternet[pixel] <- con_tab["0","0"]/(con_tab["0","0"] + con_tab["1","0"] + con_tab["0","1"])
-  if(is.na(con_tab["0","0"])){
+  csi_glinternet[pixel] <- con_tab[[pixel]]["0","0"]/(con_tab[[pixel]]["0","0"] + con_tab[[pixel]]["1","0"] + con_tab[[pixel]]["0","1"])
+  if(is.na(con_tab[[pixel]]["0","0"])){
     csi_glinternet[pixel] <- 0
   }
   
