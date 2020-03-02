@@ -212,6 +212,7 @@ for (pixel in 1:pix_num) {
 
 #Pauline's Laptop
 load(paste0("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/OtherModels/cv_fit_monthly_without_int_incl_ext.Rdata"))
+
 # Johannes
 load("D:/user/vogelj/Group_project/Code/Workspaces/cv_fit_monthly_without_int_incl_ext.Rdata")
 
@@ -332,20 +333,20 @@ abline(b=1, a=0, col="green")
 #Difference in number coeff kept
 substract_score_plot(score_name = "Variables kept number", score_1 = nb_coeff_kept_glinternet, model1_name = "glinternet",
                       score_2 = nb_coeff_kept_glmnet, model2_name = "glmnet")
-ggsave(filename="D:/user/vogelj/Group_project/Output/Plots/nbvar_kept_difference.png")
-png(filename="D:/user/vogelj/Group_project/Output/Plots/nb-var-kept_scatterplot.png")
+#ggsave(filename="D:/user/vogelj/Group_project/Output/Plots/nbvar_kept_difference.png")
+#png(filename="D:/user/vogelj/Group_project/Output/Plots/nb-var-kept_scatterplot.png")
 plot(nb_coeff_kept_glinternet+rnorm(965, sd=0.01),nb_coeff_kept_glmnet+rnorm(965, sd=0.01), xlab="glinternet",
      ylab="glmnet", main="Nb of variables kept, lambda1std/1se")
 abline(b=1, a=0, col="green")
-dev.off()
+#dev.off()
 
 substract_score_plot(score_name = "Extreme variables kept number", score_1 = nb_extr_kept_glinternet, model1_name = "glinternet",
                       score_2 = nb_extr_kept_glmnet, model2_name = "glmnet")
-ggsave(filename="D:/user/vogelj/Group_project/Output/Plots/nbextremevar_kept_difference.png")
-png(filename="D:/user/vogelj/Group_project/Output/Plots/nb-extr-kept_scatterplot.png")
+#ggsave(filename="D:/user/vogelj/Group_project/Output/Plots/nbextremevar_kept_difference.png")
+#png(filename="D:/user/vogelj/Group_project/Output/Plots/nb-extr-kept_scatterplot.png")
 plot(nb_extr_kept_glinternet+rnorm(965, sd=0.01),nb_extr_kept_glmnet+rnorm(965, sd=0.01), xlab="glinternat",
      ylab="glmnet", main="Nb of extreme indices kept, lambda1std/1se")
 abline(b=1, a=0, col="green")
-dev.off()
+#dev.off()
 
 
