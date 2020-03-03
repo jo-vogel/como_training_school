@@ -66,8 +66,8 @@ tn_adj_simpleLasso <- numeric(965)
 fn_adj_simpleLasso <- numeric(965)
 for(pix in 1:nb_pix_simplelasso){
   tn_adj_simpleLasso[pix] <- con_tab_simplelasso_adj[[pix]]["0","0"] 
-  # fn_adj_simpleLasso[pix] <- con_tab_simplelasso_adj[[pix]]["1","0"]
   fn_adj_simpleLasso[pix] <- con_tab_simplelasso_adj[[pix]]["0","1"]
+  message('note that rows are predicted and columns observed here (reverse in case of glinternet)')
   if(is.na(con_tab_simplelasso_adj[[pix]]["0","0"])){ #no extreme event forecasted => no first line in contengency table
     tn_adj_simpleLasso[pix] <- 0
     fn_adj_simpleLasso[pix] <- 0
@@ -111,6 +111,7 @@ ggplot(data = DF_no_neg, aes(x=lon, y=lat)) +
 ggsave(file="D:/user/vogelj/Group_project/Output/Plots/Pixels_no_neg_pred_glmnet.png")
 
 pred_min <- sapply(mypred,min)
+sum(pred_min>cutoff_simple_lasso) # should be identical to no_neg
 
 # png(filename = "D:/user/vogelj/Group_project/Output/Plots/hist_min_pred_val_glinternet.png")
 png(filename = "D:/user/vogelj/Group_project/Output/Plots/hist_min_pred_val_glmnet.png")
