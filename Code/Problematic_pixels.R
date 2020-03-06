@@ -23,7 +23,7 @@ coeff_kep <- coeff_kep_lwi
 work_pix <- work_pix_lwi
 fn_adj <- fn_adj_lwi
 tn_adj <- tn_adj_lwi
-mypred <- mppred_lwi
+mypred <- mypred_lwi
 
 
 # Rename to fit variable names for glmnet
@@ -235,3 +235,5 @@ ggplot(data = DF_yield_low, aes(x=lon, y=lat)) +
 
   
   
+  
+  source("./Code/Yield_comparison.r")
