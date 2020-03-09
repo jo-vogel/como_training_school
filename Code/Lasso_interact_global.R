@@ -281,7 +281,7 @@ coord_all_temp <- cbind(coord_all,paste(coord_all[,1],coord_all[,2]))
 loc_pix <- which(coord_all_temp[,3] %in% coord_subset_temp [,3]) # locations of our pixels in the whole coordinate set
 loc_pix <- loc_pix[-failed_pixels]
 
-coord_all <- cbind(coord_all,rep(NA,24320))
+coord_all <- cbind(coord_all,rep(NA,320*76))
 for (i in seq_along(work_pix)){
   coord_all[loc_pix[i],3] <- speci[i]
 }
