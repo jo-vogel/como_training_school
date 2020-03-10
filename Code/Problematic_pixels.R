@@ -1,12 +1,17 @@
+# Author: Johannes Vogel
+# Script is called in Model_comparison.r
+
 
 # Investigate the link between pixels with low yield, only positive predictions and only 1 or 2 variable-models
 
 model_name <- "Lasso (glmnet)"
 
 world <- map_data("world")
-if (model_name == "cv_fit_monthly_without_int_incl_ext" | model_name == "Lasso (glmnet)") {
-  yield <- matrix(Data_standardized$yield,965,1600)
-  }
+# if (model_name == "cv_fit_monthly_without_int_incl_ext" | model_name == "Lasso (glmnet)") {
+#   yield <- matrix(Data_standardized$yield,965,1600)
+#   }
+load("D:/user/vogelj/Data/Group project Como/extremeindices_and_monthlymeteovar.Rdata")
+yield <- Data_non_standardized$yield
 mean_yield <- apply(X=yield, MARGIN = 1, FUN = mean, na.rm=T)
 
 
@@ -212,8 +217,8 @@ DF_bad_pix <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], all_bad =
 ggplot(data = DF_yield_low, aes(x=lon, y=lat)) +
   geom_polygon(data = world, aes(long, lat, group=group),
                fill="white", color="black", size=0.3) +
-  # geom_tile(aes(fill= all_bad)) +
-  geom_tile(aes(fill= no_neg_coeff_low)) +
+  geom_tile(aes(fill= all_bad)) +
+  # geom_tile(aes(fill= no_neg_coeff_low)) +
   # geom_tile(aes(fill= no_neg_yield_low)) +
   theme(panel.ontop = F, panel.grid = element_blank(),
         panel.border = element_rect(colour = "black", fill = NA),
@@ -223,17 +228,17 @@ ggplot(data = DF_yield_low, aes(x=lon, y=lat)) +
   coord_fixed(xlim = c(-120, 135),
               ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
               ratio = 1.3)+
-  # labs(title = paste("Pixel with only positive predictions, low yield and only 1 or 2 variable-models for",model_name))+
-  labs(title = paste("Pixel with only positive predictions and only 1 or 2 variable-models for",model_name))+
+  labs(title = paste("Pixel with only positive predictions, low yield and only 1 or 2 variable-models for",model_name))+
+  # labs(title = paste("Pixel with only positive predictions and only 1 or 2 variable-models for",model_name))+
   # labs(title = paste("Pixel with only positive predictions and low yield for",model_name))+
   theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
         legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
   X11(width = 20, height = 7)
-  # ggsave(file="D:/user/vogelj/Group_project/Output/Plots/Pixels_no_neg_low yield_low_coeff_glinternet.png")
-  ggsave(file="D:/user/vogelj/Group_project/Output/Plots/Pixels_no_neg_low_coeff_glinternet.png")
+  ggsave(file="D:/user/vogelj/Group_project/Output/Plots/Pixels_no_neg_low yield_low_coeff_glinternet.png")
+  # ggsave(file="D:/user/vogelj/Group_project/Output/Plots/Pixels_no_neg_low_coeff_glinternet.png")
   # ggsave(file="D:/user/vogelj/Group_project/Output/Plots/Pixels_no_neg_low yield_glinternet.png")
 
   
   
   
-  source("./Code/Yield_comparison.r")
+source("./Code/Yield_comparison.r")
