@@ -9,7 +9,42 @@ get_firstcoeffs <- function(coeff, nb_of_coeff=1){
                                         index.return=T)$ix[-which(sort(abs(as.numeric(coeff)), 
                                                                        decreasing = T,
                                                                        index.return=T)$ix==1)]][ind]
-    if(substr(coeff_names, start = 1, stop = 1)=="t"){
+    if(substr(coeff_names, start = 1, stop = 3)=="dtr"){
+      coeff_name_date[ind,1] <- "dtr"
+      coeff_name_date[ind,2] <- NA
+    }
+    
+    if(substr(coeff_names, start = 1, stop = 3)=="frs"){
+      coeff_name_date[ind,1] <- "frs"
+      coeff_name_date[ind,2] <- NA
+    }
+    
+    if(substr(coeff_names, start = 1, stop = 3)=="txx"){
+      coeff_name_date[ind,1] <- "txx"
+      coeff_name_date[ind,2] <- NA
+    }
+    
+    if(substr(coeff_names, start = 1, stop = 3)=="tnn"){
+      coeff_name_date[ind,1] <- "tnn"
+      coeff_name_date[ind,2] <- NA
+    }
+    
+    if(substr(coeff_names, start = 1, stop = 3)=="rx5"){
+      coeff_name_date[ind,1] <- "rx5"
+      coeff_name_date[ind,2] <- NA
+    }
+    
+    if(substr(coeff_names, start = 1, stop = 3)=="tx90p"){
+      coeff_name_date[ind,1] <- "tx90p"
+      coeff_name_date[ind,2] <- NA
+    }
+    
+    if(substr(coeff_names, start = 1, stop = 3)=="tn10p"){
+      coeff_name_date[ind,1] <- "tn10p"
+      coeff_name_date[ind,2] <- NA
+    }
+    
+    if(substr(coeff_names, start = 1, stop = 4)=="tmax"){
       coeff_name_date[ind,1] <- "tmax"
       coeff_name_date[ind,2] <- substr(coeff_names, start = 6, stop = 11)
     }
