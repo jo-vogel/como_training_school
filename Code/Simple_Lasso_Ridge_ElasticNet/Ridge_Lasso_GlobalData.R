@@ -22,7 +22,7 @@ if(model_name=="Ridge"){
 
 #which lambda?
 lambda_VALS <- c("lambda.min", "lambda.1se")
-lambda_val <- lambda_VALS[2]
+lambda_val <- lambda_VALS[1]
 
 #threshold for bad yields in c(0.025,0.05,0.1)
 threshold <- 0.05
@@ -308,7 +308,7 @@ mypred <- lapply(1:test_length, function(x){predict(MODEL_chosen[[x]],
                                                     as.matrix(x1_test_list[[x]]),type="response")})
 
 #which segregation threshold for the model?
-segreg_th <- 0.5
+segreg_th <- 0.595
 
 fitted.results_model <- lapply(1:test_length, function(x){ifelse(mypred[[x]] > segreg_th,1,0)})
 
