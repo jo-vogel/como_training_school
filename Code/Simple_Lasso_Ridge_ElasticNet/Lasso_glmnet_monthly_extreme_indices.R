@@ -664,8 +664,8 @@ DF_speci <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], speci = spe
 ggplot(data = DF_speci, aes(x=lon, y=lat)) +
   geom_polygon(data = world, aes(long, lat, group=group),
                fill="white", color="black", size=0.3) +
-  geom_point(shape=15, aes(color=speci)) +
-  scale_color_gradient2(limits=c(0,1), midpoint = 0.5,
+  geom_tile(aes(fill=speci)) +
+  scale_fill_gradient2(limits=c(0,1), midpoint = 0.5,
                         low = "black", mid = "red3", high = "yellow") +
   theme(panel.ontop = F, panel.grid = element_blank(),
         panel.border = element_rect(colour = "black", fill = NA),
@@ -675,10 +675,10 @@ ggplot(data = DF_speci, aes(x=lon, y=lat)) +
   coord_fixed(xlim = c(-120, 135),
               ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
               ratio = 1.3)+
-  labs(color="Specif.",
-       title = paste("Specificity, simple",model_name,"regression, monthly meteo var + extreme indices"),
-       subtitle = paste("Bad yield threshold=", threshold,
-                        ", cutoff level=", round(segreg_th,3),", ",lambda_val, sep = ""))+
+  labs(fill="Specif."
+       #,title = paste("Specificity")
+       ,subtitle = paste("Monthly meteo var + extreme indices, cutoff level=", round(segreg_th,3),", ",lambda_val, sep = "")
+       )+
   theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
         legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
   X11(width = 20, height = 7)
@@ -690,8 +690,8 @@ DF_sci <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], csi = csi)
 ggplot(data = DF_sci, aes(x=lon, y=lat)) +
   geom_polygon(data = world, aes(long, lat, group=group),
                fill="white", color="black", size=0.3) +
-  geom_point(shape=15, aes(color=csi)) +
-  scale_color_gradient2(limits=c(0,1), midpoint = 0.5,
+  geom_tile(aes(fill=csi)) +
+  scale_fill_gradient2(limits=c(0,1), midpoint = 0.5,
                         low = "black", mid = "red3", high = "yellow") +
   theme(panel.ontop = F, panel.grid = element_blank(),
         panel.border = element_rect(colour = "black", fill = NA),
@@ -701,10 +701,9 @@ ggplot(data = DF_sci, aes(x=lon, y=lat)) +
   coord_fixed(xlim = c(-120, 135),
               ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
               ratio = 1.3)+
-  labs(color="CSI",
-       title = paste("CSI, simple",model_name,"regression, monthly meteo var + extreme indices"),
-       subtitle = paste("Bad yield threshold=", threshold,
-                        ", cutoff level=", round(segreg_th,3),", ",lambda_val, sep = ""))+
+  labs(fill="CSI",
+       #title = paste("CSI, simple",model_name,"regression, "),
+       subtitle = paste("Monthly meteo var + extreme indices, cutoff level=", round(segreg_th,3),", ",lambda_val, sep = ""))+
   theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
         legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
   X11(width = 20, height = 7)
@@ -716,8 +715,8 @@ DF_numbcoeff <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], coeff_k
 ggplot(data = DF_numbcoeff, aes(x=lon, y=lat)) +
   geom_polygon(data = world, aes(long, lat, group=group),
                fill="white", color="black", size=0.3) +
-  geom_point(shape=15, aes(color=nb_coeff_kept)) +
-  scale_color_gradient(low = "pink", high = "darkblue") +
+  geom_tile(aes(fill=nb_coeff_kept)) +
+  scale_fill_gradient(low = "pink", high = "darkblue") +
   theme(panel.ontop = F, panel.grid = element_blank(),
         panel.border = element_rect(colour = "black", fill = NA),
         axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
@@ -726,9 +725,9 @@ ggplot(data = DF_numbcoeff, aes(x=lon, y=lat)) +
   coord_fixed(xlim = c(-120, 135),
               ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
               ratio = 1.3)+
-  labs(color="Nb of var.",
-       title = paste("Number of variables kept, simple",model_name,"regression, monthly meteo var + extreme indices"),
-       subtitle = paste("Bad yield threshold=", threshold, ", lambda 1se", sep = ""))+
+  labs(fill="Nb of var.",
+       #title = paste("Number of variables kept, simple",model_name,"regression, "),
+       subtitle = paste("Monthly meteo var + extreme indices, lambda 1se", sep = ""))+
   theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
         legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
   X11(width = 20, height = 7)
@@ -743,8 +742,8 @@ mycolors <- c("orange", rgb(0.3,0.3,0.5), rgb(0,0,0.7),
 ggplot(data = DF_numbextr, aes(x=lon, y=lat)) +
   geom_polygon(data = world, aes(long, lat, group=group),
                fill="white", color="black", size=0.3) +
-  geom_point(shape=15, aes(color=coeff_kep)) +
-  scale_color_manual(values = mycolors, ) +
+  geom_tile(aes(fill=coeff_kep)) +
+  scale_fill_manual(values = mycolors, ) +
   theme(panel.ontop = F, panel.grid = element_blank(),
         panel.border = element_rect(colour = "black", fill = NA),
         axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
@@ -753,9 +752,9 @@ ggplot(data = DF_numbextr, aes(x=lon, y=lat)) +
   coord_fixed(xlim = c(-120, 135),
               ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
               ratio = 1.3)+
-  labs(color="Nb ind.",
-       title = paste("Number of exteme indices kept, simple",model_name,"regression, monthly meteo var + extreme indices"),
-       subtitle = paste("Bad yield threshold=", threshold, ", lambda 1se", sep = ""))+
+  labs(fill="Nb extr.",
+       #title = paste("Number of exteme indices kept, simple",model_name,"regression,"),
+       subtitle = paste("Monthly meteo var + extreme indices, ",lambda_val, sep = ""))+
   theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
         legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
   X11(width = 20, height = 7)
@@ -771,8 +770,8 @@ DF_numbcoeff <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], perc_ke
 ggplot(data = DF_numbcoeff, aes(x=lon, y=lat)) +
   geom_polygon(data = world, aes(long, lat, group=group),
                fill="white", color="black", size=0.3) +
-  geom_point(shape=15, aes(color=DF_numbcoeff$perc_kept)) +
-  scale_color_gradient(low = "yellow", high = "blue") +
+  geom_tile(aes(fill=DF_numbcoeff$perc_kept)) +
+  scale_fill_gradient(low = "yellow", high = "blue") +
   theme(panel.ontop = F, panel.grid = element_blank(),
         panel.border = element_rect(colour = "black", fill = NA),
         axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
@@ -781,97 +780,9 @@ ggplot(data = DF_numbcoeff, aes(x=lon, y=lat)) +
   coord_fixed(xlim = c(-120, 135),
               ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
               ratio = 1.3)+
-  labs(color="Nb of var.",
-       title = paste("Perc. of extreme indices in variables kept, simple",model_name,"regression, monthly meteo var + extreme indices"),
-       subtitle = paste("Bad yield threshold=", threshold, ", lambda 1se", sep = ""))+
-  theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
-        legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
-  X11(width = 20, height = 7)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# miscellaneous plots to check NA
-
-nb_na_dtr <- numeric()
-nb_na_frs <- numeric()
-nb_na_txx <- numeric()
-nb_na_tnn <- numeric()
-nb_na_rx5 <- numeric()
-nb_na_tx90p <- numeric()
-nb_na_tn10p <- numeric()
-
-for (pixel in 1:pix_num) {
-  nb_na_dtr[pixel] <- length(which(is.na(Model_data[pixel,"dtr",])))
-  nb_na_frs[pixel] <- length(which(is.na(Model_data[pixel,"frs",])))
-  nb_na_txx[pixel] <- length(which(is.na(Model_data[pixel,"txx",])))
-  nb_na_tnn[pixel] <- length(which(is.na(Model_data[pixel,"tnn",])))
-  nb_na_rx5[pixel] <- length(which(is.na(Model_data[pixel,"rx5",])))
-  nb_na_tx90p[pixel] <- length(which(is.na(Model_data[pixel,"tx90p",])))
-  nb_na_tn10p[pixel] <- length(which(is.na(Model_data[pixel,"tn10p",])))
-}
-
-
-
-DF_numbna <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], nbna = nb_na_frs/16)
-
-ggplot(data = DF_numbna, aes(x=lon, y=lat)) +
-  geom_polygon(data = world, aes(long, lat, group=group),
-               fill="white", color="black", size=0.3) +
-  geom_point(shape=15, aes(color=DF_numbna$nbna)) +
-  scale_color_gradient(low = "yellow", high = "blue", limits=c(0,100)) +
-  theme(panel.ontop = F, panel.grid = element_blank(),
-        panel.border = element_rect(colour = "black", fill = NA),
-        axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
-  ylab("Lat (°N)") +
-  xlab("Lon (°E)") +
-  coord_fixed(xlim = c(-120, 135),
-              ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
-              ratio = 1.3)+
-  labs(color="% of years",
-       title = paste("% years (out of 1600) with NA in extreme indices"))+
-  theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
-        legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
-  X11(width = 20, height = 7)
-
-
-nb_GS_toolong <- numeric()
-for (pixel in 1:pix_num) {
-  nb_GS_toolong[pixel] <- length(which(is.na(Yield[pixel,])))
-}
-
-
-DF_numbna <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], nbna = nb_GS_toolong/16)
-ggplot(data = DF_numbna, aes(x=lon, y=lat)) +
-  geom_polygon(data = world, aes(long, lat, group=group),
-               fill="white", color="black", size=0.3) +
-  geom_point(shape=15, aes(color=DF_numbna$nbna)) +
-  scale_color_gradient(low = "yellow", high = "blue", limits=c(0,100)) +
-  theme(panel.ontop = F, panel.grid = element_blank(),
-        panel.border = element_rect(colour = "black", fill = NA),
-        axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
-  ylab("Lat (°N)") +
-  xlab("Lon (°E)") +
-  coord_fixed(xlim = c(-120, 135),
-              ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
-              ratio = 1.3)+
-  labs(color="% of years",
-       title = paste("% years (out of 1600) with GS>365 days"))+
+  labs(fill="% extrm.",
+       #title = paste("Perc. of extreme indices in variables kept, simple",model_name,"regression, m"),
+       subtitle = paste("Monthly meteo var + extreme indices, ",lambda_val, sep = ""))+
   theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
         legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
   X11(width = 20, height = 7)
