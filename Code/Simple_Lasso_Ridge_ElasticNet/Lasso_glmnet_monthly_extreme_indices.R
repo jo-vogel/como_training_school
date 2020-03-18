@@ -534,8 +534,8 @@ dev.off()
 
 ##### Adjust cutoff level #####
 
-Model_chosen <- lasso_model_lambda1se
-lambda_val <- lambda_VALS[2]
+Model_chosen <- lasso_model_lambdamin
+lambda_val <- lambda_VALS[1]
 
 # Model_chosen <- lasso_model_lambdamin
 # lambda_val <- lambda_VALS[1]
@@ -565,7 +565,7 @@ segreg_th_adj_min <- 0.5986209
 
 ##### Model performance assessment #####
 
-segreg_th <- segreg_th_adj_1se
+segreg_th <- segreg_th_adj_min
 
 pix_model_failed <- numeric(length = pix_num)
 coeff  <-list()
@@ -727,10 +727,12 @@ ggplot(data = DF_numbcoeff, aes(x=lon, y=lat)) +
               ratio = 1.3)+
   labs(fill="Nb of var.",
        #title = paste("Number of variables kept, simple",model_name,"regression, "),
-       subtitle = paste("Monthly meteo var + extreme indices, lambda 1se", sep = ""))+
+       subtitle = paste("Monthly meteo var + extreme indices, ",lambda_val, sep = ""))+
   theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
         legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
   X11(width = 20, height = 7)
+
+hist(nb_coeff_kept, main = paste0("Nb of variables kept, ",lambda_val), xlab = "number of variables", breaks=14)
 
 #Plot number of extreme indices kept
 DF_numbextr <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], coeff_kep = nb_extr_kept)
@@ -803,45 +805,49 @@ source("./Code/get_first_coeff_function.R")
 
 
 
-count_seas_and_var <- function(coeff){
-  if (length(coeff[[i]])-1) {
-    coeff_kept <- get_firstcoeffs(coeff,length(coeff[[i]])-1)
-    nb_var <- length(unique(coeff_kept[,1]))
+count_seas_and_var <- function(coefff){
+  if (length(which((coefff)!=0))-1>0) {
+    coeff_kept <- get_firstcoeffs(coefff, nb_of_coeff = length(which((coefff)!=0))-1)
     nb_of_seas <- 0
     
-    if(!is.na(coeff_kept[,2]) & (sum(substr(coeff_kept[,2], start = 1, stop = 3) %in% c("Feb", "Dec", "Jan")))){
+    if(sum(!is.na(coeff_kept[,2])) & (sum(substr(coeff_kept[,2], start = 1, stop = 3) %in% c("Feb", "Dec", "Jan")))){
       nb_of_seas <- nb_of_seas + 1
     }
     
-    if(sum(substr(coeff_kept[,2], start = 1, stop = 3) %in% c("May", "Mar", "Apr"))){
+    if(sum(!is.na(coeff_kept[,2])) & sum(substr(coeff_kept[,2], start = 1, stop = 3) %in% c("May", "Mar", "Apr"))){
       nb_of_seas <- nb_of_seas + 1
     }
     
-    if(sum(substr(coeff_kept[,2], start = 1, stop = 3) %in% c("Jun", "Jul", "Aug"))){
+    if(sum(!is.na(coeff_kept[,2])) & sum(substr(coeff_kept[,2], start = 1, stop = 3) %in% c("Jun", "Jul", "Aug"))){
       nb_of_seas <- nb_of_seas + 1
     }
     
-    if(sum(substr(coeff_kept[,2], start = 1, stop = 3) %in% c("Sep", "Nov", "Oct"))){
+    if(sum(!is.na(coeff_kept[,2])) & sum(substr(coeff_kept[,2], start = 1, stop = 3) %in% c("Sep", "Nov", "Oct"))){
       nb_of_seas <- nb_of_seas + 1
     }
     
     
-    return(data.frame("nb_of_seas" = nb_of_seas, "nb_of_var" = nb_var))
+    return(nb_of_seas)
   } else {
-    return(data.frame("nb_of_seas" = NA, "nb_of_var" = NA))
+    return("No meteo var")
   }#end if else
   
 }
 
+nb_of_seas <- numeric()
+for (pix in 1:965) {
+  nb_of_seas[pix] <- count_seas_and_var(coeff[[pix]])
+}
 
-DF_nbdiffseason <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], nb_season = nb_of_seas)
-DF_nbdiffseason$nb_season <- as.factor(DF_nbdiffseason$nb_season)
+DF_nbseason <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], nb_season = nb_of_seas)
+DF_nbseason$nb_season <- as.factor(DF_nbseason$nb_season)
 
-ggplot(data = DF_nbdiffseason, aes(x=lon, y=lat)) +
+ggplot(data = DF_nbseason, aes(x=lon, y=lat)) +
   geom_polygon(data = world, aes(long, lat, group=group),
                fill="white", color="black", size=0.3) +
-  geom_tiles(aes(fill=DF_nbdiffseason$nb_season)) +
-  scale_file_manual(values = c("1"=rainbow(4)[1], "2"=rainbow(4)[4], "3"=rainbow(4)[3], "4"=rainbow(4)[2])) +
+  geom_tile(aes(fill=DF_nbseason$nb_season)) +
+  scale_fill_manual(values = c("0"=viridis(6)[1], "1"=viridis(6)[3], "2"=viridis(6)[4],
+                               "3"=viridis(6)[5], "4"=viridis(6)[6], "No meteo var"="gray")) +
   theme(panel.ontop = F, panel.grid = element_blank(),
         panel.border = element_rect(colour = "black", fill = NA),
         axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
@@ -852,7 +858,7 @@ ggplot(data = DF_nbdiffseason, aes(x=lon, y=lat)) +
               ratio = 1.3)+
   labs(fill="Nb of seasons",
        #title = paste("Number of different seasons, simple",model_name,"regression"),
-       subtitle = paste("monthly meteo var + extreme indices", sep = ""))+
+       subtitle = paste("monthly meteo var + extreme indices, ",lambda_val, sep = ""))+
   theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
         legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
   X11(width = 20, height = 7)
