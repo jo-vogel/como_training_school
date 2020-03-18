@@ -198,7 +198,7 @@ cutoff_simple_lasso <- adjust_cutoff(model_vector=lasso_model_lambda1se, x1_trai
                                      work_pix = pix_in, cost_fp = cost_fp_simple_lasso, cost_fn= cost_fn_simple_lasso)
 segreg_th_adj <- cutoff_simple_lasso # replace the default threshold = 0.5, by the calculated optimal cutoff
 
-
+segreg_th_adj <- 0.666
 
 fitted_results_simplelasso_adj <- lapply(1:nb_pix_simplelasso, function(x){ifelse(pred_simplelasso[[x]] > segreg_th_adj,1,0)})
 
@@ -639,8 +639,8 @@ substract_score_plot <- function(score_name, score_1, model1_name, score_2, mode
   ggplot(data = DF_sub, aes(x=DF_sub$lon, y=DF_sub$lat)) +
     geom_polygon(data = world, aes(long, lat, group=group),
                  fill="white", color="black", size=0.3) +
-    geom_point(shape=15, aes(color=DF_sub$sub_score)) +
-    scale_color_gradient2(low = "blue", high = "red") +
+    geom_tile(aes(fill=DF_sub$sub_score)) +
+    scale_fill_gradient2(low = "blue", high = "red") +
     theme(panel.ontop = F, panel.grid = element_blank(),
           panel.border = element_rect(colour = "black", fill = NA),
           axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
@@ -649,9 +649,9 @@ substract_score_plot <- function(score_name, score_1, model1_name, score_2, mode
     coord_fixed(xlim = c(-120, 135),
                 ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
                 ratio = 1.3)+
-    labs(color=paste("Diff in", score_name),
+    labs(fill=paste("Diff in", score_name),
          title = paste("Difference",score_name,model1_name, "-", model2_name),
-         subtitle = paste("Bad yield threshold=", threshold, sep = ""))+
+         subtitle = paste("Adjusted cut-off", sep = ""))+
     theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
           legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
     X11(width = 20, height = 7)
