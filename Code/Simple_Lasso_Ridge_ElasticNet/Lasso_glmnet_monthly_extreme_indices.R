@@ -34,7 +34,7 @@ segreg_th <- 0.5
 ##### Initialisation, librairies, data #####
 
 library(ncdf4);library(glmnet);library(InformationValue);library(ROCR)
-library(abind);library(stringr);library(tictoc);library(ggplot2)
+library(abind);library(stringr);library(tictoc);library(ggplot2);library(viridis)
 
 
 
@@ -783,6 +783,76 @@ ggplot(data = DF_numbcoeff, aes(x=lon, y=lat)) +
   labs(fill="% extrm.",
        #title = paste("Perc. of extreme indices in variables kept, simple",model_name,"regression, m"),
        subtitle = paste("Monthly meteo var + extreme indices, ",lambda_val, sep = ""))+
+  theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
+        legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
+  X11(width = 20, height = 7)
+
+
+
+
+
+
+
+
+
+
+# Map of the number of season kept #####
+
+
+source("./Code/get_first_coeff_function.R")
+
+
+
+count_seas_and_var <- function(coeff){
+  if (length(coeff[[i]])-1) {
+    coeff_kept <- get_firstcoeffs(coeff,length(coeff[[i]])-1)
+    nb_var <- length(unique(coeff_kept[,1]))
+    nb_of_seas <- 0
+    
+    if(!is.na(coeff_kept[,2]) & (sum(substr(coeff_kept[,2], start = 1, stop = 3) %in% c("Feb", "Dec", "Jan")))){
+      nb_of_seas <- nb_of_seas + 1
+    }
+    
+    if(sum(substr(coeff_kept[,2], start = 1, stop = 3) %in% c("May", "Mar", "Apr"))){
+      nb_of_seas <- nb_of_seas + 1
+    }
+    
+    if(sum(substr(coeff_kept[,2], start = 1, stop = 3) %in% c("Jun", "Jul", "Aug"))){
+      nb_of_seas <- nb_of_seas + 1
+    }
+    
+    if(sum(substr(coeff_kept[,2], start = 1, stop = 3) %in% c("Sep", "Nov", "Oct"))){
+      nb_of_seas <- nb_of_seas + 1
+    }
+    
+    
+    return(data.frame("nb_of_seas" = nb_of_seas, "nb_of_var" = nb_var))
+  } else {
+    return(data.frame("nb_of_seas" = NA, "nb_of_var" = NA))
+  }#end if else
+  
+}
+
+
+DF_nbdiffseason <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], nb_season = nb_of_seas)
+DF_nbdiffseason$nb_season <- as.factor(DF_nbdiffseason$nb_season)
+
+ggplot(data = DF_nbdiffseason, aes(x=lon, y=lat)) +
+  geom_polygon(data = world, aes(long, lat, group=group),
+               fill="white", color="black", size=0.3) +
+  geom_tiles(aes(fill=DF_nbdiffseason$nb_season)) +
+  scale_file_manual(values = c("1"=rainbow(4)[1], "2"=rainbow(4)[4], "3"=rainbow(4)[3], "4"=rainbow(4)[2])) +
+  theme(panel.ontop = F, panel.grid = element_blank(),
+        panel.border = element_rect(colour = "black", fill = NA),
+        axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
+  ylab("Lat (°N)") +
+  xlab("Lon (°E)") +
+  coord_fixed(xlim = c(-120, 135),
+              ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
+              ratio = 1.3)+
+  labs(fill="Nb of seasons",
+       #title = paste("Number of different seasons, simple",model_name,"regression"),
+       subtitle = paste("monthly meteo var + extreme indices", sep = ""))+
   theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
         legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
   X11(width = 20, height = 7)
