@@ -534,8 +534,8 @@ dev.off()
 
 ##### Adjust cutoff level #####
 
-Model_chosen <- lasso_model_lambdamin
-lambda_val <- lambda_VALS[1]
+Model_chosen <- lasso_model_lambda1se
+lambda_val <- lambda_VALS[2]
 
 # Model_chosen <- lasso_model_lambdamin
 # lambda_val <- lambda_VALS[1]
@@ -565,7 +565,7 @@ segreg_th_adj_min <- 0.5986209
 
 ##### Model performance assessment #####
 
-segreg_th <- segreg_th_adj_min
+segreg_th <- segreg_th_adj_1se
 
 pix_model_failed <- numeric(length = pix_num)
 coeff  <-list()
@@ -862,3 +862,18 @@ ggplot(data = DF_nbseason, aes(x=lon, y=lat)) +
   theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
         legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
   X11(width = 20, height = 7)
+
+
+
+
+#### Barplot: combinations of months and variables ####
+coefs_seas <- sapply(1:length(coeff), function(x) names(numLevels_list[[x]])[coeff[[x]][-1]!=0])
+coefs_seas_vec <- unlist(coefs_seas)
+
+png(filename="C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/Images/Monthly_and_extreme_indices/barplot_variables_lambda1se.png",
+    res=2000,units="cm",width=15,height=20)
+
+par(mar=c(5,7,1,1))
+barplot(sort(table(coefs_seas_vec)),horiz=T,las=1,col="ForestGreen",
+        xlab="Number of pixels, where variable is included in the model\nLasso glmnet lambda 1se",cex.names=0.6)
+dev.off()
