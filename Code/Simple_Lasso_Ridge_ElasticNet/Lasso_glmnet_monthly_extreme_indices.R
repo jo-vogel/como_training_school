@@ -567,6 +567,7 @@ segreg_th_adj_min <- 0.5986209
 
 segreg_th <- segreg_th_adj_1se
 
+
 pix_model_failed <- numeric(length = pix_num)
 coeff  <-list()
 speci <- rep(NA, pix_num)
