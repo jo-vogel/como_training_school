@@ -38,21 +38,21 @@ path_to_NH_files <- "C:/Users/admin/Documents/Damocles_training_school_Como/Grou
 # path_to_NH_files <- "D:/user/vogelj/Data/Group project Como"
 
 
+load(paste0(path_to_NH_files,"/monthlymeteovar_V2020-03-20.Rdata"))
+load(paste0(path_to_NH_files,"/monthlymeteovar_rescaled_V2020-03-20.Rdata"))
+
 #Monthly Meteovar
-nh_files <- list.files(path=path_to_NH_files,pattern="NH_yield*") # all files from northern hemisphere
-nh_data <- lapply(1:length(nh_files),
-                  FUN = function(x){nc_open(paste0(path_to_NH_files,"/",nh_files[x]))})
-yield <- ncvar_get(nh_data[[1]],"yield")
-tasmax <- ncvar_get(nh_data[[1]],"tasmax")
-vpd <- ncvar_get(nh_data[[1]],"vpd")
-pr <- ncvar_get(nh_data[[1]],"pr")
-lat_subset <- ncvar_get(nh_data[[1]],"lat")
-lon_subset <- ncvar_get(nh_data[[1]],"lon")
-yield_stand <- ncvar_get(nh_data[[2]],"yield")
-tasmax_stand <- ncvar_get(nh_data[[2]],"tasmax")
-vpd_stand <- ncvar_get(nh_data[[2]],"vpd")
-pr_stand <- ncvar_get(nh_data[[2]],"pr")
-lapply(1:length(nh_files),function(x){nc_close(nh_data[[x]])})
+yield <- Data_non_standardized$yield
+tasmax <- Data_non_standardized$tasmax
+vpd <-Data_non_standardized$vpd
+pr <- Data_non_standardized$precipitation
+lat_subset <- Data_non_standardized$latitudes
+lon_subset <- Data_non_standardized$longitudes
+yield_stand <- Data_standardized$yield
+tasmax_stand <- Data_standardized$tasmax
+vpd_stand <- Data_standardized$vpd
+pr_stand <- Data_standardized$precipitation
+
 coord_subset <- cbind(lon_subset,lat_subset)
 
 
@@ -153,16 +153,16 @@ colnames(pr_stand) <- c("pr_Aug_Y1","pr_Sep_Y1","pr_Oct_Y1","pr_Nov_Y1","pr_Dec_
                   "pr_Feb_Y2","pr_Mar_Y2","pr_Apr_Y2","pr_May_Y2","pr_Jun_Y2","pr_Jul_Y2",
                   "pr_Aug_Y2","pr_Sep_Y2","pr_Oct_Y2","pr_Nov_Y2","pr_Dec_Y2")
 
-Data_non_standardized <- list(longitudes=lon_subset, latitudes=lat_subset,
+Data_xtrm_non_standardized <- list(longitudes=lon_subset, latitudes=lat_subset,
                               yield=yield, precipitation=pr, tasmax = tasmax,
                               vpd=vpd, dtr=dtr_non_stand, frs=frs_non_stand, txx=txx_non_stand,
                               tnn=tnn_non_stand, rx5=rx5_non_stand, tx90p=tx90p_non_stand, tn10p=tn10p_non_stand)
 
-Data_standardized <- list(longitudes=lon_subset, latitudes=lat_subset,
+Data_xtrm_standardized <- list(longitudes=lon_subset, latitudes=lat_subset,
                               yield=yield_stand, precipitation=pr_stand, tasmax = tasmax_stand,
                               vpd=vpd_stand, dtr=dtr_stand, frs=frs_stand, txx=txx_stand,
                               tnn=tnn_stand, rx5=rx5_stand, tx90p=tx90p_stand, tn10p=tn10p_stand)
 
 
-save(Data_non_standardized, file = paste0(path_to_NH_files,"/extremeindices_and_monthlymeteovar.Rdata"))
-save(Data_standardized, file = paste0(path_to_NH_files,"/extremeindices_and_monthlymeteovar_rescaled.Rdata"))
+save(Data_xtrm_non_standardized, file = paste0(path_to_NH_files,"/extremeindices_and_monthlymeteovar_V2020-03-20.Rdata"))
+save(Data_xtrm_standardized, file = paste0(path_to_NH_files,"/extremeindices_and_monthlymeteovar_rescaled_V2020-03-20.Rdata"))
