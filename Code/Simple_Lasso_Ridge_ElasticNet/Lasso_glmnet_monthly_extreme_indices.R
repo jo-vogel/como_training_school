@@ -42,23 +42,23 @@ library(abind);library(stringr);library(tictoc);library(ggplot2);library(viridis
 ##### Load standardized Data #####
 
 #Pauline's Laptop
-load("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/Data/Global/extremeindices_and_monthlymeteovar_rescaled.Rdata")
-load("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/Data/Global/extremeindices_and_monthlymeteovar.Rdata")
+load("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/Data/Global/extremeindices_and_monthlymeteovar_rescaled_V2020-03-20.RData")
+load("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/Data/Global/extremeindices_and_monthlymeteovar_V2020-03-20.RData")
 
 
 
 ##### Process data #####
-yield_3dim <- array(Data_standardized$yield,dim=c(965,1,1600))
-dtr_3dim <- array(Data_standardized$dtr,dim=c(965,1,1600))
-frs_3dim <- array(Data_standardized$frs,dim=c(965,1,1600))
-txx_3dim <- array(Data_standardized$txx,dim=c(965,1,1600))
-tnn_3dim <- array(Data_standardized$tnn,dim=c(965,1,1600))
-rx5_3dim <- array(Data_standardized$rx5,dim=c(965,1,1600))
-tx90p_3dim <- array(Data_standardized$tx90p,dim=c(965,1,1600))
-tn10p_3dim <- array(Data_standardized$tn10p,dim=c(965,1,1600))
+yield_3dim <- array(Data_xtrm_standardized$yield,dim=c(969,1,1600))
+dtr_3dim <- array(Data_xtrm_standardized$dtr,dim=c(969,1,1600))
+frs_3dim <- array(Data_xtrm_standardized$frs,dim=c(969,1,1600))
+txx_3dim <- array(Data_xtrm_standardized$txx,dim=c(969,1,1600))
+tnn_3dim <- array(Data_xtrm_standardized$tnn,dim=c(969,1,1600))
+rx5_3dim <- array(Data_xtrm_standardized$rx5,dim=c(969,1,1600))
+tx90p_3dim <- array(Data_xtrm_standardized$tx90p,dim=c(969,1,1600))
+tn10p_3dim <- array(Data_xtrm_standardized$tn10p,dim=c(969,1,1600))
 
 Model_data <- abind(yield_3dim,dtr_3dim,frs_3dim,txx_3dim,tnn_3dim,rx5_3dim,tx90p_3dim,tn10p_3dim
-                    ,Data_standardized$tasmax,Data_standardized$vpd,Data_standardized$pr,along=2)
+                    ,Data_xtrm_standardized$tasmax,Data_xtrm_standardized$vpd,Data_xtrm_standardized$pr,along=2)
 colnames(Model_data) <- c("Yield", "dtr", "frs", "txx", "tnn", "rx5", "tx90p", "tn10p",
                           "tmax_Aug_Y1","tmax_Sep_Y1","tmax_Oct_Y1","tmax_Nov_Y1","tmax_Dec_Y1","tmax_Jan_Y2",
                           "tmax_Feb_Y2","tmax_Mar_Y2","tmax_Apr_Y2","tmax_May_Y2","tmax_Jun_Y2","tmax_Jul_Y2",
@@ -71,7 +71,7 @@ colnames(Model_data) <- c("Yield", "dtr", "frs", "txx", "tnn", "rx5", "tx90p", "
                           "pr_Aug_Y2","pr_Sep_Y2","pr_Oct_Y2","pr_Nov_Y2","pr_Dec_Y2")
 
 pix_num <- dim(Model_data)[1]
-Yield <- Data_standardized$yield
+Yield <- Data_xtrm_standardized$yield
 low_yield <- apply(Yield, MARGIN = 1, FUN=quantile, probs=threshold, na.rm=T)
 cy <- t(sapply(1:pix_num,function(x){ifelse(Yield[x,]<low_yield[x],0,1)})) # identical for standardised and non-standardised yield
 
@@ -140,7 +140,7 @@ for (i in 1:pix_num){
 
 
 
-#### Run the CrossValidation #####
+# #### Run the CrossValidation #####
 # tic()
 # model_cv_fitting <- list()
 # nbyears_final_training_data <- numeric()
@@ -173,16 +173,16 @@ for (i in 1:pix_num){
 #   print(paste(pixel, "out of", pix_num))
 # }#end for pixel
 # 
-# toc() #3.9h for Lasso
+# toc() #3.3h for Lasso
 # 
 # save(model_cv_fitting, file = paste0("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/cv_month_xtrm_",
-#                                    model_name,"_threshbadyield", str_pad(threshold*100, 3, pad = "0"),".RData"))
+#                                    model_name,"_threshbadyield", str_pad(threshold*100, 3, pad = "0"),"_V2020-03-20.RData"))
 
 
-# ##### Run the model with lambda1se and lambda min #####
+# # ##### Run the model with lambda1se and lambda min #####
 # 
 # load(file = paste0("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/cv_month_xtrm_",
-#                    model_name,"_threshbadyield", str_pad(threshold*100, 3, pad = "0"),".RData"))
+#                    model_name,"_threshbadyield", str_pad(threshold*100, 3, pad = "0"),"_V2020-03-20.RData"))
 # 
 # tic()
 # 
@@ -230,9 +230,9 @@ for (i in 1:pix_num){
 #   }#end for pixel
 # 
 #   save(lasso_model_lambdamin, file = paste0("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/Lasso_lambdamin_month_xtrm_",
-#                                             model_name,"_threshbadyield", str_pad(threshold*100, 3, pad = "0"),".RData"))
+#                                             model_name,"_threshbadyield", str_pad(threshold*100, 3, pad = "0"),"_V2020-03-20.RData"))
 #   save(lasso_model_lambda1se, file = paste0("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/Lasso_lambda1se_month_xtrm_",
-#                                             model_name,"_threshbadyield", str_pad(threshold*100, 3, pad = "0"),".RData"))
+#                                             model_name,"_threshbadyield", str_pad(threshold*100, 3, pad = "0"),"_V2020-03-20.RData"))
 # }
 # toc()
 # # 2min for Lasso
@@ -243,13 +243,13 @@ for (i in 1:pix_num){
 ##### Load the model #####
 
 # On the Drive you can find my data in:
-# Models/LASSO-Ridge regression/regression_results_Global_wo_interactions/Lasso_lambda1se_month_xtrm_Lasso_threshbadyield005.RData
-# Models/LASSO-Ridge regression/regression_results_Global_wo_interactions/Lasso_lambdamin_month_xtrm_Lasso_threshbadyield005.RData
+# Models/LASSO-Ridge regression/regression_results_Global_wo_interactions/Lasso_lambda1se_month_xtrm_Lasso_threshbadyield005_V2020-03-20.RData
+# Models/LASSO-Ridge regression/regression_results_Global_wo_interactions/Lasso_lambdamin_month_xtrm_Lasso_threshbadyield005_V2020-03-20.RData
 
 load(paste0("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/Lasso_lambda1se_month_xtrm_",
-            model_name,"_threshbadyield", str_pad(threshold*100, 3, pad = "0"),".RData"))
+            model_name,"_threshbadyield", str_pad(threshold*100, 3, pad = "0"),"_V2020-03-20.RData"))
 load(paste0("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/Lasso_lambdamin_month_xtrm_",
-            model_name,"_threshbadyield", str_pad(threshold*100, 3, pad = "0"),".RData"))
+            model_name,"_threshbadyield", str_pad(threshold*100, 3, pad = "0"),"_V2020-03-20.RData"))
 
 
 
@@ -370,7 +370,7 @@ coord_all <- cbind(long_all,lati_all)
 
 lapply(1:length(nh_files),function(x){nc_close(nh_data[[x]])})
 
-coord_subset <- cbind(Data_standardized$longitudes,Data_standardized$latitudes)
+coord_subset <- cbind(Data_xtrm_standardized$longitudes,Data_xtrm_standardized$latitudes)
 world <- map_data("world")
 
 # Plot specificity error ####
@@ -557,15 +557,12 @@ library(pbapply)
 #return the mean value, over all pixels, of the adjusted cutoff
 cutoff_simple_lasso <- adjust_cutoff(model_vector = Model_chosen,x1_train_list = x1_train_list_simple_lasso, y1_train_list = y1_train_list_simple_lasso,
                                      work_pix = work_pix, cost_fp = cost_fp_simple_lasso, cost_fn= cost_fn_simple_lasso)
-# segreg_th_adj_1se <- cutoff_simple_lasso # replace the default threshold = 0.5, by the calculated optimal cutoff
-# segreg_th_adj_min <- cutoff_simple_lasso # replace the default threshold = 0.5, by the calculated optimal cutoff
-
-segreg_th_adj_1se <- 0.6612744
-segreg_th_adj_min <- 0.5986209
+segreg_th_adj_1se <- 0.6648434
+segreg_th_adj_min <- 0.5995192
 
 ##### Model performance assessment #####
 
-segreg_th <- segreg_th_adj_1se
+segreg_th <- segreg_th_adj_min
 
 
 pix_model_failed <- numeric(length = pix_num)
@@ -655,7 +652,7 @@ coord_all <- cbind(long_all,lati_all)
 
 lapply(1:length(nh_files),function(x){nc_close(nh_data[[x]])})
 
-coord_subset <- cbind(Data_standardized$longitudes,Data_standardized$latitudes)
+coord_subset <- cbind(Data_xtrm_standardized$longitudes,Data_xtrm_standardized$latitudes)
 world <- map_data("world")
 
 # Plot specificity error ####
@@ -836,7 +833,7 @@ count_seas_and_var <- function(coefff){
 }
 
 nb_of_seas <- numeric()
-for (pix in 1:965) {
+for (pix in 1:969) {
   nb_of_seas[pix] <- count_seas_and_var(coeff[[pix]])
 }
 
