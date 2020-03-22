@@ -130,89 +130,90 @@ for (i in 1:pix_num){
 
 
 
-# Run model ####
-################
-
-
-
-#without paralellizing
-tic()
-model_cv_fitting <- list()
-for (pixel in 1:dim(Model_data_stand)[1]) {
-# for (pixel in 1:5) {
-  model_cv_fitting[[pixel]] <- cv.glmnet(x = as.matrix(x1_train_list[[pixel]]),
-                                         y = as.matrix(y1_train_list[[pixel]]),
-                                         family = "binomial", alpha = no_model, nfolds = 10)
-  print(paste(pixel, "out of", dim(Model_data_stand)[1]))
-}#end for pixel
-
-toc()
-
-#2.25h for Lasso
-save(model_cv_fitting, file = paste("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/",
-                                    model_name,"_Thresholdbadyield", str_pad(threshold*100, 3, pad = "0"),"_V2020-03-20.RData", sep = ""))
-
-
-
-
-
-
-# Load the fitted model ####
-############################
-
-load(file = paste("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/",
-                                    model_name,"_Thresholdbadyield", str_pad(threshold*100, 3, pad = "0"),"_V2020-03-20.RData", sep = ""))
-
-
-# Keep the model just for lambda.min and lambda.1se ####
-########################################################
-if (model_name == "Ridge"){
-  ridge_model_lambdamin <- list()
-  ridge_model_lambda1se <- list()
-  
-  for (pixel in 1:pix_num) {
-    ridge_model_lambdamin[[pixel]] <- glmnet(x = as.matrix(x1_train_list[[pixel]]),
-                                             y = as.matrix(y1_train_list[[pixel]]),
-                                             family = "binomial", alpha = no_model,
-                                             lambda = model_cv_fitting[[pixel]]$lambda.min)
-    
-    ridge_model_lambda1se[[pixel]] <- glmnet(x = as.matrix(x1_train_list[[pixel]]),
-                                             y = as.matrix(y1_train_list[[pixel]]),
-                                             family = "binomial", alpha = no_model,
-                                             lambda = model_cv_fitting[[pixel]]$lambda.1se)
-  }#end for pixel
-  
-  
-  save(ridge_model_lambdamin, file = paste("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/",
-                                           model_name,"_lambdamin_threshbadyield", str_pad(threshold*100, 3, pad = "0"),"_V2020-03-20.RData", sep = ""))
-  save(ridge_model_lambda1se, file = paste("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/",
-                                           model_name,"_lambda1se_threshbadyield", str_pad(threshold*100, 3, pad = "0"),"_V2020-03-20.RData", sep = ""))
-  
-}
-
-if (model_name == "Lasso"){
-  lasso_model_lambdamin <- list()
-  lasso_model_lambda1se <- list()
-  
-  for (pixel in 1:pix_num) {
-    lasso_model_lambdamin[[pixel]] <- glmnet(x = as.matrix(x1_train_list[[pixel]]),
-                                             y = as.matrix(y1_train_list[[pixel]]),
-                                             family = "binomial", alpha = no_model,
-                                             lambda = model_cv_fitting[[pixel]]$lambda.min)
-    
-    lasso_model_lambda1se[[pixel]] <- glmnet(x = as.matrix(x1_train_list[[pixel]]),
-                                             y = as.matrix(y1_train_list[[pixel]]),
-                                             family = "binomial", alpha = no_model,
-                                             lambda = model_cv_fitting[[pixel]]$lambda.1se)
-  }#end for pixel
-  
-  save(lasso_model_lambdamin, file = paste("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/",
-                                           model_name,"_lambdamin_threshbadyield", str_pad(threshold*100, 3, pad = "0"),"_V2020-03-20.RData", sep = ""))
-  save(lasso_model_lambda1se, file = paste("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/",
-                                           model_name,"_lambda1se_threshbadyield", str_pad(threshold*100, 3, pad = "0"),"_V2020-03-20.RData", sep = ""))
-  
-}
-
+# # Run model ####
+# ################
+# 
+# 
+# 
+# #without paralellizing
+# tic()
+# model_cv_fitting <- list()
+# for (pixel in 1:dim(Model_data_stand)[1]) {
+# # for (pixel in 1:5) {
+#   model_cv_fitting[[pixel]] <- cv.glmnet(x = as.matrix(x1_train_list[[pixel]]),
+#                                          y = as.matrix(y1_train_list[[pixel]]),
+#                                          family = "binomial", alpha = no_model, nfolds = 10)
+#   print(paste(pixel, "out of", dim(Model_data_stand)[1]))
+# }#end for pixel
+# 
+# toc()
+# 
+# #2.25h for Lasso
+# save(model_cv_fitting, file = paste("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/",
+#                                     model_name,"_Thresholdbadyield", str_pad(threshold*100, 3, pad = "0"),"_V2020-03-20.RData", sep = ""))
+# 
+# 
+# 
+# 
+# 
+# 
+# # Load the fitted model ####
+# ############################
+# 
+# load(file = paste("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/",
+#                                     model_name,"_Thresholdbadyield", str_pad(threshold*100, 3, pad = "0"),"_V2020-03-20.RData", sep = ""))
+# 
+# 
+# # Keep the model just for lambda.min and lambda.1se ####
+# ########################################################
+# tic()
+# if (model_name == "Ridge"){
+#   ridge_model_lambdamin <- list()
+#   ridge_model_lambda1se <- list()
+#   
+#   for (pixel in 1:pix_num) {
+#     ridge_model_lambdamin[[pixel]] <- glmnet(x = as.matrix(x1_train_list[[pixel]]),
+#                                              y = as.matrix(y1_train_list[[pixel]]),
+#                                              family = "binomial", alpha = no_model,
+#                                              lambda = model_cv_fitting[[pixel]]$lambda.min)
+#     
+#     ridge_model_lambda1se[[pixel]] <- glmnet(x = as.matrix(x1_train_list[[pixel]]),
+#                                              y = as.matrix(y1_train_list[[pixel]]),
+#                                              family = "binomial", alpha = no_model,
+#                                              lambda = model_cv_fitting[[pixel]]$lambda.1se)
+#   }#end for pixel
+#   
+#   
+#   save(ridge_model_lambdamin, file = paste("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/",
+#                                            model_name,"_lambdamin_threshbadyield", str_pad(threshold*100, 3, pad = "0"),"_V2020-03-20.RData", sep = ""))
+#   save(ridge_model_lambda1se, file = paste("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/",
+#                                            model_name,"_lambda1se_threshbadyield", str_pad(threshold*100, 3, pad = "0"),"_V2020-03-20.RData", sep = ""))
+#   
+# }
+# 
+# if (model_name == "Lasso"){
+#   lasso_model_lambdamin <- list()
+#   lasso_model_lambda1se <- list()
+#   
+#   for (pixel in 1:pix_num) {
+#     lasso_model_lambdamin[[pixel]] <- glmnet(x = as.matrix(x1_train_list[[pixel]]),
+#                                              y = as.matrix(y1_train_list[[pixel]]),
+#                                              family = "binomial", alpha = no_model,
+#                                              lambda = model_cv_fitting[[pixel]]$lambda.min)
+#     
+#     lasso_model_lambda1se[[pixel]] <- glmnet(x = as.matrix(x1_train_list[[pixel]]),
+#                                              y = as.matrix(y1_train_list[[pixel]]),
+#                                              family = "binomial", alpha = no_model,
+#                                              lambda = model_cv_fitting[[pixel]]$lambda.1se)
+#   }#end for pixel
+#   
+#   save(lasso_model_lambdamin, file = paste("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/",
+#                                            model_name,"_lambdamin_threshbadyield", str_pad(threshold*100, 3, pad = "0"),"_V2020-03-20.RData", sep = ""))
+#   save(lasso_model_lambda1se, file = paste("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/",
+#                                            model_name,"_lambda1se_threshbadyield", str_pad(threshold*100, 3, pad = "0"),"_V2020-03-20.RData", sep = ""))
+#   
+# }
+# toc() #2min
 
 # Load the fitted model for one lambda ####
 ###########################################
@@ -244,6 +245,27 @@ mypred <- lapply(1:test_length, function(x){predict(MODEL_chosen[[x]],
 #which segregation threshold for the model?
 segreg_th <- 0.595
 
+# Adjust cutoff level
+# source("./Code/cutoff_adj_glmnet_lambda1se.R")
+source("./Code/Simple_Lasso_Ridge_ElasticNet/cutoff_adj_glmnet_lambda1se.R")
+y1_train_list_simple_lasso <- y1_train_list
+x1_train_list_simple_lasso <- x1_train_list
+cost_fp_simple_lasso <- 100 # Misses: this should be associated with a higher cost, as it is more detrimental
+cost_fn_simple_lasso <- 100 # False alarms
+
+
+
+library(pbapply)
+cutoff_simple_lasso <- adjust_cutoff(model_vector=MODEL_chosen, x1_train_list = x1_train_list_simple_lasso, y1_train_list = y1_train_list_simple_lasso,
+                                     work_pix = pix_in, cost_fp = cost_fp_simple_lasso, cost_fn= cost_fn_simple_lasso)
+segreg_th <- cutoff_simple_lasso # replace the default threshold = 0.5, by the calculated optimal cutoff
+
+#lambda min
+segreg_th_adj <- 0.5953918
+#lambda 1se
+segreg_th_adj <- 0.666
+
+
 fitted.results_model <- lapply(1:test_length, function(x){ifelse(mypred[[x]] > segreg_th,1,0)})
 
 mis_clas_err <- sapply(1:test_length, function(x){misClassError(actuals = as.matrix(y1_test_list[[x]]),
@@ -253,9 +275,7 @@ mis_clas_err <- sapply(1:test_length, function(x){misClassError(actuals = as.mat
 con_tab <-  lapply(1:test_length, function(x){InformationValue::confusionMatrix(as.matrix(y1_test_list[[x]]),
                                                                                 fitted.results_model[[x]],
                                                                                 threshold = segreg_th)})
-# sensi <- sapply(1:test_length, function(x){InformationValue::sensitivity(as.matrix(y1_test_list[[x]]),
-#                                                                          fitted.results_model[[x]],
-#                                                                          threshold = segreg_th)})
+
 speci <- sapply(1:test_length, function(x){InformationValue::specificity(as.matrix(y1_test_list[[x]]),
                                                                          fitted.results_model[[x]],
                                                                          threshold = segreg_th)})
