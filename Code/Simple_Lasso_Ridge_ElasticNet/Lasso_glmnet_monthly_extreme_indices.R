@@ -557,6 +557,7 @@ library(pbapply)
 #return the mean value, over all pixels, of the adjusted cutoff
 cutoff_simple_lasso <- adjust_cutoff(model_vector = Model_chosen,x1_train_list = x1_train_list_simple_lasso, y1_train_list = y1_train_list_simple_lasso,
                                      work_pix = work_pix, cost_fp = cost_fp_simple_lasso, cost_fn= cost_fn_simple_lasso)
+#with 969 pixels, _V2020-03-20
 segreg_th_adj_1se <- 0.6648434
 segreg_th_adj_min <- 0.5995192
 
