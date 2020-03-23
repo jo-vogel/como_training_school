@@ -160,9 +160,9 @@ load(paste0("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject
 
 ##### Adjust cutoff level #####
 
-Model_chosen <- lasso_model_lambda1se
-lambda_val <- lambda_VALS[2]
-lambda_name <- lambda_NAMES[2]
+Model_chosen <- lasso_model_lambdamin
+lambda_val <- lambda_VALS[1]
+lambda_name <- lambda_NAMES[1]
 
 
 #with 969 pixels, _V2020-03-20
@@ -172,7 +172,7 @@ segreg_th_adj_min <- 0.5995192
 
 ##### Model performance assessment #####
 
-segreg_th <- segreg_th_adj_1se
+segreg_th <- segreg_th_adj_min
 
 
 pix_model_failed <- numeric(length = pix_num)
@@ -485,6 +485,60 @@ ggplot(data = DF_sub, aes(x=DF_sub$lon, y=DF_sub$lat)) +
   labs(fill="Diff in CSI",
        title = "Difference CSI with xtrm - w/o xtrm",
        subtitle = paste("Adjusted cut-off", sep = ""))+
+  theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
+        legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
+  X11(width = 20, height = 7)
+hist(csi_sub, main="csi with xtrms - w/o xtrms (lambdamin)")
+
+mean_yield <- apply(X = Data_xtrm_non_standardized$yield, MARGIN = 1, FUN = mean, na.rm=T)
+plot(mean_yield, csi_sub, ylab="csi with xtrms - w/o xtrms (lambdamin)")
+
+
+
+
+
+# Plot nb of different meteo variables ####
+
+nb_meteo <- numeric()
+source("./Code/get_first_coeff_function.R")
+
+for (pix in 1:length(coeff)) {
+  if((length(which(coeff[[pix]]!=0))-1)<1){
+    nb_meteo[pix] <- 0
+  } else {
+    coeff_kept <- get_firstcoeffs(coeff = coeff[[pix]],
+                                  nb_of_coeff = (length(which(coeff[[pix]]!=0))-1))
+    nb_meteo[pix] <- length(unique(coeff_kept[,1]))
+    for (extr in c("dtr", "frs", "txx", "tnn", "rx5", "tx90p", "tn10p")) {
+      if (extr %in% unique(get_firstcoeffs(coeff = coeff[[pix]],
+                                           nb_of_coeff = length(coeff_kept[,1]))[,1])){
+        nb_meteo[pix] <- nb_meteo[pix] - 1
+        
+        }#end fi
+      }#end for xtrm
+      
+  }#end ifelse
+}#end for pix
+
+DF_nbmeteo <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], nb_meteo = nb_meteo)
+DF_nbmeteo$nb_meteo <- as.factor(DF_nbmeteo$nb_meteo)
+
+ggplot(data = DF_nbmeteo, aes(x=lon, y=lat)) +
+  geom_polygon(data = world, aes(long, lat, group=group),
+               fill="white", color="black", size=0.3) +
+  geom_tile(aes(fill=nb_meteo)) +
+  scale_fill_manual(values = c("0"="#fbb4b9", "1"="#f768a1", "2"="#c51b8a", "3"="#7a0177")) +
+  theme(panel.ontop = F, panel.grid = element_blank(),
+        panel.border = element_rect(colour = "black", fill = NA),
+        axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
+  ylab("Lat (°N)") +
+  xlab("Lon (°E)") +
+  coord_fixed(xlim = c(-120, 135),
+              ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
+              ratio = 1.3)+
+  labs(fill="Nb of meteo var.",
+       #title = paste("Number of variables kept, simple",model_name,"regression, "),
+       subtitle = paste("Monthly meteo var + extreme indices, ",lambda_val, sep = ""))+
   theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
         legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
   X11(width = 20, height = 7)
