@@ -23,7 +23,7 @@ stopifnot(model_name %in% c("Ridge", "Lasso"));if(model_name=="Lasso"){no_model 
 
 #which lambda?
 lambda_VALS <- c("lambda.min", "lambda.1se")
-lambda_val <- lambda_VALS[2]
+lambda_val <- lambda_VALS[1]
 
 #threshold for bad yields in c(0.025,0.05,0.1)
 threshold <- 0.05
@@ -281,7 +281,7 @@ save(LAMBDAS,
 ##### Model performance assessment #####
 
 
-Model_chosen <- lasso_model_lambdamin
+Model_chosen <- lasso_model_lambda1se
 
 pix_model_failed <- numeric(length = pix_num)
 coeff  <-list()
@@ -534,8 +534,8 @@ dev.off()
 
 ##### Adjust cutoff level #####
 
-Model_chosen <- lasso_model_lambda1se
-lambda_val <- lambda_VALS[2]
+Model_chosen <- lasso_model_lambdamin
+lambda_val <- lambda_VALS[1]
 
 # Model_chosen <- lasso_model_lambdamin
 # lambda_val <- lambda_VALS[1]
