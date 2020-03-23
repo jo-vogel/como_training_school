@@ -229,9 +229,11 @@ load(file = paste("C:/Users/admin/Documents/Damocles_training_school_Como/GroupP
 # Model performance assessment ####
 ###################################
 
-MODEL_chosen <- lasso_model_lambdamin
+MODEL_chosen <- lasso_model_lambda1se
 lambda_VALS <- c("lambda.min", "lambda.1se")
-lambda_val <- lambda_VALS[1]
+lambda_NAMES<- c("lambdamin", "lambda1se")
+lambda_val <- lambda_VALS[2]
+lambda_name <- lambda_NAMES[2]
 
 test_length <- length(MODEL_chosen)
 
@@ -242,8 +244,7 @@ coefs <- lapply(1:test_length, function(x){coef(MODEL_chosen[[x]])})
 mypred <- lapply(1:test_length, function(x){predict(MODEL_chosen[[x]],
                                                     as.matrix(x1_test_list[[x]]),type="response")})
 
-#which segregation threshold for the model?
-segreg_th <- 0.595
+
 
 # Adjust cutoff level
 # source("./Code/cutoff_adj_glmnet_lambda1se.R")
@@ -263,7 +264,7 @@ segreg_th <- cutoff_simple_lasso # replace the default threshold = 0.5, by the c
 #lambda min
 segreg_th_adj <- 0.5953918
 #lambda 1se
-segreg_th_adj <- 0.666
+segreg_th_adj <- 0.6661376
 
 
 fitted.results_model <- lapply(1:test_length, function(x){ifelse(mypred[[x]] > segreg_th,1,0)})
@@ -292,7 +293,7 @@ for(pix in 1:length(coefs)){
 csi_wo_extremes <- csi
 
 save(csi_wo_extremes, file=paste0("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/csi_wo_xtrms_",
-                      lambda_val,"_V2020-03-20.RData"))
+                      lambda_name,"_V2020-03-20.RData"))
 
 # Plot miscla error ####
 
