@@ -229,11 +229,11 @@ load(file = paste("C:/Users/admin/Documents/Damocles_training_school_Como/GroupP
 # Model performance assessment ####
 ###################################
 
-MODEL_chosen <- lasso_model_lambda1se
+MODEL_chosen <- lasso_model_lambdamin
 lambda_VALS <- c("lambda.min", "lambda.1se")
 lambda_NAMES<- c("lambdamin", "lambda1se")
-lambda_val <- lambda_VALS[2]
-lambda_name <- lambda_NAMES[2]
+lambda_val <- lambda_VALS[1]
+lambda_name <- lambda_NAMES[1]
 
 test_length <- length(MODEL_chosen)
 
