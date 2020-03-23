@@ -34,12 +34,12 @@ get_firstcoeffs <- function(coeff, nb_of_coeff=1){
       coeff_name_date[ind,2] <- NA
     }
     
-    if(substr(coeff_names, start = 1, stop = 3)=="tx90p"){
+    if(substr(coeff_names, start = 1, stop = 5)=="tx90p"){
       coeff_name_date[ind,1] <- "tx90p"
       coeff_name_date[ind,2] <- NA
     }
     
-    if(substr(coeff_names, start = 1, stop = 3)=="tn10p"){
+    if(substr(coeff_names, start = 1, stop = 5)=="tn10p"){
       coeff_name_date[ind,1] <- "tn10p"
       coeff_name_date[ind,2] <- NA
     }
