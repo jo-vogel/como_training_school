@@ -28,7 +28,7 @@ stopifnot(model_name %in% c("Ridge", "Lasso"));if(model_name=="Lasso"){no_model 
 
 #which lambda?
 lambda_VALS <- c("lambda.min", "lambda.1se")
-lambda_val <- lambda_VALS[2]
+lambda_NAMES <- c("lambdamin", "lambda1se")
 
 #threshold for bad yields in c(0.025,0.05,0.1)
 threshold <- 0.05
@@ -53,17 +53,17 @@ load("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/Data/
 
 
 ##### Process data #####
-yield_3dim <- array(Data_standardized$yield,dim=c(965,1,1600))
-dtr_3dim <- array(Data_standardized$dtr,dim=c(965,1,1600))
-frs_3dim <- array(Data_standardized$frs,dim=c(965,1,1600))
-txx_3dim <- array(Data_standardized$txx,dim=c(965,1,1600))
-tnn_3dim <- array(Data_standardized$tnn,dim=c(965,1,1600))
-rx5_3dim <- array(Data_standardized$rx5,dim=c(965,1,1600))
-tx90p_3dim <- array(Data_standardized$tx90p,dim=c(965,1,1600))
-tn10p_3dim <- array(Data_standardized$tn10p,dim=c(965,1,1600))
+yield_3dim <- array(Data_xtrm_standardized$yield,dim=c(969,1,1600))
+dtr_3dim <- array(Data_xtrm_standardized$dtr,dim=c(969,1,1600))
+frs_3dim <- array(Data_xtrm_standardized$frs,dim=c(969,1,1600))
+txx_3dim <- array(Data_xtrm_standardized$txx,dim=c(969,1,1600))
+tnn_3dim <- array(Data_xtrm_standardized$tnn,dim=c(969,1,1600))
+rx5_3dim <- array(Data_xtrm_standardized$rx5,dim=c(969,1,1600))
+tx90p_3dim <- array(Data_xtrm_standardized$tx90p,dim=c(969,1,1600))
+tn10p_3dim <- array(Data_xtrm_standardized$tn10p,dim=c(969,1,1600))
 
 Model_data <- abind(yield_3dim,dtr_3dim,frs_3dim,txx_3dim,tnn_3dim,rx5_3dim,tx90p_3dim,tn10p_3dim
-                    ,Data_standardized$tasmax,Data_standardized$vpd,Data_standardized$pr,along=2)
+                    ,Data_xtrm_standardized$tasmax,Data_xtrm_standardized$vpd,Data_xtrm_standardized$pr,along=2)
 colnames(Model_data) <- c("Yield", "dtr", "frs", "txx", "tnn", "rx5", "tx90p", "tn10p",
                           "tmax_Aug_Y1","tmax_Sep_Y1","tmax_Oct_Y1","tmax_Nov_Y1","tmax_Dec_Y1","tmax_Jan_Y2",
                           "tmax_Feb_Y2","tmax_Mar_Y2","tmax_Apr_Y2","tmax_May_Y2","tmax_Jun_Y2","tmax_Jul_Y2",
@@ -76,7 +76,7 @@ colnames(Model_data) <- c("Yield", "dtr", "frs", "txx", "tnn", "rx5", "tx90p", "
                           "pr_Aug_Y2","pr_Sep_Y2","pr_Oct_Y2","pr_Nov_Y2","pr_Dec_Y2")
 
 pix_num <- dim(Model_data)[1]
-Yield <- Data_standardized$yield
+Yield <- Data_xtrm_standardized$yield
 low_yield <- apply(Yield, MARGIN = 1, FUN=quantile, probs=threshold, na.rm=T)
 cy <- t(sapply(1:pix_num,function(x){ifelse(Yield[x,]<low_yield[x],0,1)})) # identical for standardised and non-standardised yield
 
@@ -162,32 +162,13 @@ load(paste0("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject
 
 Model_chosen <- lasso_model_lambda1se
 lambda_val <- lambda_VALS[2]
-
-# Model_chosen <- lasso_model_lambdamin
-# lambda_val <- lambda_VALS[1]
-
-source("./Code/Simple_Lasso_Ridge_ElasticNet/cutoff_adj_glmnet_lambda1se.R")
-y1_train_list_simple_lasso <- y1_train_list
-x1_train_list_simple_lasso <- x1_train_list
-cost_fp_simple_lasso <- 100 # Misses: this should be associated with a higher cost, as it is more detrimental
-cost_fn_simple_lasso <- 100 # False alarms
+lambda_name <- lambda_NAMES[2]
 
 
-work_pix_tmp <- numeric()
-for (pix in 1:pix_num) {
-  if(is.character(Model_chosen[[pix]])){work_pix_tmp[pix]<-0} else {work_pix_tmp[pix]<-1}
-}#end for pix
+#with 969 pixels, _V2020-03-20
+segreg_th_adj_1se <- 0.6648434
+segreg_th_adj_min <- 0.5995192
 
-work_pix <- which(work_pix_tmp==1)
-library(pbapply)
-#return the mean value, over all pixels, of the adjusted cutoff
-cutoff_simple_lasso <- adjust_cutoff(model_vector = Model_chosen,x1_train_list = x1_train_list_simple_lasso, y1_train_list = y1_train_list_simple_lasso,
-                                     work_pix = work_pix, cost_fp = cost_fp_simple_lasso, cost_fn= cost_fn_simple_lasso)
-# segreg_th_adj_1se <- cutoff_simple_lasso # replace the default threshold = 0.5, by the calculated optimal cutoff
-# segreg_th_adj_min <- cutoff_simple_lasso # replace the default threshold = 0.5, by the calculated optimal cutoff
-
-segreg_th_adj_1se <- 0.6612744
-segreg_th_adj_min <- 0.5986209
 
 ##### Model performance assessment #####
 
@@ -281,7 +262,7 @@ coord_all <- cbind(long_all,lati_all)
 
 lapply(1:length(nh_files),function(x){nc_close(nh_data[[x]])})
 
-coord_subset <- cbind(Data_standardized$longitudes,Data_standardized$latitudes)
+coord_subset <- cbind(Data_xtrm_standardized$longitudes,Data_xtrm_standardized$latitudes)
 world <- map_data("world")
 
 
@@ -390,7 +371,7 @@ ggplot(data = DF_numbextr, aes(x=lon, y=lat)) +
         legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
   X11(width = 20, height = 7)
 
-mean_yield <- apply(X=Data_non_standardized$yield, MARGIN = 1, FUN = mean, na.rm=T)
+mean_yield <- apply(X=Data_xtrm_non_standardized$yield, MARGIN = 1, FUN = mean, na.rm=T)
 
 pairs(cbind(mean_yield, csi, speci, nb_coeff_kept, nb_extr_kept), lower.panel = NULL)
 
@@ -434,7 +415,7 @@ count_seas_and_var <- function(coefff){
 }
 
 nb_of_seas <- numeric()
-for (pix in 1:965) {
+for (pix in 1:969) {
   nb_of_seas[pix] <- count_seas_and_var(coeff[[pix]])
 }
 
@@ -446,7 +427,7 @@ ggplot(data = DF_nbseason, aes(x=lon, y=lat)) +
                fill="white", color="black", size=0.3) +
   geom_tile(aes(fill=DF_nbseason$nb_season)) +
   scale_fill_manual(values = c("0"=viridis(6)[1], "1"=viridis(6)[3], "2"=viridis(6)[4],
-                               "3"=viridis(6)[5], "4"=viridis(6)[6], "No meteo var"="gray")) +
+                               "3"=viridis(6)[5], "4"=viridis(6)[6], "No meteo var"="pink")) +
   theme(panel.ontop = F, panel.grid = element_blank(),
         panel.border = element_rect(colour = "black", fill = NA),
         axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
@@ -469,17 +450,41 @@ ggplot(data = DF_nbseason, aes(x=lon, y=lat)) +
 coefs_seas <- sapply(1:length(coeff), function(x) names(numLevels_list[[x]])[coeff[[x]][-1]!=0])
 coefs_seas_vec <- unlist(coefs_seas)
 
-#png(filename="C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/Images/Monthly_and_extreme_indices/barplot_variables_lambda1se.png",
-    res=2000,units="cm",width=15,height=20)
+png(filename="C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/Images/Final_plots/lambda1se/barplot_variables_lambda1se.png",
+   res=2000,units="cm",width=15,height=20)
 
 par(mar=c(5,7,1,1))
 barplot(sort(table(coefs_seas_vec)),horiz=T,las=1,col="ForestGreen",
         xlab="Number of pixels, where variable is included in the model\nLasso glmnet lambda 1se",cex.names=0.6)
-#dev.off()
+dev.off()
 
 
 # Difference CSI w/o extreme indices ####
 csi_extremes <- csi
 load(file=paste0("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/csi_wo_xtrms_",
-                 lambda_val,"_V2020-03-20.RData"))
+                 lambda_name,"_V2020-03-20.RData"))
+world <- map_data("world")
 
+csi_sub <- csi_extremes - csi_wo_extremes
+
+DF_sub <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], sub_score = csi_sub)
+
+ggplot(data = DF_sub, aes(x=DF_sub$lon, y=DF_sub$lat)) +
+  geom_polygon(data = world, aes(long, lat, group=group),
+               fill="white", color="black", size=0.3) +
+  geom_tile(aes(fill=DF_sub$sub_score)) +
+  scale_fill_gradient2(low = "blue", high = "red") +
+  theme(panel.ontop = F, panel.grid = element_blank(),
+        panel.border = element_rect(colour = "black", fill = NA),
+        axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
+  ylab("Lat (°N)") +
+  xlab("Lon (°E)") +
+  coord_fixed(xlim = c(-120, 135),
+              ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
+              ratio = 1.3)+
+  labs(fill="Diff in CSI",
+       title = "Difference CSI with xtrm - w/o xtrm",
+       subtitle = paste("Adjusted cut-off", sep = ""))+
+  theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
+        legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
+  X11(width = 20, height = 7)
