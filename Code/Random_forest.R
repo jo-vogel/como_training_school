@@ -115,10 +115,10 @@ sensi[work_pix] <- sapply(seq_along(work_pix), function(x) {InformationValue::se
 mean(sensi)
 
 # Calculate CSI 
-csi <- rep(NA,965)
-csi[work_pix] <- sapply(seq_along(work_pix), function(x){tn[x]/(tn[x]+fn[x]+fp[x])})
-mean(csi)
-plot(csi)
+csi_rf <- rep(NA,965)
+csi_rf[work_pix] <- sapply(seq_along(work_pix), function(x){tn[x]/(tn[x]+fn[x]+fp[x])})
+mean(csi_rf)
+plot(csi_rf)
 
 
 
@@ -130,9 +130,6 @@ DF_speci <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], specificity
 ggplot(data = DF_speci, aes(x=lon, y=lat)) +
   geom_polygon(data = world, aes(long, lat, group=group),
                fill="white", color="black", size=0.3) +
-  # geom_point(shape=15, aes(color=speci),size=0.7) +
-  # scale_color_gradient2(limits=c(min(speci,na.rm=T),max(speci,na.rm=T)),midpoint=min(speci,na.rm=T)+(max(speci,na.rm=T)-min(speci,na.rm=T))/2,
-  #                       low = "black", mid = "red3", high = "yellow") +
   geom_tile(aes(fill=speci)) +
   scale_fill_viridis(na.value="grey50")+
   theme(panel.ontop = F, panel.grid = element_blank(),
@@ -153,4 +150,27 @@ ggplot(data = DF_speci, aes(x=lon, y=lat)) +
 ggsave(file="D:/user/vogelj/Group_project/Output/Plots/Specificity_rand_forest_map.png")
 
 
+DF_csi <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], Critical_success_index = csi_rf)
+
+ggplot(data = DF_csi, aes(x=lon, y=lat)) +
+  geom_polygon(data = world, aes(long, lat, group=group),
+               fill="white", color="black", size=0.3) +
+  geom_tile(aes(fill=csi_rf)) +
+  scale_fill_viridis(na.value="grey50")+
+  theme(panel.ontop = F, panel.grid = element_blank(),
+        panel.border = element_rect(colour = "black", fill = NA),
+        axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
+  ylab("Lat (°N)") +
+  xlab("Lon (°E)") +
+  coord_fixed(xlim = c(-120, 135),
+              ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
+              ratio = 1.3)+
+  labs(color="CSI",
+       title = paste("Critical succes index, simple",model_name,"regression"),
+       subtitle = paste("Bad yield threshold=", threshold,
+                        ", segregation threshold=", segreg_th, sep = ""))+
+  theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
+        legend.title = element_text(size = 15), legend.text = element_text(size = 14))  +
+  X11(width = 20, height = 7)
+ggsave(file="D:/user/vogelj/Group_project/Output/Plots/CSI_rand_forest_map.png")
 

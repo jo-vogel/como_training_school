@@ -465,8 +465,8 @@ message('Indicate model data set to be loaded here')
 # model_name <- cv_fit_monthly_without_int_incl_ext # monthly model including extreme indices without interactions
 model_names <- c("cv_fit_monthly_no_int","cv_fit_monthly_without_int_incl_ext")
 
-model_name <- "cv_fit_monthly_without_int_incl_ext"
-# for (model_name in model_names){
+# model_name <- "cv_fit_monthly_without_int_incl_ext"
+for (model_name in model_names){
 
 # On the Drive you can find my data in:
 # with interactions
@@ -569,8 +569,7 @@ csi_adj_lwi <- rep(NA,965)
 csi_adj_lwi[work_pix_lwi] <- sapply(seq_along(work_pix_lwi), function(x){tn_adj_lwi[x]/(tn_adj_lwi[x]+fp_adj_lwi[x]+fn_adj_lwi[x])})
 
 
-if (model_name == "cv_fit_monthly_no_int") csi_adj_lwi_monthly_no_int <- csi_adj_lwi
-if (model_name == "cv_fit_monthly_without_int_incl_ext") csi_adj_lwi_monthly_without_int_incl_ext <- csi_adj_lwi
+
 
 
 #If without interact
@@ -606,6 +605,19 @@ for (pix in 1:pix_num) {
   }
 }
 
+
+if (model_name == "cv_fit_monthly_no_int") {
+  csi_adj_lwi_monthly_no_int <- csi_adj_lwi
+  coefs_lwi_monthly_no_int <- coefs_lwi
+  coeff_kep_lwi_monthly_no_int <- coeff_kep_lwi
+}
+if (model_name == "cv_fit_monthly_without_int_incl_ext"){
+  csi_adj_lwi_monthly_without_int_incl_ext <- csi_adj_lwi
+  coefs_lwi_monthly_without_int_incl_ext <- coefs_lwi
+  coeff_kep_lwi_monthly_without_int_incl_ext <- coeff_kep_lwi
+}
+
+
 # print average performance
 mean(csi_lwi,na.rm=T);mean(csi_adj_lwi,na.rm=T)
 mean(speci_lwi,na.rm=T);mean(speci_adj_lwi,na.rm=T)
@@ -626,7 +638,7 @@ source("./Code/Plots_performance_and_variables.r")
 # source("./Code/Problematic_pixels.r")
 
 
-# }
+}
 
 
 # Create comparison maps ####
@@ -700,10 +712,16 @@ score <- "CSI"
 # score_1 <- csi_simplelasso_adj
 # model_2 <- "Lasso_wo_int_glinternet_adj"
 # score_2 <- csi_lasso_wo_int_glmint_adj
-model_1 <- model_names[2]
-score_1 <- csi_adj_lwi_monthly_without_int_incl_ext
-model_2 <- model_names[1]
-score_2 <- csi_adj_lwi_monthly_no_int
+# model_1 <- model_names[2]
+# score_1 <- csi_adj_lwi_monthly_without_int_incl_ext
+# model_2 <- model_names[1]
+# score_2 <- csi_adj_lwi_monthly_no_int
+
+# source("./Code/Random_forest.R")
+model_1 <- "Lasso_glmnet"
+score_1 <- csi_simplelasso_adj
+model_2 <- "Random_forest"
+score_2 <- csi_rf # taken from Random_forest.r
 
 # pairs(cbind(csi_simplelasso, csi_simplelasso_adj, csi_lasso_wo_int_glmint, csi_lasso_wo_int_glmint_adj))
 
@@ -769,3 +787,7 @@ plot(mean_yield, speci_elastic, xlab="Mean Yield", ylab="Specificity", main="Ela
 plot(mean_yield, speci_ridge, xlab="Mean Yield", ylab="Specificity", main="Ridge\nmonthly data")
 plot(mean_yield, speci_bestglm, xlab="Mean Yield", ylab="Specificity", main="Best GLM\nmonthly data")
 plot(mean_yield, speci_lwi, xlab="Mean Yield", ylab="Specificity", main="Lasso with interaction\nmonthly data")
+
+
+
+
