@@ -12,7 +12,7 @@ source('./Code/Lasso_interact_global_preparation_incl_ext_ind.R') # monthly data
 
 # model_rf_reg <- randomForest(x=x1_train_list[[1]],y=y1_train_list[[1]],importance = TRUE)
 # model_rf_reg
-model_rf <- randomForest(x=x1_train_list[[1]],y=as.factor(y1_train_list[[1]]),importance = TRUE)
+model_rf <- randomForest(x=x1_train_list[[1]],y=as.factor(y1_train_list[[1]]),importance = TRUE) # mtry = 5 in this case
 model_rf
 
 # Predicting on train set
@@ -61,7 +61,7 @@ plot(3:8,a)
 # all pixels ####
 #################
 
-model_rf <- pblapply(1:length(x1_train_list), function(x) randomForest(x=x1_train_list[[x]],y=as.factor(y1_train_list[[x]]),importance = TRUE))
+model_rf <- pblapply(1:length(x1_train_list), function(x) randomForest(x=x1_train_list[[x]],y=as.factor(y1_train_list[[x]]),importance = TRUE)) # mtry = 5 in this case
 
 # Predicting on train set
 pred_set <- pblapply (1:length(x1_train_list),function(x) matrix(unlist(x1_train_list[[x]]), nrow=dim(x1_train_list[[x]])[1], byrow=F))
@@ -86,16 +86,44 @@ plot(mean_acc_test)
 table(predValid[[1]],y1_test_list[[1]])
 
 
-
 # To check important variables for examplary pixel
 importance(model_rf[[100]])      
 varImpPlot(model_rf[[100]]) 
 
 
+# Using For loop to identify the right mtry for model
+mean_acc_test=c()
+speci <- c()
+model_mtry_all <- vector("list",length=5)
+predValid_all <- vector("list",length=5)
+
+# for (i in 3:8) {
+# for (i in 9:14) {  
+# for (i in 15:20) {  
+# for (i in 21:25) {
+for (i in 17) { # you get 2 warnings, because there are 2 pixel with only 16 predictors, which is lower than the number of trees mtrees
+# for (i in 26:30) {
+# for (i in 31:35) { # speci does not increase anymore
+  k <- i - 16
+  model_mtry <-  pblapply(1:length(x1_train_list), function(x) randomForest(x=x1_train_list[[x]],y=as.factor(y1_train_list[[x]]), mtry=i, importance = TRUE))
+  predValid <- pblapply (1:length(x1_train_list),function(x) predict(model_mtry[[x]], valid_set[[x]], type = "class"))
+  model_mtry_all[[k]] <- model_mtry
+  predValid_all[[k]] <- predValid
+  mean_acc_test[k] <- mean(sapply (1:length(x1_train_list),function(x) mean(predValid_all[[k]][[x]] == y1_test_list[[x]])))
+  plot(mean_acc_test)
+  speci[k] <- mean(sapply(1:length(x1_train_list), function(x){InformationValue::specificity(y1_test_list[[x]],(as.numeric(predValid_all[[k]][[x]])-1))}))
+}
+save.image(file="D:/user/vogelj/Group_project/Code/Workspaces/rf_21_25.RData")
+
+mean_acc_test
+speci
+plot(mean_acc_test)
+plot(speci)
+
 
 # Further performance assessments
 work_pix <- 1:965
-obs_pred <- lapply(seq_along(work_pix), function(x){cbind(y1_test_list[[x]],as.numeric(predValid[[x]])-1)})
+obs_pred <- lapply(seq_along(work_pix), function(x){cbind(y1_test_list[[x]],as.numeric(predValid_all[[6]][[x]])-1)})
 # the conversion of predValid from factor to numeric sets (0,1) to (1,2), therefore this correction by subtracting 1
 tp <- sapply(seq_along(work_pix), function(x){sum(rowSums(obs_pred[[x]])==2)}) # Correct rejections
 tn <- sapply(seq_along(work_pix), function(x){sum(rowSums(obs_pred[[x]])==0)}) # Hits
@@ -173,4 +201,5 @@ ggplot(data = DF_csi, aes(x=lon, y=lat)) +
         legend.title = element_text(size = 15), legend.text = element_text(size = 14))  +
   X11(width = 20, height = 7)
 ggsave(file="D:/user/vogelj/Group_project/Output/Plots/CSI_rand_forest_map.png")
+
 
