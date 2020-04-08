@@ -29,10 +29,13 @@ library(abind);library(stringr);library(tictoc);library(ggplot2);library(viridis
 
 ##### Load standardized Data #####
 
+# in the drive folder Data/Global Data
 #Pauline's Laptop
-load("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/Data/Global/monthlymeteovar_V2020-03-20.Rdata")
-load("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/Data/Global/monthlymeteovar_rescaled_V2020-03-20.Rdata")
-
+# load("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/Data/Global/monthlymeteovar_V2020-03-20.Rdata")
+# load("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/Data/Global/monthlymeteovar_rescaled_V2020-03-20.Rdata")
+# Johannes
+load("D:/user/vogelj/Group_project/Data/monthlymeteovar_V2020-03-20.Rdata")
+load("D:/user/vogelj/Group_project/Data/monthlymeteovar_rescaled_V2020-03-20.Rdata")
 
 
 ##### Process data #####
@@ -218,9 +221,16 @@ for (i in 1:pix_num){
 # Load the fitted model for one lambda ####
 ###########################################
 
-load(file = paste("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/",
+# in the drive folder Models/LASSO-Rigde regression/regression_output_Global_data
+# Pauline
+# load(file = paste("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/",
+#                   model_name,"_lambdamin_threshbadyield", str_pad(threshold*100, 3, pad = "0"),"_V2020-03-20.RData", sep = ""))
+# load(file = paste("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/",
+#                   model_name,"_lambda1se_threshbadyield", str_pad(threshold*100, 3, pad = "0"),"_V2020-03-20.RData", sep = ""))
+# Johannes
+load(file = paste("D:/user/vogelj/Group_project/Code/Workspaces/",
                   model_name,"_lambdamin_threshbadyield", str_pad(threshold*100, 3, pad = "0"),"_V2020-03-20.RData", sep = ""))
-load(file = paste("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/",
+load(file = paste("D:/user/vogelj/Group_project/Code/Workspaces/",
                   model_name,"_lambda1se_threshbadyield", str_pad(threshold*100, 3, pad = "0"),"_V2020-03-20.RData", sep = ""))
 
 
@@ -242,6 +252,8 @@ coefs <- lapply(1:test_length, function(x){coef(MODEL_chosen[[x]])})
 coeff_wo_extremes <- coefs
 
 #save(coeff_wo_extremes, file=paste0("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/coeff_wo_xtrms_",
+#                                  lambda_name,"_V2020-03-20.RData"))
+# save(coeff_wo_extremes, file=paste0("D:/user/vogelj/Group_project/Code/Workspaces/coeff_wo_xtrms_",
 #                                  lambda_name,"_V2020-03-20.RData"))
 
 mypred <- lapply(1:test_length, function(x){predict(MODEL_chosen[[x]],
@@ -297,7 +309,8 @@ csi_wo_extremes <- csi
 
 #save(csi_wo_extremes, file=paste0("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/csi_wo_xtrms_",
 #                      lambda_name,"_V2020-03-20.RData"))
-
+# save(csi_wo_extremes, file=paste0("D:/user/vogelj/Group_project/Code/Workspaces/csi_wo_xtrms_",
+#                      lambda_name,"_V2020-03-20.RData"))
 
 
 number_coeff_kept <- function(coeff_list){#give number of coeff !=0
@@ -317,6 +330,8 @@ for (pixel in 1:pix_num) {
 }#end pixel
 nb_coeff_kept_wo_extremes <- nb_coeff_kept
 #save(nb_coeff_kept_wo_extremes, file=paste0("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/nb_coeff_wo_xtrms_",
+#                                  lambda_name,"_V2020-03-20.RData"))
+# save(nb_coeff_kept_wo_extremes, file=paste0("D:/user/vogelj/Group_project/Code/Workspaces/nb_coeff_wo_xtrms_",
 #                                  lambda_name,"_V2020-03-20.RData"))
 
 # Plot miscla error ####

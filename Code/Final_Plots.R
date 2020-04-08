@@ -46,10 +46,13 @@ library(abind);library(stringr);library(tictoc);library(ggplot2);library(viridis
 
 ##### Load standardized Data #####
 
+# in the drive folder Data/Global Data
 #Pauline's Laptop
-load("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/Data/Global/extremeindices_and_monthlymeteovar_rescaled_V2020-03-20.Rdata")
-load("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/Data/Global/extremeindices_and_monthlymeteovar_V2020-03-20.Rdata")
-
+# load("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/Data/Global/extremeindices_and_monthlymeteovar_rescaled_V2020-03-20.Rdata")
+# load("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/Data/Global/extremeindices_and_monthlymeteovar_V2020-03-20.Rdata")
+# Johannes
+load("D:/user/vogelj/Group_project/Data/extremeindices_and_monthlymeteovar_rescaled_V2020-03-20.Rdata")
+load("D:/user/vogelj/Group_project/Data/extremeindices_and_monthlymeteovar_V2020-03-20.Rdata")
 
 
 ##### Process data #####
@@ -150,11 +153,15 @@ for (i in 1:pix_num){
 # Models/LASSO-Ridge regression/regression_results_Global_wo_interactions/Lasso_lambda1se_month_xtrm_Lasso_threshbadyield005.RData
 # Models/LASSO-Ridge regression/regression_results_Global_wo_interactions/Lasso_lambdamin_month_xtrm_Lasso_threshbadyield005.RData
 
-load(paste0("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/Lasso_lambda1se_month_xtrm_",
+# load(paste0("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/Lasso_lambda1se_month_xtrm_",
+            # model_name,"_threshbadyield", str_pad(threshold*100, 3, pad = "0"),"_V2020-03-20.RData"))
+# load(paste0("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/Lasso_lambdamin_month_xtrm_",
+            # model_name,"_threshbadyield", str_pad(threshold*100, 3, pad = "0"),"_V2020-03-20.RData"))
+# Johannes
+load(paste0("D:/user/vogelj/Group_project/Code/Workspaces/Lasso_lambda1se_month_xtrm_",
             model_name,"_threshbadyield", str_pad(threshold*100, 3, pad = "0"),"_V2020-03-20.RData"))
-load(paste0("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/Lasso_lambdamin_month_xtrm_",
+load(paste0("D:/user/vogelj/Group_project/Code/Workspaces/Lasso_lambdamin_month_xtrm_",
             model_name,"_threshbadyield", str_pad(threshold*100, 3, pad = "0"),"_V2020-03-20.RData"))
-
 
 
 
@@ -212,8 +219,10 @@ for (pixel in 1:pix_num) {
 }#end pixel
 
 
-load(file=paste0("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/coeff_wo_xtrms_",
-                 lambda_name,"_V2020-03-20.RData"))
+# load(file=paste0("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/coeff_wo_xtrms_",
+#                  lambda_name,"_V2020-03-20.RData")) # Pauline
+load(file=paste0("D:/user/vogelj/Group_project/Code/Workspaces/coeff_wo_xtrms_",
+                 lambda_name,"_V2020-03-20.RData")) # Johannes
 
 extreme_in_coeff <- function(coeff_list){ #function to check how many extreme indeices are kept as predictors
   extreme_indices <- c("dtr", "frs", "txx", "tnn", "rx5", "tx90p", "tn10p")
@@ -244,11 +253,15 @@ for (pixel in 1:pix_num) {
   }#end if else pb model
 }#end pixel
 
-load(file=paste0("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/nb_coeff_wo_xtrms_",
-                 lambda_name,"_V2020-03-20.RData"))
+# load(file=paste0("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/nb_coeff_wo_xtrms_",
+#                  lambda_name,"_V2020-03-20.RData")) # Pauline
+load(file=paste0("D:/user/vogelj/Group_project/Code/Workspaces/nb_coeff_wo_xtrms_",
+                 lambda_name,"_V2020-03-20.RData"))# Johannes
 
-load(file=paste0("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/csi_wo_xtrms_",
-                 lambda_name,"_V2020-03-20.RData"))
+# load(file=paste0("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/csi_wo_xtrms_",
+#                  lambda_name,"_V2020-03-20.RData")) # Pauline
+load(file=paste0("D:/user/vogelj/Group_project/Code/Workspaces/csi_wo_xtrms_",
+                 lambda_name,"_V2020-03-20.RData")) # Johannes
 mean_yield <- apply(Data_xtrm_non_standardized$yield,MARGIN = 1, FUN = mean, na.rm=T)
 
 
@@ -256,7 +269,8 @@ mean_yield <- apply(Data_xtrm_non_standardized$yield,MARGIN = 1, FUN = mean, na.
 
 ##### Plot results ######
 # load all coordinates of northern hemisphere
-path_to_NH_files <- "C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/Data/Global"
+# path_to_NH_files <- "C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/Data/Global" # Pauline
+path_to_NH_files <- "D:/user/vogelj/Data/Group project Como" # Johannes
 nh_files <- list.files(path=path_to_NH_files,pattern="*NH.nc") # all files from northern hemisphere
 nh_data <- lapply(1:length(nh_files),function(x){nc_open(paste0(path_to_NH_files,"/",nh_files[x]))})
 lat_all <- ncvar_get(nh_data[[1]],"lat")
@@ -363,8 +377,10 @@ hist(nb_coeff_kept, main = paste0("Nb of variables kept, ",lambda_val), xlab = "
 
 # Difference nb var kept w/o extreme indices ####
 nb_coeff_kept_extremes <- nb_coeff_kept
-load(file=paste0("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/nb_coeff_wo_xtrms_",
-                 lambda_name,"_V2020-03-20.RData"))
+# load(file=paste0("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/nb_coeff_wo_xtrms_",
+#                  lambda_name,"_V2020-03-20.RData")) # Pauline
+load(file=paste0("D:/user/vogelj/Group_project/Code/Workspaces/nb_coeff_wo_xtrms_",
+                 lambda_name,"_V2020-03-20.RData")) # Johannes
 world <- map_data("world")
 
 nbcoeff_sub <- nb_coeff_kept_extremes - nb_coeff_kept_wo_extremes
@@ -390,7 +406,7 @@ ggplot(data = DF_sub, aes(x=DF_sub$lon, y=DF_sub$lat)) +
   theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
         legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
   X11(width = 20, height = 7)
-hist(csi_sub, main="csi with xtrms - w/o xtrms (lambdamin)")
+
 
 mean_yield <- apply(X = Data_xtrm_non_standardized$yield, MARGIN = 1, FUN = mean, na.rm=T)
 plot(mean_yield, csi_sub, ylab="csi with xtrms - w/o xtrms (lambdamin)")
@@ -506,11 +522,15 @@ ggplot(data = DF_nbseason, aes(x=lon, y=lat)) +
 
 # Difference CSI w/o extreme indices ####
 csi_extremes <- csi
-load(file=paste0("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/csi_wo_xtrms_",
-                 lambda_name,"_V2020-03-20.RData"))
-world <- map_data("world")
-
 csi_sub <- csi_extremes - csi_wo_extremes
+
+
+# load(file=paste0("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/csi_wo_xtrms_",
+#                  lambda_name,"_V2020-03-20.RData")) # Pauline
+load(file=paste0("D:/user/vogelj/Group_project/Code/Workspaces/csi_wo_xtrms_",
+                 lambda_name,"_V2020-03-20.RData")) # Johannes
+
+world <- map_data("world")
 
 DF_sub <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], sub_score = csi_sub)
 
