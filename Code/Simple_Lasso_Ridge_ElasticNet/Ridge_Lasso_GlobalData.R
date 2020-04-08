@@ -229,17 +229,20 @@ load(file = paste("C:/Users/admin/Documents/Damocles_training_school_Como/GroupP
 # Model performance assessment ####
 ###################################
 
-MODEL_chosen <- lasso_model_lambdamin
+MODEL_chosen <- lasso_model_lambda1se
 lambda_VALS <- c("lambda.min", "lambda.1se")
 lambda_NAMES<- c("lambdamin", "lambda1se")
-lambda_val <- lambda_VALS[1]
-lambda_name <- lambda_NAMES[1]
+lambda_val <- lambda_VALS[2]
+lambda_name <- lambda_NAMES[2]
 
 test_length <- length(MODEL_chosen)
 
 coefs <- lapply(1:test_length, function(x){coef(MODEL_chosen[[x]])})
 
+coeff_wo_extremes <- coefs
 
+#save(coeff_wo_extremes, file=paste0("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/coeff_wo_xtrms_",
+#                                  lambda_name,"_V2020-03-20.RData"))
 
 mypred <- lapply(1:test_length, function(x){predict(MODEL_chosen[[x]],
                                                     as.matrix(x1_test_list[[x]]),type="response")})
@@ -292,8 +295,29 @@ for(pix in 1:length(coefs)){
 
 csi_wo_extremes <- csi
 
-save(csi_wo_extremes, file=paste0("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/csi_wo_xtrms_",
-                      lambda_name,"_V2020-03-20.RData"))
+#save(csi_wo_extremes, file=paste0("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/csi_wo_xtrms_",
+#                      lambda_name,"_V2020-03-20.RData"))
+
+
+
+number_coeff_kept <- function(coeff_list){#give number of coeff !=0
+  return(length(which(abs(coeff_list[-1,])>0)))
+}
+
+nb_coeff_kept <- numeric()
+
+for (pixel in 1:pix_num) {
+  if(is.character(MODEL_chosen[[pixel]])){
+    nb_coeff_kept[pixel] <- NA
+  } else {
+    
+    nb_coeff_kept[pixel] <- number_coeff_kept(coefs[[pixel]])
+    
+  }#end if else pb model
+}#end pixel
+nb_coeff_kept_wo_extremes <- nb_coeff_kept
+#save(nb_coeff_kept_wo_extremes, file=paste0("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/nb_coeff_wo_xtrms_",
+#                                  lambda_name,"_V2020-03-20.RData"))
 
 # Plot miscla error ####
 
