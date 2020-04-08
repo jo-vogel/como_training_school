@@ -160,9 +160,9 @@ load(paste0("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject
 
 ##### Adjust cutoff level #####
 
-Model_chosen <- lasso_model_lambdamin
-lambda_val <- lambda_VALS[1]
-lambda_name <- lambda_NAMES[1]
+Model_chosen <- lasso_model_lambda1se
+lambda_val <- lambda_VALS[2]
+lambda_name <- lambda_NAMES[2]
 
 
 #with 969 pixels, _V2020-03-20
@@ -172,7 +172,7 @@ segreg_th_adj_min <- 0.5995192
 
 ##### Model performance assessment #####
 
-segreg_th <- segreg_th_adj_min
+segreg_th <- segreg_th_adj_1se
 
 
 pix_model_failed <- numeric(length = pix_num)
@@ -212,6 +212,8 @@ for (pixel in 1:pix_num) {
 }#end pixel
 
 
+load(file=paste0("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/coeff_wo_xtrms_",
+                 lambda_name,"_V2020-03-20.RData"))
 
 extreme_in_coeff <- function(coeff_list){ #function to check how many extreme indeices are kept as predictors
   extreme_indices <- c("dtr", "frs", "txx", "tnn", "rx5", "tx90p", "tn10p")
@@ -242,9 +244,12 @@ for (pixel in 1:pix_num) {
   }#end if else pb model
 }#end pixel
 
+load(file=paste0("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/nb_coeff_wo_xtrms_",
+                 lambda_name,"_V2020-03-20.RData"))
 
-
-
+load(file=paste0("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/csi_wo_xtrms_",
+                 lambda_name,"_V2020-03-20.RData"))
+mean_yield <- apply(Data_xtrm_non_standardized$yield,MARGIN = 1, FUN = mean, na.rm=T)
 
 
 
@@ -273,7 +278,8 @@ ggplot(data = DF_sci, aes(x=lon, y=lat)) +
   geom_polygon(data = world, aes(long, lat, group=group),
                fill="white", color="black", size=0.3) +
   geom_tile(aes(fill=csi)) +
-  scale_fill_gradient2(limits=c(0,1), midpoint = 0.5,
+  scale_fill_gradient2(midpoint = max(csi, na.rm = T)/2,
+                       #limits=c(0,1),
                        low = "black", mid = "red3", high = "yellow") +
   theme(panel.ontop = F, panel.grid = element_blank(),
         panel.border = element_rect(colour = "black", fill = NA),
@@ -283,12 +289,17 @@ ggplot(data = DF_sci, aes(x=lon, y=lat)) +
   coord_fixed(xlim = c(-120, 135),
               ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
               ratio = 1.3)+
-  labs(fill="CSI",
-       #title = paste("CSI, simple",model_name,"regression, "),
-       subtitle = paste("Monthly meteo var + extreme indices, cutoff level=", round(segreg_th,3),", ",lambda_val, sep = ""))+
+  labs(fill="CSI"
+       #,title = paste("CSI, simple",model_name,"regression, "),
+       #subtitle = paste("Monthly meteo var + extreme indices, cutoff level=", round(segreg_th,3),", ",lambda_val, sep = "")
+       )+
   theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
         legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
-  X11(width = 20, height = 7)
+  X11(width = 20, height = 6)
+
+plot(mean_yield,csi)
+cor.test(mean_yield, csi)
+cor.test(mean_yield, csi, method = "kendall")
 
 
 # Plot specificity error ####
@@ -311,11 +322,16 @@ ggplot(data = DF_speci, aes(x=lon, y=lat)) +
               ratio = 1.3)+
   labs(fill="Specif."
        #,title = paste("Specificity")
-       ,subtitle = paste("Monthly meteo var + extreme indices, cutoff level=", round(segreg_th,3),", ",lambda_val, sep = "")
+       #,subtitle = paste("Monthly meteo var + extreme indices, cutoff level=", round(segreg_th,3),", ",lambda_val, sep = "")
   )+
   theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
         legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
-  X11(width = 20, height = 7)
+  X11(width = 20, height = 6)
+
+plot(mean_yield,speci)
+cor.test(mean_yield, speci)
+cor.test(mean_yield, speci, method = "kendall")
+
 
 
 # Plot number of variables kept ####
@@ -334,15 +350,53 @@ ggplot(data = DF_numbcoeff, aes(x=lon, y=lat)) +
   coord_fixed(xlim = c(-120, 135),
               ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
               ratio = 1.3)+
-  labs(fill="Nb of var.",
-       #title = paste("Number of variables kept, simple",model_name,"regression, "),
-       subtitle = paste("Monthly meteo var + extreme indices, ",lambda_val, sep = ""))+
+  labs(fill="Nb of var."
+       #,title = paste("Number of variables kept, simple",model_name,"regression, "),
+       #subtitle = paste("Monthly meteo var + extreme indices, ",lambda_val, sep = "")
+       )+
   theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
         legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
-  X11(width = 20, height = 7)
+  X11(width = 20, height = 6)
 
 # Histogram nb variables ####
 hist(nb_coeff_kept, main = paste0("Nb of variables kept, ",lambda_val), xlab = "number of variables", breaks=14)
+
+# Difference nb var kept w/o extreme indices ####
+nb_coeff_kept_extremes <- nb_coeff_kept
+load(file=paste0("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/nb_coeff_wo_xtrms_",
+                 lambda_name,"_V2020-03-20.RData"))
+world <- map_data("world")
+
+nbcoeff_sub <- nb_coeff_kept_extremes - nb_coeff_kept_wo_extremes
+
+DF_sub <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], sub_score = nbcoeff_sub)
+
+ggplot(data = DF_sub, aes(x=DF_sub$lon, y=DF_sub$lat)) +
+  geom_polygon(data = world, aes(long, lat, group=group),
+               fill="white", color="black", size=0.3) +
+  geom_tile(aes(fill=DF_sub$sub_score)) +
+  scale_fill_gradient2(low = "blue", high = "red") +
+  theme(panel.ontop = F, panel.grid = element_blank(),
+        panel.border = element_rect(colour = "black", fill = NA),
+        axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
+  ylab("Lat (°N)") +
+  xlab("Lon (°E)") +
+  coord_fixed(xlim = c(-120, 135),
+              ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
+              ratio = 1.3)+
+  labs(fill="Diff in nb var",
+       title = "Difference number of variable kept with xtrm - w/o xtrm",
+       subtitle = paste("Adjusted cut-off", sep = ""))+
+  theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
+        legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
+  X11(width = 20, height = 7)
+hist(csi_sub, main="csi with xtrms - w/o xtrms (lambdamin)")
+
+mean_yield <- apply(X = Data_xtrm_non_standardized$yield, MARGIN = 1, FUN = mean, na.rm=T)
+plot(mean_yield, csi_sub, ylab="csi with xtrms - w/o xtrms (lambdamin)")
+
+
+
 
 # Plot number of extreme indices kept ####
 DF_numbextr <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], coeff_kep = nb_extr_kept)
@@ -364,12 +418,13 @@ ggplot(data = DF_numbextr, aes(x=lon, y=lat)) +
   coord_fixed(xlim = c(-120, 135),
               ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
               ratio = 1.3)+
-  labs(fill="Nb extr.",
-       #title = paste("Number of exteme indices kept, simple",model_name,"regression,"),
-       subtitle = paste("Monthly meteo var + extreme indices, ",lambda_val, sep = ""))+
+  labs(fill="Nb extr.\n ind."
+       #,title = paste("Number of exteme indices kept, simple",model_name,"regression,"),
+       #subtitle = paste("Monthly meteo var + extreme indices, ",lambda_val, sep = "")
+       )+
   theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
         legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
-  X11(width = 20, height = 7)
+  X11(width = 20, height = 6)
 
 mean_yield <- apply(X=Data_xtrm_non_standardized$yield, MARGIN = 1, FUN = mean, na.rm=T)
 
@@ -406,8 +461,12 @@ count_seas_and_var <- function(coefff){
       nb_of_seas <- nb_of_seas + 1
     }
     
+    if (nb_of_seas>0){
+      return(nb_of_seas)
+    } else {
+      return("No meteo var")
+    }
     
-    return(nb_of_seas)
   } else {
     return("No meteo var")
   }#end if else
@@ -436,27 +495,13 @@ ggplot(data = DF_nbseason, aes(x=lon, y=lat)) +
   coord_fixed(xlim = c(-120, 135),
               ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
               ratio = 1.3)+
-  labs(fill="Nb of seasons",
-       #title = paste("Number of different seasons, simple",model_name,"regression"),
-       subtitle = paste("monthly meteo var + extreme indices, ",lambda_val, sep = ""))+
+  labs(fill="Nb of seasons"
+       #,title = paste("Number of different seasons, simple",model_name,"regression"),
+       #subtitle = paste("monthly meteo var + extreme indices, ",lambda_val, sep = "")
+       )+
   theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
         legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
-  X11(width = 20, height = 7)
-
-
-
-
-#### Barplot: combinations of months and variables ####
-coefs_seas <- sapply(1:length(coeff), function(x) names(numLevels_list[[x]])[coeff[[x]][-1]!=0])
-coefs_seas_vec <- unlist(coefs_seas)
-
-png(filename="C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/Images/Final_plots/lambda1se/barplot_variables_lambda1se.png",
-   res=2000,units="cm",width=15,height=20)
-
-par(mar=c(5,7,1,1))
-barplot(sort(table(coefs_seas_vec)),horiz=T,las=1,col="ForestGreen",
-        xlab="Number of pixels, where variable is included in the model\nLasso glmnet lambda 1se",cex.names=0.6)
-dev.off()
+  X11(width = 20, height = 6)
 
 
 # Difference CSI w/o extreme indices ####
@@ -536,9 +581,92 @@ ggplot(data = DF_nbmeteo, aes(x=lon, y=lat)) +
   coord_fixed(xlim = c(-120, 135),
               ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
               ratio = 1.3)+
-  labs(fill="Nb of meteo var.",
-       #title = paste("Number of variables kept, simple",model_name,"regression, "),
-       subtitle = paste("Monthly meteo var + extreme indices, ",lambda_val, sep = ""))+
+  labs(fill="Nb of\nmeteo var."
+       #,title = paste("Number of variables kept, simple",model_name,"regression, "),
+       #subtitle = paste("Monthly meteo var + extreme indices, ",lambda_val, sep = "")
+       )+
   theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
         legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
-  X11(width = 20, height = 7)
+  X11(width = 20, height = 6)
+
+
+
+
+
+##### Differences wo extreme indices #####
+
+plot(csi - csi_wo_extremes, nb_coeff_kept - nb_coeff_kept_wo_extremes, xlab="Diff in CSI", ylab="Diff in nb var")
+abline(v=0, col="red")
+abline(h=0, col="chartreuse4")
+hist(csi - csi_wo_extremes)
+abline(v=mean(csi - csi_wo_extremes, na.rm=T), col="blue")
+abline(v=median(csi - csi_wo_extremes, na.rm=T), col="blue4", lty=2)
+hist(nb_coeff_kept - nb_coeff_kept_wo_extremes)
+abline(v=mean(nb_coeff_kept - nb_coeff_kept_wo_extremes, na.rm=T), col="blue")
+abline(v=median(nb_coeff_kept - nb_coeff_kept_wo_extremes, na.rm=T), col="blue4", lty=2)
+
+which((csi - csi_wo_extremes)<0)
+plot(csi - csi_wo_extremes, nb_extr_kept, xlab="Diff in CSI", ylab="nb of extremes kept")
+abline(v=0, col="red")
+mean(nb_extr_kept[which((csi - csi_wo_extremes)<0)])
+mean(nb_extr_kept)
+
+
+
+
+#### Barplot: combinations of months and variables ####
+coefs_seas <- sapply(1:length(coeff), function(x) names(numLevels_list[[x]])[coeff[[x]][-1]!=0])
+coefs_seas_vec <- unlist(coefs_seas)
+
+pdf(file="C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/Images/Final_plots/lambda1se/barplot_variables_lambda1se.pdf",
+    width=6,height=8)
+
+par(mar=c(5,7,1,1))
+barplot(sort(table(coefs_seas_vec)),horiz=T,las=1,col="grey",
+        xlab="Number of grid points, where variable is included in the model",cex.names=0.6)
+dev.off()
+
+
+
+
+
+##### Plot of 1 variable (in the 10 most present variables) #####
+top10variables <- names(sort(table(coefs_seas_vec), decreasing = T)[1:10])
+
+
+
+for (varia in 1:10) {
+  
+  varia_name <- top10variables[varia]
+  varia_in_pix <- numeric()
+  for (pix in 1:pix_num) {
+    varia_in_pix[pix] <- (varia_name %in% row.names(coeff[[pix]])[which(coeff[[pix]]!=0)])
+  }#end for pix
+  
+  DF_var <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], var_in = varia_in_pix)
+  DF_var$var_in <- as.factor(DF_var$var_in)
+  
+  ggplot(data = DF_var, aes(x=lon, y=lat)) +
+    geom_polygon(data = world, aes(long, lat, group=group),
+                 fill="white", color="black", size=0.3) +
+    geom_tile(aes(fill=DF_var$var_in)) +
+    scale_fill_manual(values = c("1"="#fc8d62", "0"="#8da0cb"),
+                      label= c("1"="Yes", "0"="No"),
+                      breaks=c("1","0")) +
+    theme(panel.ontop = F, panel.grid = element_blank(),
+          panel.border = element_rect(colour = "black", fill = NA),
+          axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
+    ylab("Lat (°N)") +
+    xlab("Lon (°E)") +
+    coord_fixed(xlim = c(-120, 135),
+                ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
+                ratio = 1.3)+
+    labs(fill=paste0(varia_name,"\nselected")
+         #,title = paste("Number of variables kept, simple",model_name,"regression, "),
+         #subtitle = paste("Monthly meteo var + extreme indices, ",lambda_val, sep = "")
+    )+
+    theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
+          legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
+    X11(width = 20, height = 6)
+  
+}
