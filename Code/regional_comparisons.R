@@ -1,5 +1,7 @@
 # Regional comparisons
 
+library(rgdal)
+library(raster)
 # Author: Johannes Vogel
 
 message("run with Model_comparison.r")
@@ -45,11 +47,11 @@ continents <- readOGR("D:/user/vogelj/Data/continent_shapefile/continent.shp") #
 africa <- subset(continents,subset=continents@data[["CONTINENT"]]=="Africa")
 europe <- subset(continents,subset=continents@data[["CONTINENT"]]=="Europe")
 no_am <- subset(continents,subset=continents@data[["CONTINENT"]]=="North America")
-so_am <- subset(continents,subset=continents@data[["CONTINENT"]]=="South America")
-oceania <- subset(continents,subset=continents@data[["CONTINENT"]]=="Oceania")
 asia <- subset(continents,subset=continents@data[["CONTINENT"]]=="Asia")
-australia <- subset(continents,subset=continents@data[["CONTINENT"]]=="Australia")
-antarctica <- subset(continents,subset=continents@data[["CONTINENT"]]=="Antarctica")
+# so_am <- subset(continents,subset=continents@data[["CONTINENT"]]=="South America")
+# oceania <- subset(continents,subset=continents@data[["CONTINENT"]]=="Oceania")
+# australia <- subset(continents,subset=continents@data[["CONTINENT"]]=="Australia")
+# antarctica <- subset(continents,subset=continents@data[["CONTINENT"]]=="Antarctica")
 
 
 # Specificity
@@ -93,3 +95,18 @@ coeff_kep_eur_pixels <- extract(coeff_kep_ras,europe)
 coeff_kep_no_am_pixels <- extract(coeff_kep_ras,no_am)
 coeff_kep_asia_pixels <- extract(coeff_kep_ras,asia)
 boxplot(coeff_kep_eur_pixels[[1]],coeff_kep_no_am_pixels[[1]],coeff_kep_afr_pixels[[1]], coeff_kep_asia_pixels[[1]],coeff_kep,names=c("Europe (233)","No. America (419)","Africa (45)","Asia (263)","World (965)"), main="Number of coefficients for glinternet wit extr. indicators",sub="Number of pixels in brackets")
+
+
+
+
+
+# glmnet ####
+
+coord_all_var <- cbind(coord_all,rep(NA,320*76),rep(NA,320*76),rep(NA,320*76))
+for (i in seq_along(work_pix)){
+  coord_all_var[loc_pix[i],3] <- csi[i]
+}
+csi_mat <- matrix(as.numeric(coord_all_var[,3]),nrow=320,ncol=76)
+
+boxplot(csi_eur_pixels[[1]],csi_no_am_pixels[[1]],csi_afr_pixels[[1]], csi_asia_pixels[[1]],csi,names=c("Europe (233)","No. America (419)","Africa (45)","Asia (263)","World (965)"), main="Adjusted CSI for glinternet wit extr. indicators",sub="Number of pixels in brackets")
+summary(csi_eur_pixels[[1]]) # highest csi worldwide

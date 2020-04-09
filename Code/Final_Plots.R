@@ -263,6 +263,7 @@ load(file=paste0("D:/user/vogelj/Group_project/Code/Workspaces/nb_coeff_wo_xtrms
 load(file=paste0("D:/user/vogelj/Group_project/Code/Workspaces/csi_wo_xtrms_",
                  lambda_name,"_V2020-03-20.RData")) # Johannes
 mean_yield <- apply(Data_xtrm_non_standardized$yield,MARGIN = 1, FUN = mean, na.rm=T)
+var_yield <- apply(Data_xtrm_non_standardized$yield,MARGIN = 1, FUN = var, na.rm=T)
 
 
 
@@ -314,6 +315,10 @@ ggplot(data = DF_sci, aes(x=lon, y=lat)) +
 plot(mean_yield,csi)
 cor.test(mean_yield, csi)
 cor.test(mean_yield, csi, method = "kendall")
+plot(var_yield,csi)
+cor.test(var_yield, csi)
+plot(mean_yield,var_yield)
+cor.test(mean_yield, var_yield)
 
 
 # Plot specificity error ####
@@ -652,41 +657,152 @@ dev.off()
 
 ##### Plot of 1 variable (in the 10 most present variables) #####
 top10variables <- names(sort(table(coefs_seas_vec), decreasing = T)[1:10])
+allvariables <- colnames(Model_data)[-1]
 
-
-
-for (varia in 1:10) {
-  
-  varia_name <- top10variables[varia]
-  varia_in_pix <- numeric()
-  for (pix in 1:pix_num) {
-    varia_in_pix[pix] <- (varia_name %in% row.names(coeff[[pix]])[which(coeff[[pix]]!=0)])
-  }#end for pix
-  
-  DF_var <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], var_in = varia_in_pix)
-  DF_var$var_in <- as.factor(DF_var$var_in)
-  
-  ggplot(data = DF_var, aes(x=lon, y=lat)) +
-    geom_polygon(data = world, aes(long, lat, group=group),
-                 fill="white", color="black", size=0.3) +
-    geom_tile(aes(fill=DF_var$var_in)) +
-    scale_fill_manual(values = c("1"="#fc8d62", "0"="#8da0cb"),
-                      label= c("1"="Yes", "0"="No"),
-                      breaks=c("1","0")) +
-    theme(panel.ontop = F, panel.grid = element_blank(),
-          panel.border = element_rect(colour = "black", fill = NA),
-          axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
-    ylab("Lat (°N)") +
-    xlab("Lon (°E)") +
-    coord_fixed(xlim = c(-120, 135),
-                ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
-                ratio = 1.3)+
-    labs(fill=paste0(varia_name,"\nselected")
-         #,title = paste("Number of variables kept, simple",model_name,"regression, "),
-         #subtitle = paste("Monthly meteo var + extreme indices, ",lambda_val, sep = "")
-    )+
-    theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
-          legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
-    X11(width = 20, height = 6)
-  
+# for (varia in 1:10) {
+  for (varia in 1:length(allvariables)) {
+    
+    # varia_name <- top10variables[varia]
+    varia_name <- allvariables[varia]
+    varia_in_pix <- numeric()
+    plots <- vector("list",length=(length(allvariables)))
+    for (pix in 1:pix_num) {
+      varia_in_pix[pix] <- (varia_name %in% row.names(coeff[[pix]])[which(coeff[[pix]]!=0)])
+    }#end for pix
+    
+    DF_var <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], var_in = varia_in_pix)
+    DF_var$var_in <- as.factor(DF_var$var_in)
+    
+    # plots[[varia]] <- 
+      ggplot(data = DF_var, aes(x=lon, y=lat)) +
+      geom_polygon(data = world, aes(long, lat, group=group),
+                   fill="white", color="black", size=0.3) +
+      geom_tile(aes(fill=DF_var$var_in)) +
+      scale_fill_manual(values = c("1"="#fc8d62", "0"="#8da0cb"),
+                        label= c("1"="Yes", "0"="No"),
+                        breaks=c("1","0")) +
+      theme(panel.ontop = F, panel.grid = element_blank(),
+            panel.border = element_rect(colour = "black", fill = NA),
+            axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
+      ylab("Lat (°N)") +
+      xlab("Lon (°E)") +
+      coord_fixed(xlim = c(-120, 135),
+                  ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
+                  ratio = 1.3)+
+      labs(fill=paste0(varia_name,"\nselected")
+           #,title = paste("Number of variables kept, simple",model_name,"regression, "),
+           #subtitle = paste("Monthly meteo var + extreme indices, ",lambda_val, sep = "")
+      )+
+      theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
+            legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
+      X11(width = 20, height = 6)
+      ggsave(filename=paste0("D:/user/vogelj/Group_project/Output/Plots/",varia_name,".jpg"))
 }
+
+
+
+
+nb_meteo <- numeric(length=length(coeff))
+met_type <- numeric(length=length(coeff))
+met_strings <- vector("list",length=length(coeff))
+met_vpd <- numeric(length=length(coeff))
+met_pr <- numeric(length=length(coeff))
+met_temp <- numeric(length=length(coeff))
+
+source("./Code/get_first_coeff_function.R")
+for (pix in 1:length(coeff)) {
+  if((length(which(coeff[[pix]]!=0))-1)<1){
+    nb_meteo[pix] <- 0
+  } else {
+    coeff_kept <- get_firstcoeffs(coeff = coeff[[pix]],
+                                  nb_of_coeff = (length(which(coeff[[pix]]!=0))-1))
+    nb_meteo[pix] <- length(unique(coeff_kept[,1]))
+    for (extr in c("dtr", "frs", "txx", "tnn", "rx5", "tx90p", "tn10p")) {
+      if (extr %in% unique(get_firstcoeffs(coeff = coeff[[pix]],
+                                           nb_of_coeff = length(coeff_kept[,1]))[,1])){
+        nb_meteo[pix] <- nb_meteo[pix] - 1
+        
+      }#end fi
+    }#end for xtrm
+    
+  }#end ifelse
+  met_string <- (c("vpd","pr","tmax") %in% unique(coeff_kept[,1])) 
+  met_strings[[pix]] <- met_string
+  if (identical(met_string, c(T,F,F))) {
+    met_type[pix] <- 1
+  } else if (identical(met_string, c(F,T,F))) {
+    met_type[pix] <- 2
+  } else if (identical(met_string, c(F,F,T))) {
+    met_type[pix] <- 3
+  } else if (identical(met_string, c(T,T,F))) {
+    met_type[pix] <- 4
+  } else if (identical(met_string, c(T,F,T))) {
+    met_type[pix] <- 5
+  } else if (identical(met_string, c(F,T,T))) {
+    met_type[pix] <- 6
+  } else if (identical(met_string, c(T,T,T))) {
+    met_type[pix] <- 7
+  } else if (identical(met_string, c(F,F,F)) | is.null(met_string)) {
+    met_type[pix] <- 8
+  }
+  if ("vpd" %in% unique(coeff_kept[,1])) {met_vpd[pix] <- 1} 
+  if ("pr" %in% unique(coeff_kept[,1])) {met_temp[pix] <- 2} 
+  if ("tmax" %in% unique(coeff_kept[,1])) {met_pr[pix] <- 3}
+  
+}#end for pix
+
+
+# Combinations of meteorological variables
+DF_meteo_type <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], met_type = met_type)
+DF_meteo_type$met_type <- as.factor(DF_meteo_type$met_type)
+cols <- c("1" = "#7FC97F", "2" = "cadetblue2", "3" = "#386CB0", "4" = "#824D99", "5" = "#F0027F", "6" = "darkred" , "7" = "#FDC086", "8" = "#FFFF99")
+
+ggplot(data = DF_meteo_type, aes(x=lon, y=lat)) +
+  geom_polygon(data = world, aes(long, lat, group=group),
+               fill="white", color="black", size=0.3) +
+  geom_tile(aes(fill=met_type)) +
+  scale_fill_manual(values = cols,labels=c("VPD","Pr","T","VPD & Pr","VPD & T","Pr & T", "All","None")) +
+  theme(panel.ontop = F, panel.grid = element_blank(),
+        panel.border = element_rect(colour = "black", fill = NA),
+        axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
+  ylab("Lat (°N)") +
+  xlab("Lon (°E)") +
+  coord_fixed(xlim = c(-120, 135),
+              ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
+              ratio = 1.3)+
+  labs(fill="Combination of met. variables"
+  )+
+  theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
+        legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
+  X11(width = 20, height = 6)
+ggsave("D:/user/vogelj/Group_project/Output/Plots/meteotype.pdf")
+
+
+# Indiviual monthly variable predictors
+DF_meteo_cat <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], met_cat = met_vpd)
+# DF_meteo_cat <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], met_cat = met_temp)
+# DF_meteo_cat <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], met_cat = met_pr)
+DF_meteo_cat$met_cat <- as.factor(DF_meteo_cat$met_cat)
+cols <- c("1" = colors2[1], "2" = colors2[3], "3" = colors2[5],  "4" = colors2[7])
+
+ggplot(data = DF_meteo_cat, aes(x=lon, y=lat)) +
+  geom_polygon(data = world, aes(long, lat, group=group),
+               fill="white", color="black", size=0.3) +
+  geom_tile(aes(fill=met_cat)) +
+  # scale_fill_manual(values = cols,labels=c("VPD","Pr","T","VPD & Pr","VPD & T","Pr & T", "All","None")) +
+  theme(panel.ontop = F, panel.grid = element_blank(),
+        panel.border = element_rect(colour = "black", fill = NA),
+        axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
+  ylab("Lat (°N)") +
+  xlab("Lon (°E)") +
+  coord_fixed(xlim = c(-120, 135),
+              ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
+              ratio = 1.3)+
+  labs(fill="Occurrence of variable"
+  )+
+  theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
+        legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
+  X11(width = 20, height = 6)
+ggsave("D:/user/vogelj/Group_project/Output/Plots/met_vpd.pdf")
+# ggsave("D:/user/vogelj/Group_project/Output/Plots/met_temp.pdf")
+# ggsave("D:/user/vogelj/Group_project/Output/Plots/met_pr.pdf")
