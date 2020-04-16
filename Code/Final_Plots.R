@@ -380,6 +380,7 @@ ggplot(data = DF_numbcoeff, aes(x=lon, y=lat)) +
 # Histogram nb variables ####
 hist(nb_coeff_kept, main = paste0("Nb of variables kept, ",lambda_val), xlab = "number of variables", breaks=14)
 
+
 # Difference nb var kept w/o extreme indices ####
 nb_coeff_kept_extremes <- nb_coeff_kept
 # load(file=paste0("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/nb_coeff_wo_xtrms_",
@@ -423,8 +424,10 @@ plot(mean_yield, csi_sub, ylab="csi with xtrms - w/o xtrms (lambdamin)")
 DF_numbextr <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], coeff_kep = nb_extr_kept)
 DF_numbextr$coeff_kep <- as.factor(DF_numbextr$coeff_kep)
 
-mycolors <- c("orange", rgb(0.3,0.3,0.5), rgb(0,0,0.7),
-              rgb(0.2,0.2,0.8), rgb(0.4,0.4,0.9), rgb(0.7,0.7,1), rgb(0.8,0.8,1), rgb(0.9,0.9,1))
+# mycolors <- c("orange", rgb(0.3,0.3,0.5), rgb(0,0,0.7),
+              # rgb(0.2,0.2,0.8), rgb(0.4,0.4,0.9), rgb(0.7,0.7,1), rgb(0.8,0.8,1), rgb(0.9,0.9,1))
+mycolors <- rev(hcl.colors(n=8,palette="Viridis"))
+# mycolors <- rev(hcl.colors(n=8,palette="Plasma"))
 
 ggplot(data = DF_numbextr, aes(x=lon, y=lat)) +
   geom_polygon(data = world, aes(long, lat, group=group),
@@ -446,6 +449,7 @@ ggplot(data = DF_numbextr, aes(x=lon, y=lat)) +
   theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
         legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
   X11(width = 20, height = 6)
+ggsave(filename="D:/user/vogelj/Group_project/Output/Plots/num_extr_ind_viridis.pdf")
 
 mean_yield <- apply(X=Data_xtrm_non_standardized$yield, MARGIN = 1, FUN = mean, na.rm=T)
 
@@ -658,9 +662,12 @@ dev.off()
 ##### Plot of 1 variable (in the 10 most present variables) #####
 top10variables <- names(sort(table(coefs_seas_vec), decreasing = T)[1:10])
 allvariables <- colnames(Model_data)[-1]
+varia_names_extr <- c("dtr","frs","TXx","TNn","Rx5day","TX90p","TN10p")
 
+# par(mfrow=c(4,2))
 # for (varia in 1:10) {
-  for (varia in 1:length(allvariables)) {
+for (varia in 1:length(allvariables)) {
+# for (varia in 1:7) {
     
     # varia_name <- top10variables[varia]
     varia_name <- allvariables[varia]
@@ -669,6 +676,7 @@ allvariables <- colnames(Model_data)[-1]
     for (pix in 1:pix_num) {
       varia_in_pix[pix] <- (varia_name %in% row.names(coeff[[pix]])[which(coeff[[pix]]!=0)])
     }#end for pix
+    varia_name <- varia_names_extr[varia] # only for ext. ind. naming
     
     DF_var <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], var_in = varia_in_pix)
     DF_var$var_in <- as.factor(DF_var$var_in)
@@ -690,10 +698,11 @@ allvariables <- colnames(Model_data)[-1]
                   ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
                   ratio = 1.3)+
       labs(fill=paste0(varia_name,"\nselected")
+           ,title = varia_name
            #,title = paste("Number of variables kept, simple",model_name,"regression, "),
            #subtitle = paste("Monthly meteo var + extreme indices, ",lambda_val, sep = "")
       )+
-      theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
+      theme(plot.title = element_text(size = 20, hjust = 0.5), plot.subtitle = element_text(size = 15),
             legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
       X11(width = 20, height = 6)
       ggsave(filename=paste0("D:/user/vogelj/Group_project/Output/Plots/",varia_name,".jpg"))
