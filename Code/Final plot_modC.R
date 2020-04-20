@@ -415,20 +415,6 @@ MEAN_PLOT+  geom_point(data = DF_meanY[excluded_pixel,], aes(x = lon, y = lat), 
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 # # Plot specificity error ####
 # 
 # DF_speci <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], speci = speci)
