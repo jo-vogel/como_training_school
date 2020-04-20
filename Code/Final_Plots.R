@@ -178,11 +178,14 @@ lambda_name <- lambda_NAMES[2]
 #with 969 pixels, seed 1994, train size 70%
 segreg_th_adj_1se <- 0.6500294
 
+# /!\ this one is if we discard pixels with too low yield before computing cutoff
+segreg_th_adj_1se_after_disc <- 0.6513794
+
 segreg_th <- segreg_th_adj_1se
 
 
 
-#Remove pixels with low mean yield, lower than the10th percentile on the 995 VERY initial pixels
+#Remove pixels with low mean yield, lower than the10th percentile on the 995 VERY initial pixels ####
 mean_yield <- apply(Data_xtrm_non_standardized$yield,MARGIN = 1, FUN = mean, na.rm=T)
 pix_to_keep <- which(mean_yield > 434.24)
 final_pix_num <- length(pix_to_keep)
@@ -823,3 +826,40 @@ ggplot(data = DF_meteo_cat, aes(x=lon, y=lat)) +
 ggsave("D:/user/vogelj/Group_project/Output/Plots/met_vpd.pdf")
 # ggsave("D:/user/vogelj/Group_project/Output/Plots/met_temp.pdf")
 # ggsave("D:/user/vogelj/Group_project/Output/Plots/met_pr.pdf")
+
+
+
+
+
+
+# Compute cutoff after discarding pixels ####
+
+
+source("./Code/Simple_Lasso_Ridge_ElasticNet/cutoff_adj_glmnet_lambda1se.R")
+y1_train_list_simple_lasso <- list()
+x1_train_list_simple_lasso <- list()
+Model_chosen_discar <- list()
+for (pixel in 1:final_pix_num) {
+  pix <- pix_to_keep[pixel]
+  
+  y1_train_list_simple_lasso[[pixel]] <- y1_train_list[[pix]]
+  x1_train_list_simple_lasso[[pixel]] <- x1_train_list[[pix]]
+  Model_chosen_discar[[pixel]] <- Model_chosen[[pix]]
+  
+}#end pixel
+
+work_pix_tmp <- numeric()
+for (pixel in 1:final_pix_num) {
+  pix <- pix_to_keep[pixel]
+  if(is.character(Model_chosen[[pix]])){work_pix_tmp[pixel]<-0} else {work_pix_tmp[pixel]<-1}
+}#end for pix
+
+work_pix <- which(work_pix_tmp==1)
+library(pbapply)
+#return the mean value, over all pixels, of the adjusted cutoff
+cutoff_simple_lasso <- adjust_cutoff(model_vector = Model_chosen_discar,x1_train_list = x1_train_list_simple_lasso,
+                                     y1_train_list = y1_train_list_simple_lasso,
+                                     work_pix = work_pix, cost_fp = 100, cost_fn= 100)
+#with 969 pixels, _V2020-03-20
+segreg_th_adj_1se_after_disc <- cutoff_simple_lasso
+segreg_th_adj_1se_after_disc <- 0.6513794
