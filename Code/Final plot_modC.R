@@ -349,7 +349,7 @@ cor.test(var_yield[pix_to_keep], csi)
 plot(mean_yield[pix_to_keep],var_yield[pix_to_keep])
 cor.test(mean_yield[pix_to_keep], var_yield[pix_to_keep])
 
-##### Plot csi all pixel and mean yield/ yield variance #########
+##### ScatterPlot CSI all pixel and mean yield/ yield variance #########
 
 excluded_pixel<-which(mean_yield <= 434.24)
 
@@ -376,6 +376,57 @@ legend("topleft",c("Excluded pixels","Included pixels"),col=c("red","black"), pc
 #Just excluded pixels
 
 plot(var_yield[excluded_pixel], csi_all[excluded_pixel],col="red",pch=19, main="Only excluded pixel")
+
+
+
+# Plot Mean Yield ####
+coord_all_pixel <- cbind(Data_xtrm_standardized$longitudes,
+                      Data_xtrm_standardized$latitudes)
+
+
+DF_meanY <- data.frame(lon=coord_all_pixel[,1], lat = coord_all_pixel[,2], meany = mean_yield)
+
+MEAN_PLOT<-ggplot(data = DF_meanY, aes(x=lon, y=lat)) +
+  geom_polygon(data = world, aes(long, lat, group=group),
+               fill="white", color="black", size=0.3) +
+  geom_tile(aes(fill=meany)) +
+  scale_fill_gradient2(midpoint = max(mean_yield, na.rm = T)/2,
+                       #limits=c(0,1),
+                       low = "black", mid = "red3", high = "yellow") +
+  theme(panel.ontop = F, panel.grid = element_blank(),
+        panel.border = element_rect(colour = "black", fill = NA),
+        axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
+  ylab("Lat (°N)") +
+  xlab("Lon (°E)") +
+  coord_fixed(xlim = c(-120, 135),
+              ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
+              ratio = 1.3)+
+  labs(fill="Mean Yield"
+       #,title = paste("CSI, simple",model_name,"regression, "),
+       #subtitle = paste("Monthly meteo var + extreme indices, cutoff level=", round(segreg_th,3),", ",lambda_val, sep = "")
+  )+
+  theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
+        legend.title = element_text(size = 15), legend.text = element_text(size = 14))+
+  #+ geom_textured_bar() +
+ # scale_image_manual(values = world) +
+  X11(width = 20, height = 5)
+
+MEAN_PLOT+  geom_point(data = DF_meanY[excluded_pixel,], aes(x = lon, y = lat), color = "yellow", size = 0.8)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 # # Plot specificity error ####
