@@ -183,6 +183,13 @@ for (pix in 1:nb_pixel_kept) {
 pix_to_keep <- which(apply(X=yields, MARGIN = 1, FUN = stats::quantile, probs=0.05, na.rm=T)!=0)
 pix_to_rm <- setdiff(1:dim(yields)[1], pix_to_keep)
 
+mean_yield <- apply(yields,MARGIN = 1, FUN = mean, na.rm=T)
+pix_to_rm_2 <- which(mean_yield<=434.24)
+
+length(pix_to_rm_2)
+length(pix_to_rm)
+
+length(which(pix_to_rm %in% pix_to_rm_2))
 
 ##### Final dataset to store #####
 

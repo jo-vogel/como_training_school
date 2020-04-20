@@ -178,11 +178,14 @@ lambda_name <- lambda_NAMES[2]
 #with 969 pixels, seed 1994, train size 70%
 segreg_th_adj_1se <- 0.6500294
 
+# /!\ this one is if we discard pixels with too low yield before computing cutoff
+segreg_th_adj_1se_after_disc <- 0.6513794
+
 segreg_th <- segreg_th_adj_1se
 
 
 
-#Remove pixels with low mean yield, lower than the10th percentile on the 995 VERY initial pixels
+#Remove pixels with low mean yield, lower than the10th percentile on the 995 VERY initial pixels ####
 mean_yield <- apply(Data_xtrm_non_standardized$yield,MARGIN = 1, FUN = mean, na.rm=T)
 pix_to_keep <- which(mean_yield > 434.24)
 final_pix_num <- length(pix_to_keep)
@@ -771,14 +774,14 @@ DF_meteo_type <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], met_ty
 #DF_meteo_type$met_type <- as.factor(DF_meteo_type$met_type)
 #cols <- c("1" = "#7FC97F", "2" = "cadetblue2", "3" = "#386CB0", "4" = "#824D99", "5" = "#F0027F", "6" = "darkred" , "7" = "#FDC086", "8" = "#FFFF99")
 
-cols <- c("VPD" = "#7FC97F", "Pr" = "cadetblue2", "T" = "#386CB0", "VPD & Pr" = "#824D99",
-          "VPD & T" = "#F0027F", "Pr & T" = "darkred" , "All" = "#FDC086", "None" = "#FFFF99")
+cols <- c("VPD" = "#7FC97F", "Pr" = "cadetblue2", "Tmax" = "#386CB0", "VPD & Pr" = "#824D99",
+          "VPD & Tmax" = "#F0027F", "Pr & Tmax" = "darkred" , "All" = "#FDC086", "None" = "#FFFF99")
 
 ggplot(data = DF_meteo_type, aes(x=lon, y=lat)) +
   geom_polygon(data = world, aes(long, lat, group=group),
                fill="white", color="black", size=0.3) +
   geom_tile(aes(fill=met_type)) +
-  scale_fill_manual(values = cols,breaks=c("VPD","Pr","T","VPD & Pr","VPD & T","Pr & T", "All","None")) +
+  scale_fill_manual(values = cols,breaks=c("VPD","Pr","Tmax","VPD & Pr","VPD & Tmax","Pr & Tmax", "All","None")) +
   theme(panel.ontop = F, panel.grid = element_blank(),
         panel.border = element_rect(colour = "black", fill = NA),
         axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
@@ -823,3 +826,40 @@ ggplot(data = DF_meteo_cat, aes(x=lon, y=lat)) +
 ggsave("D:/user/vogelj/Group_project/Output/Plots/met_vpd.pdf")
 # ggsave("D:/user/vogelj/Group_project/Output/Plots/met_temp.pdf")
 # ggsave("D:/user/vogelj/Group_project/Output/Plots/met_pr.pdf")
+
+
+
+
+
+
+# Compute cutoff after discarding pixels ####
+
+
+source("./Code/Simple_Lasso_Ridge_ElasticNet/cutoff_adj_glmnet_lambda1se.R")
+y1_train_list_simple_lasso <- list()
+x1_train_list_simple_lasso <- list()
+Model_chosen_discar <- list()
+for (pixel in 1:final_pix_num) {
+  pix <- pix_to_keep[pixel]
+  
+  y1_train_list_simple_lasso[[pixel]] <- y1_train_list[[pix]]
+  x1_train_list_simple_lasso[[pixel]] <- x1_train_list[[pix]]
+  Model_chosen_discar[[pixel]] <- Model_chosen[[pix]]
+  
+}#end pixel
+
+work_pix_tmp <- numeric()
+for (pixel in 1:final_pix_num) {
+  pix <- pix_to_keep[pixel]
+  if(is.character(Model_chosen[[pix]])){work_pix_tmp[pixel]<-0} else {work_pix_tmp[pixel]<-1}
+}#end for pix
+
+work_pix <- which(work_pix_tmp==1)
+library(pbapply)
+#return the mean value, over all pixels, of the adjusted cutoff
+cutoff_simple_lasso <- adjust_cutoff(model_vector = Model_chosen_discar,x1_train_list = x1_train_list_simple_lasso,
+                                     y1_train_list = y1_train_list_simple_lasso,
+                                     work_pix = work_pix, cost_fp = 100, cost_fn= 100)
+#with 969 pixels, _V2020-03-20
+segreg_th_adj_1se_after_disc <- cutoff_simple_lasso
+segreg_th_adj_1se_after_disc <- 0.6513794
