@@ -385,6 +385,9 @@ coord_all_pixel <- cbind(Data_xtrm_standardized$longitudes,
 
 
 DF_meanY <- data.frame(lon=coord_all_pixel[,1], lat = coord_all_pixel[,2], meany = mean_yield)
+DF_meanY$type<-1
+DF_meanY$type[excluded_pixel]<-2
+
 
 MEAN_PLOT<-ggplot(data = DF_meanY, aes(x=lon, y=lat)) +
   geom_polygon(data = world, aes(long, lat, group=group),
@@ -399,7 +402,7 @@ MEAN_PLOT<-ggplot(data = DF_meanY, aes(x=lon, y=lat)) +
   ylab("Lat (°N)") +
   xlab("Lon (°E)") +
   coord_fixed(xlim = c(-120, 135),
-              ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
+              ylim = c(min(coord_all_pixel[,2])-1, max(coord_all_pixel[,2]+1)),
               ratio = 1.3)+
   labs(fill="Mean Yield"
        #,title = paste("CSI, simple",model_name,"regression, "),
@@ -413,6 +416,20 @@ MEAN_PLOT<-ggplot(data = DF_meanY, aes(x=lon, y=lat)) +
 
 MEAN_PLOT+  geom_point(data = DF_meanY[excluded_pixel,], aes(x = lon, y = lat), color = "yellow", size = 0.8)
 
+#Altra idea
+ggplot(data = DF_meanY, aes(x=lon, y=lat)) +
+  geom_polygon(data = world, aes(long, lat, group=group),
+               fill="white", color="black", size=0.3) +
+  
+  geom_point(aes(size = DF_meanY$meany),color=DF_meanY$type)+ scale_radius( range = c(0.1, 2.8))+
+  theme(panel.ontop = F, panel.grid = element_blank(),
+        panel.border = element_rect(colour = "black", fill = NA),
+        axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
+  ylab("Lat (°N)") +
+  xlab("Lon (°E)") +
+  coord_fixed(xlim = c(-120, 135),
+              ylim = c(min(coord_all_pixel[,2])-1, max(coord_all_pixel[,2]+1)),
+              ratio = 1.3)
 
 
 # # Plot specificity error ####
