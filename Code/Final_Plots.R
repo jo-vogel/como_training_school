@@ -151,13 +151,13 @@ for (i in 1:pix_num){
 ##### Load the model #####
 
 # On the Drive you can find my data in:
-# Models/LASSO-Ridge regression/regression_results_Global_wo_interactions/Lasso_lambda1se_month_xtrm_Lasso_threshbadyield005.RData
-# Models/LASSO-Ridge regression/regression_results_Global_wo_interactions/Lasso_lambdamin_month_xtrm_Lasso_threshbadyield005.RData
+# Models/LASSO-Ridge regression/regression_output_Global_data/Lasso_lambda1se_month_xtrm_LASSO_threshbadyield005_seed1994_train70_969GP.RData
+# Models/LASSO-Ridge regression/regression_output_Global_data/Lasso_lambdamin_month_xtrm_LASSO_threshbadyield005_seed1994_train70_969GP.RData
 
 load(file = paste0("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/SensitivityAnalysis/Lasso_lambda1se_month_xtrm_LASSO_threshbadyield005_seed",
                    seed, "_train", train_size,"_969GP.RData"))
-load(file = paste0("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/SensitivityAnalysis/Lasso_lambdamin_month_xtrm_LASSO_threshbadyield005_seed",
-                   seed, "_train", train_size,"_969GP.RData"))
+# load(file = paste0("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/SensitivityAnalysis/Lasso_lambdamin_month_xtrm_LASSO_threshbadyield005_seed",
+#                    seed, "_train", train_size,"_969GP.RData"))
 
 
 
