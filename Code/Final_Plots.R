@@ -774,14 +774,14 @@ DF_meteo_type <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], met_ty
 #DF_meteo_type$met_type <- as.factor(DF_meteo_type$met_type)
 #cols <- c("1" = "#7FC97F", "2" = "cadetblue2", "3" = "#386CB0", "4" = "#824D99", "5" = "#F0027F", "6" = "darkred" , "7" = "#FDC086", "8" = "#FFFF99")
 
-cols <- c("VPD" = "#7FC97F", "Pr" = "cadetblue2", "T" = "#386CB0", "VPD & Pr" = "#824D99",
-          "VPD & T" = "#F0027F", "Pr & T" = "darkred" , "All" = "#FDC086", "None" = "#FFFF99")
+cols <- c("VPD" = "#7FC97F", "Pr" = "cadetblue2", "Tmax" = "#386CB0", "VPD & Pr" = "#824D99",
+          "VPD & Tmax" = "#F0027F", "Pr & Tmax" = "darkred" , "All" = "#FDC086", "None" = "#FFFF99")
 
 ggplot(data = DF_meteo_type, aes(x=lon, y=lat)) +
   geom_polygon(data = world, aes(long, lat, group=group),
                fill="white", color="black", size=0.3) +
   geom_tile(aes(fill=met_type)) +
-  scale_fill_manual(values = cols,breaks=c("VPD","Pr","T","VPD & Pr","VPD & T","Pr & T", "All","None")) +
+  scale_fill_manual(values = cols,breaks=c("VPD","Pr","Tmax","VPD & Pr","VPD & Tmax","Pr & Tmax", "All","None")) +
   theme(panel.ontop = F, panel.grid = element_blank(),
         panel.border = element_rect(colour = "black", fill = NA),
         axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
