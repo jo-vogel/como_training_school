@@ -389,13 +389,13 @@ DF_meanY$type<-1
 DF_meanY$type[excluded_pixel]<-2
 
 
-MEAN_PLOT<-ggplot(data = DF_meanY, aes(x=lon, y=lat)) +
+ggplot(data = DF_meanY, aes(x=lon, y=lat)) +
   geom_polygon(data = world, aes(long, lat, group=group),
-               fill="white", color="black", size=0.3) +
-  geom_tile(aes(fill=meany)) +
+               fill="white", color="black", size=0.3)+  geom_tile(aes(fill=meany)) +
   scale_fill_gradient2(midpoint = max(mean_yield, na.rm = T)/2,
-                       #limits=c(0,1),
+                       limits=c(0,max(mean_yield)),
                        low = "black", mid = "red3", high = "yellow") +
+  scale_shape_manual(values=c("Excluded pixels"=4))+
   theme(panel.ontop = F, panel.grid = element_blank(),
         panel.border = element_rect(colour = "black", fill = NA),
         axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
@@ -404,24 +404,21 @@ MEAN_PLOT<-ggplot(data = DF_meanY, aes(x=lon, y=lat)) +
   coord_fixed(xlim = c(-120, 135),
               ylim = c(min(coord_all_pixel[,2])-1, max(coord_all_pixel[,2]+1)),
               ratio = 1.3)+
-  labs(fill="Mean Yield"
-       #,title = paste("CSI, simple",model_name,"regression, "),
-       #subtitle = paste("Monthly meteo var + extreme indices, cutoff level=", round(segreg_th,3),", ",lambda_val, sep = "")
-  )+
+  labs(fill="Mean Yield"  )+
   theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
         legend.title = element_text(size = 15), legend.text = element_text(size = 14))+
-  #+ geom_textured_bar() +
- # scale_image_manual(values = world) +
+  geom_point(data = DF_meanY[excluded_pixel,], aes(x = lon, y = lat), color = "yellow", size = 0.3)+
   X11(width = 20, height = 5)
-
-MEAN_PLOT+  geom_point(data = DF_meanY[excluded_pixel,], aes(x = lon, y = lat), color = "yellow", size = 0.8)
-
-#Altra idea
+  
+#+scale_shape_manual(values=c("Excluded pixels"=4),guide = guide_legend(override.aes = aes(shape = 4))) +
+#theme(legend.direction = "vertical", legend.box = "vertical")
+#+ guides(colour = guide_legend(override.aes = list(size = c(3, 3, 5))))
+  
+#Other Idea
 ggplot(data = DF_meanY, aes(x=lon, y=lat)) +
   geom_polygon(data = world, aes(long, lat, group=group),
                fill="white", color="black", size=0.3) +
-  
-  geom_point(aes(size = DF_meanY$meany),color=DF_meanY$type)+ scale_radius( range = c(0.1, 2.8))+
+  geom_point(aes(size = DF_meanY$meany),color=DF_meanY$type)+ scale_radius( range = c(0.06, 2))+
   theme(panel.ontop = F, panel.grid = element_blank(),
         panel.border = element_rect(colour = "black", fill = NA),
         axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
