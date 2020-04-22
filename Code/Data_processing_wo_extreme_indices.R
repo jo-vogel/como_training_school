@@ -31,6 +31,7 @@ library(abind); library(raster); library(BBmisc); library(ggplot2)
 # Get the data
 path_to_NH_files <- "C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/Data/Global"
 path_to_NH_files <- "D:/user/vogelj/Data/Group project Como"
+path_to_NH_files <-"C:/Users/39349/Documents/DAMOCLES/Data_global"
 
 nh_files <- list.files(path=path_to_NH_files,pattern="*NH.nc") # all files from northern hemisphere
 nh_data <- lapply(1:length(nh_files),
