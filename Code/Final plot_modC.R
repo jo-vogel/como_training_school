@@ -379,7 +379,8 @@ plot(var_yield[excluded_pixel], csi_all[excluded_pixel],col="red",pch=19, main="
 
 
 
-# Plot Mean Yield ####
+# MAP Plot Mean Yield ####
+
 coord_all_pixel <- cbind(Data_xtrm_standardized$longitudes,
                       Data_xtrm_standardized$latitudes)
 
@@ -401,32 +402,20 @@ ggplot(data = DF_meanY, aes(x=lon, y=lat)) +
         axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
   ylab("Lat (°N)") +
   xlab("Lon (°E)") +
-  coord_fixed(xlim = c(-120, 135),
-              ylim = c(min(coord_all_pixel[,2])-1, max(coord_all_pixel[,2]+1)),
+  coord_fixed(xlim = c(-115, 130),
+              ylim = c(min(coord_all_pixel[,2]), max(coord_all_pixel[,2])),
               ratio = 1.3)+
   labs(fill="Mean Yield"  )+
   theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
         legend.title = element_text(size = 15), legend.text = element_text(size = 14))+
-  geom_point(data = DF_meanY[excluded_pixel,], aes(x = lon, y = lat), color = "yellow", size = 0.3)+
-  X11(width = 20, height = 5)
-  
-#+scale_shape_manual(values=c("Excluded pixels"=4),guide = guide_legend(override.aes = aes(shape = 4))) +
-#theme(legend.direction = "vertical", legend.box = "vertical")
-#+ guides(colour = guide_legend(override.aes = list(size = c(3, 3, 5))))
-  
-#Other Idea
-ggplot(data = DF_meanY, aes(x=lon, y=lat)) +
-  geom_polygon(data = world, aes(long, lat, group=group),
-               fill="white", color="black", size=0.3) +
-  geom_point(aes(size = DF_meanY$meany),color=DF_meanY$type)+ scale_radius( range = c(0.06, 2))+
-  theme(panel.ontop = F, panel.grid = element_blank(),
-        panel.border = element_rect(colour = "black", fill = NA),
-        axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
-  ylab("Lat (°N)") +
-  xlab("Lon (°E)") +
-  coord_fixed(xlim = c(-120, 135),
-              ylim = c(min(coord_all_pixel[,2])-1, max(coord_all_pixel[,2]+1)),
-              ratio = 1.3)
+  geom_point(data = DF_meanY[excluded_pixel,], aes(x = lon, y = lat), color = "yellow", size = 0.8, pch=4)
+
+ggsave("C:/Users/39349/Documents/DAMOCLES/Final Workspace LASSO/MeanYield.png", units="in", dpi=400)
+
+# MAP Plot Growing Season ####
+
+
+
 
 
 # # Plot specificity error ####
