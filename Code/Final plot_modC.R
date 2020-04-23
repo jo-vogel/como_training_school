@@ -6,14 +6,17 @@
 # It is structured in the following way:
 # a) Load the desired model
 # b) Load data for initial 995 pixels
-# c)plot map CSI
-# c) plot map specificity
-# d) plot map nb of variable
-# e) plot histo nb of variable
-# f) plots map nb of extremes kept
-# g) plot map nb of seasons
-# h) plot barplot nb pix for each var
-# i) plot difference CSI w/o xtrm indices
+# c) plot map CSI
+# d) Scatterplot CSIvs mean/variance/Sd Yield with excluded pixels
+# e) plot map mean yield with 2 criteria of excluded pixels
+# f) plot map length of growing season with 2 criteria of excluded pixels
+# g) plot map specificity
+# h) plot map nb of variable
+# i) plot histo nb of variable
+# l) plots map nb of extremes kept
+# m) plot map nb of seasons
+# n) plot barplot nb pix for each var
+# o) plot difference CSI w/o xtrm indices
 
 
 
