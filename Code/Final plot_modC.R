@@ -5,7 +5,8 @@
 ##############################################################################
 # It is structured in the following way:
 # a) Load the desired model
-# b) plot map CSI
+# b) Load data for initial 995 pixels
+# c)plot map CSI
 # c) plot map specificity
 # d) plot map nb of variable
 # e) plot histo nb of variable
@@ -192,11 +193,23 @@ segreg_th_adj_1se <- 0.6500294
 segreg_th <- segreg_th_adj_1se
 
 
+######### Load Data for the initials 995 Pixels #########
+# You can find it in Drive: Figures/Data-Processing #####
+load("C:/Users/39349/Documents/DAMOCLES/Data_global/Data_995_pixR.RData")
+
+Mean_yields_995<- apply(yields_995,MARGIN = 1, FUN = mean, na.rm=T)  #Median for the row
+
+Mean_grow_season_995<- apply(length_growseas_995,1,MARGIN = 1, FUN = mean, na.rm=T) #Median for the row
+
 
 #Remove pixels with low mean yield, lower than the10th percentile on the 995 VERY initial pixels
 mean_yield <- apply(Data_xtrm_non_standardized$yield,MARGIN = 1, FUN = mean, na.rm=T)
-pix_to_keep <- which(mean_yield > 434.24)
+pix_to_keep <- which(mean_yield > quantile(Mean_yields_995,0.10))
+excluded_pixel<-which(mean_yield <= quantile(Mean_yields_995,0.10))
+
 final_pix_num <- length(pix_to_keep)
+
+
 ##### Model performance assessment #####
 
 
@@ -230,7 +243,7 @@ for (pixel in 1:final_pix_num) {
   
 }#end pixel
 
-# CSI for all the pixel #
+# CSI for all the pixels #
 
 csi_all <- rep(NA, final_pix_num)
 
@@ -350,10 +363,13 @@ plot(mean_yield[pix_to_keep],var_yield[pix_to_keep])
 cor.test(mean_yield[pix_to_keep], var_yield[pix_to_keep])
 
 ##### ScatterPlot CSI all pixel and mean yield/ yield variance #########
+          ## Plot with 969 pixels: Rejected the pixel with Yield<..### 
 
-excluded_pixel<-which(mean_yield <= 434.24)
 
+#Criterion for excluded pixels that are in the plot
 
+  
+  
 #Mean Yield and CSI
 par(mar = c(5, 4, 4, 8), xpd = TRUE)
 plot(mean_yield, csi_all,col="black",pch=19, xlab="Mean Yield", ylab="CSI", cex.lab=1.2, cex.axis=1.2,  cex.sub=1.2)
@@ -375,46 +391,95 @@ legend("topleft",c("Excluded pixels","Included pixels"),col=c("red","black"), pc
 
 #Just excluded pixels
 
+
+
 plot(var_yield[excluded_pixel], csi_all[excluded_pixel],col="red",pch=19, main="Only excluded pixel")
 
 
 
 # MAP Plot Mean Yield ####
+# Plot with the initial 995 pixels #
 
-coord_all_pixel <- cbind(Data_xtrm_standardized$longitudes,
-                      Data_xtrm_standardized$latitudes)
+excluded_pixel_995<-which(Mean_yields_995<= quantile(Mean_yields_995,0.10))
+pix_to_keep_995<- which(Mean_yields_995>quantile(Mean_yields_995,0.10))
 
 
-DF_meanY <- data.frame(lon=coord_all_pixel[,1], lat = coord_all_pixel[,2], meany = mean_yield)
-DF_meanY$type<-1
-DF_meanY$type[excluded_pixel]<-2
 
+pixel<-rep(1:995,1)
+
+#Plot data Processing
+plot(pixel,Mean_yields_995, xlab="Pixels", ylab="Mean Yield")
+points(pixel[excluded_pixel_995_ex2],Mean_yields_995[excluded_pixel_995], col="red",pch=16)
+points(pixel[pix_to_rm],Mean_yields_995[pix_to_rm],col="green",pch=16)
+legend("topleft",c("5th percentile yield==0","Mean Yield< 10th percentile"),col=c("green","red"), pch=19)
+
+
+DF_meanY <- data.frame(lon=coord_all_995[,1], lat = coord_all_995[,2], meany = Mean_yields_995)
+
+DF_meanY_kept<-DF_meanY [pix_to_keep_995,]
+DF_meanY_EX2<-DF_meanY [excluded_pixel_995,]
+DF_meanY_EX1<- DF_meanY [pix_to_rm,]
 
 ggplot(data = DF_meanY, aes(x=lon, y=lat)) +
   geom_polygon(data = world, aes(long, lat, group=group),
                fill="white", color="black", size=0.3)+  geom_tile(aes(fill=meany)) +
-  scale_fill_gradient2(midpoint = max(mean_yield, na.rm = T)/2,
-                       limits=c(0,max(mean_yield)),
+  scale_fill_gradient2(midpoint = max(Mean_yields_995, na.rm = T)/2,
+                       limits=c(0,max(Mean_yields_995)),
                        low = "black", mid = "red3", high = "yellow") +
-  scale_shape_manual(values=c("Excluded pixels"=4))+
+  #scale_shape_manual(values=c("Excluded pixels"=4, "Exc2=15"))+
   theme(panel.ontop = F, panel.grid = element_blank(),
         panel.border = element_rect(colour = "black", fill = NA),
         axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
   ylab("Lat (°N)") +
   xlab("Lon (°E)") +
   coord_fixed(xlim = c(-115, 130),
-              ylim = c(min(coord_all_pixel[,2]), max(coord_all_pixel[,2])),
+              ylim = c(min(coord_all_995[,2]), max(coord_all_995[,2])),
               ratio = 1.3)+
   labs(fill="Mean Yield"  )+
   theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
         legend.title = element_text(size = 15), legend.text = element_text(size = 14))+
-  geom_point(data = DF_meanY[excluded_pixel,], aes(x = lon, y = lat), color = "yellow", size = 0.8, pch=4)
+  geom_point(data = DF_meanY_EX2, aes(x = lon, y = lat), color = "yellow", size = 0.8, pch=4)+
+  geom_point(data = DF_meanY_EX1, aes(x = lon, y = lat), color = "yellow", size = 0.4, pch=15)
 
-ggsave("C:/Users/39349/Documents/DAMOCLES/Final Workspace LASSO/MeanYield.png", units="in", dpi=400)
+ggsave("C:/Users/39349/Documents/DAMOCLES/Final Workspace LASSO/MeanYield_2crit_1.png", units="in", dpi=400)
 
-# MAP Plot Growing Season ####
+ #+X11(width = 20, height = 6)
 
 
+
+### MAP Plot Growing Season ####
+# Plot with the initial 995 pixels #
+
+
+DF_meanGrSeas<-data.frame(lon=coord_all_995[,1], lat = coord_all_995[,2], meany = Mean_grow_season_995)
+
+DF_meanGrSeas_kept<-DF_meanY [pix_to_keep_995,]
+DF_meanGrSeas_EX2<-DF_meanY [excluded_pixel_995,]
+DF_meanGrSeas_EX1<- DF_meanY [pix_to_rm,]
+
+
+ggplot(data = DF_meanGrSeas, aes(x=lon, y=lat)) +
+  geom_polygon(data = world, aes(long, lat, group=group),
+               fill="white", color="black", size=0.3)+  geom_tile(aes(fill=meany)) +
+  scale_fill_gradient2(midpoint = max(Mean_grow_season_995, na.rm = T)/2,
+                       limits=c(0,max(Mean_grow_season_995)),
+                       low = "black", mid = "red3", high = "blue") +
+  #scale_shape_manual(values=c("Excluded pixels"=4))+
+  theme(panel.ontop = F, panel.grid = element_blank(),
+        panel.border = element_rect(colour = "black", fill = NA),
+        axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
+  ylab("Lat (°N)") +
+  xlab("Lon (°E)") +
+  coord_fixed(xlim = c(-115, 130),
+              ylim = c(min(coord_all_995[,2]), max(coord_all_995[,2])),
+              ratio = 1.3)+
+  labs(fill="Mean growing season length"  )+
+  theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
+        legend.title = element_text(size = 15), legend.text = element_text(size = 14))+
+  geom_point(data = DF_meanGrSeas_EX2, aes(x = lon, y = lat), color = "yellow", size = 0.8, pch=4, show.legend=TRUE)+
+  geom_point(data = DF_meanGrSeas_EX1, aes(x = lon, y = lat), color = "yellow", size = 0.4, pch=15, show.legend=TRUE)
+
+ggsave("C:/Users/39349/Documents/DAMOCLES/Final Workspace LASSO/Grow_season_2crit_col2.png", units="in", dpi=400)
 
 
 
