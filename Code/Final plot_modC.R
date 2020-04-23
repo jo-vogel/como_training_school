@@ -412,7 +412,7 @@ pixel<-rep(1:995,1)
 
 #Plot data Processing
 plot(pixel,Mean_yields_995, xlab="Pixels", ylab="Mean Yield")
-points(pixel[excluded_pixel_995_ex2],Mean_yields_995[excluded_pixel_995], col="red",pch=16)
+points(pixel[excluded_pixel_995],Mean_yields_995[excluded_pixel_995], col="red",pch=16)
 points(pixel[pix_to_rm],Mean_yields_995[pix_to_rm],col="green",pch=16)
 legend("topleft",c("5th percentile yield==0","Mean Yield< 10th percentile"),col=c("green","red"), pch=19)
 
@@ -423,7 +423,7 @@ DF_meanY_kept<-DF_meanY [pix_to_keep_995,]
 DF_meanY_EX2<-DF_meanY [excluded_pixel_995,]
 DF_meanY_EX1<- DF_meanY [pix_to_rm,]
 
-ggplot(data = DF_meanY, aes(x=lon, y=lat)) +
+p1<-ggplot(data = DF_meanY, aes(x=lon, y=lat)) +
   geom_polygon(data = world, aes(long, lat, group=group),
                fill="white", color="black", size=0.3)+  geom_tile(aes(fill=meany)) +
   scale_fill_gradient2(midpoint = max(Mean_yields_995, na.rm = T)/2,
@@ -444,7 +444,9 @@ ggplot(data = DF_meanY, aes(x=lon, y=lat)) +
   geom_point(data = DF_meanY_EX2, aes(x = lon, y = lat), color = "yellow", size = 0.8, pch=4)+
   geom_point(data = DF_meanY_EX1, aes(x = lon, y = lat), color = "yellow", size = 0.4, pch=15)
 
-ggsave("C:/Users/39349/Documents/DAMOCLES/Final Workspace LASSO/MeanYield_2crit_1.png", units="in", dpi=400)
+
+#ggsave("C:/Users/39349/Documents/DAMOCLES/Final Workspace LASSO/MeanYield_2crit_1.png", units="in", dpi=400)
+ggsave("C:/Users/39349/Documents/DAMOCLES/Final Workspace LASSO/MeanYield_2crit_1.png", units="in", width=16.7,height=7.52, dpi=400)
 
  #+X11(width = 20, height = 6)
 
@@ -461,7 +463,7 @@ DF_meanGrSeas_EX2<-DF_meanY [excluded_pixel_995,]
 DF_meanGrSeas_EX1<- DF_meanY [pix_to_rm,]
 
 
-ggplot(data = DF_meanGrSeas, aes(x=lon, y=lat)) +
+p2<-ggplot(data = DF_meanGrSeas, aes(x=lon, y=lat)) +
   geom_polygon(data = world, aes(long, lat, group=group),
                fill="white", color="black", size=0.3)+  geom_tile(aes(fill=meany)) +
   scale_fill_gradient2(midpoint = max(Mean_grow_season_995, na.rm = T)/2,
@@ -476,14 +478,17 @@ ggplot(data = DF_meanGrSeas, aes(x=lon, y=lat)) +
   coord_fixed(xlim = c(-115, 130),
               ylim = c(min(coord_all_995[,2]), max(coord_all_995[,2])),
               ratio = 1.3)+
-  labs(fill="Mean growing season length"  )+
+  labs(fill="Mean growing season"  )+
   theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
         legend.title = element_text(size = 15), legend.text = element_text(size = 14))+
   geom_point(data = DF_meanGrSeas_EX2, aes(x = lon, y = lat), color = "yellow", size = 0.8, pch=4, show.legend=TRUE)+
   geom_point(data = DF_meanGrSeas_EX1, aes(x = lon, y = lat), color = "yellow", size = 0.4, pch=15, show.legend=TRUE)
 
-ggsave("C:/Users/39349/Documents/DAMOCLES/Final Workspace LASSO/Grow_season_2crit_col2.png", units="in", dpi=400)
+#ggsave("C:/Users/39349/Documents/DAMOCLES/Final Workspace LASSO/Grow_season_2crit_col2.png", units="in", dpi=400)
+ggsave("C:/Users/39349/Documents/DAMOCLES/Final Workspace LASSO/Grow_season_2crit_col2.png", units="in", width=16.7,height=7.52, dpi=400)
 
+ggarrange(p1, p2, nrow = 2,ncol=1,labels = c("A)", "B)"))
+ggsave("C:/Users/39349/Documents/DAMOCLES/Final Workspace LASSO/MATCH.png", units="in", dpi=400)
 
 
 # # Plot specificity error ####
