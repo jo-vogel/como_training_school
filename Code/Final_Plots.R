@@ -35,7 +35,7 @@ threshold <- 0.05
 
 ##### Initialisation, librairies, data #####
 
-library(ncdf4);library(glmnet);library(InformationValue);library(ROCR)
+library(ncdf4);library(glmnet);library(InformationValue);library(ROCR);library(ggpubr)
 library(abind);library(stringr);library(tictoc);library(ggplot2);library(viridis)
 
 
@@ -168,28 +168,62 @@ load(file = paste0("C:/Users/admin/Documents/Damocles_training_school_Como/Group
 #              seed, "_train", train_size,"_969GP.RData"))
 
 
-##### Adjust cutoff level #####
-
 Model_chosen <- lasso_model_lambda1se
 lambda_val <- lambda_VALS[2]
 lambda_name <- lambda_NAMES[2]
 
 
-#with 969 pixels, seed 1994, train size 70%
-segreg_th_adj_1se <- 0.6500294
 
-# /!\ this one is if we discard pixels with too low yield before computing cutoff
-segreg_th_adj_1se_after_disc <- 0.6513794
+#Remove pixels with low mean yield, lower than the10th percentile on the 995 VERY initial pixels, on row yield ####
+# in the drive folder Data/Global Data
+load("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/Data/Global/895gridpoints_kept_after10thpercyield.Rdata")
 
-segreg_th <- segreg_th_adj_1se
+coord_969 <- cbind(Data_xtrm_standardized$longitudes,
+                   Data_xtrm_standardized$latitudes)
+pix_to_keep <- logical(length = dim(coord_969)[1])
+for (pix in 1:dim(coord_969)[1]) {#find grid points in common in the 969 pixels and the 895 pixels
+  pix_to_keep[pix] <- (min((GP_kept_after_10thperc[,1]-coord_969[pix,1])^2+
+                                     (GP_kept_after_10thperc[,2]-coord_969[pix,2])^2)==0)
+}
 
+final_pix_num <- sum(pix_to_keep)
 
+number_pix_to_keep_in_969 <- which(pix_to_keep==1)
 
-#Remove pixels with low mean yield, lower than the10th percentile on the 995 VERY initial pixels ####
-mean_yield <- apply(Data_xtrm_non_standardized$yield,MARGIN = 1, FUN = mean, na.rm=T)
-pix_to_keep <- which(mean_yield > 434.24)
-final_pix_num <- length(pix_to_keep)
+##### Adjust cutoff level #####
+
+# source("./Code/Simple_Lasso_Ridge_ElasticNet/cutoff_adj_glmnet_lambda1se.R")
+# y1_train_list_simple_lasso <- y1_train_list
+# x1_train_list_simple_lasso <- x1_train_list
+# Model_chosen_889 <- list()
+# 
+# y1_train_list_simple_lasso <- list()
+# x1_train_list_simple_lasso <- list()
+# work_pix_tmp <- numeric()
+# for (pixel in 1:final_pix_num) {
+#   pix_in_969 <- number_pix_to_keep_in_969[pixel]
+#   y1_train_list_simple_lasso[[pixel]] <- y1_train_list[[pix_in_969]]
+#   x1_train_list_simple_lasso[[pixel]] <- x1_train_list[[pix_in_969]]
+#   Model_chosen_889[[pixel]] <- Model_chosen[[pix_in_969]]
+#   if(is.character(Model_chosen[[pix_in_969]])){work_pix_tmp[pixel]<-0} else {work_pix_tmp[pixel]<-1}
+# }#end for pixel
+# 
+# 
+# 
+# cost_fp_simple_lasso <- 100 # Misses: this should be associated with a higher cost, as it is more detrimental
+# cost_fn_simple_lasso <- 100 # False alarms
+# 
+# work_pix <- which(work_pix_tmp==1)
+# library(pbapply)
+# #return the mean value, over all pixels, of the adjusted cutoff
+# cutoff_simple_lasso <- adjust_cutoff(model_vector = Model_chosen_889,x1_train_list = x1_train_list_simple_lasso, y1_train_list = y1_train_list_simple_lasso,
+#                                      work_pix = work_pix, cost_fp = cost_fp_simple_lasso, cost_fn= cost_fn_simple_lasso)
+
+segreg_th <- 0.6505441
+
 ##### Model performance assessment #####
+
+
 
 
 coeff  <-list()
@@ -198,7 +232,7 @@ sensi <- rep(NA, final_pix_num)
 csi <- rep(NA, final_pix_num)
 
 for (pixel in 1:final_pix_num) {
-  pix <- pix_to_keep[pixel]
+  pix <- number_pix_to_keep_in_969[pixel]
   coeff[[pixel]] <- coefficients(Model_chosen[[pix]])
   
   mypred <- predict(Model_chosen[[pix]], as.matrix(x1_test_list[[pix]]),type="response")
@@ -223,11 +257,6 @@ for (pixel in 1:final_pix_num) {
 }#end pixel
 
 
-# load(file=paste0("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/coeff_wo_xtrms_",
-#                  lambda_name,"_V2020-03-20.RData")) # Pauline
-# load(file=paste0("D:/user/vogelj/Group_project/Code/Workspaces/coeff_wo_xtrms_",
-#                  lambda_name,"_V2020-03-20.RData")) # Johannes
-
 extreme_in_coeff <- function(coeff_list){ #function to check how many extreme indeices are kept as predictors
   extreme_indices <- c("dtr", "frs", "txx", "tnn", "rx5", "tx90p", "tn10p")
   if(max(abs(coeff_list[extreme_indices,]))==0){
@@ -250,15 +279,7 @@ for (pixel in 1:final_pix_num) {
   nb_coeff_kept[pixel] <- number_coeff_kept(coeff[[pixel]])
 }#end pixel
 
-# load(file=paste0("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/nb_coeff_wo_xtrms_",
-#                  lambda_name,"_V2020-03-20.RData")) # Pauline
-# load(file=paste0("D:/user/vogelj/Group_project/Code/Workspaces/nb_coeff_wo_xtrms_",
-#                  lambda_name,"_V2020-03-20.RData"))# Johannes
 
-# load(file=paste0("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/csi_wo_xtrms_",
-#                  lambda_name,"_V2020-03-20.RData")) # Pauline
-# load(file=paste0("D:/user/vogelj/Group_project/Code/Workspaces/csi_wo_xtrms_",
-#                  lambda_name,"_V2020-03-20.RData")) # Johannes
 
 mean_yield <- apply(Data_xtrm_non_standardized$yield,MARGIN = 1, FUN = mean, na.rm=T)
 var_yield <- apply(Data_xtrm_non_standardized$yield,MARGIN = 1, FUN = var, na.rm=T)
@@ -267,21 +288,21 @@ var_yield <- apply(Data_xtrm_non_standardized$yield,MARGIN = 1, FUN = var, na.rm
 
 
 ##### Plot results ######
-# load all coordinates of northern hemisphere
-path_to_NH_files <- "C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/Data/Global" # Pauline
-# path_to_NH_files <- "D:/user/vogelj/Data/Group project Como" # Johannes
-nh_files <- list.files(path=path_to_NH_files,pattern="*NH.nc") # all files from northern hemisphere
-nh_data <- lapply(1:length(nh_files),function(x){nc_open(paste0(path_to_NH_files,"/",nh_files[x]))})
-lat_all <- ncvar_get(nh_data[[1]],"lat")
-lon_all <- ncvar_get(nh_data[[1]],"lon")
-lati_all <- rep(lat_all,each=length(lon_all))
-long_all <- rep(lon_all,length(lat_all)) # coordinates rearranged
-coord_all <- cbind(long_all,lati_all)
+# # load all coordinates of northern hemisphere
+# path_to_NH_files <- "C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/Data/Global" # Pauline
+# # path_to_NH_files <- "D:/user/vogelj/Data/Group project Como" # Johannes
+# nh_files <- list.files(path=path_to_NH_files,pattern="*NH.nc") # all files from northern hemisphere
+# nh_data <- lapply(1:length(nh_files),function(x){nc_open(paste0(path_to_NH_files,"/",nh_files[x]))})
+# lat_all <- ncvar_get(nh_data[[1]],"lat")
+# lon_all <- ncvar_get(nh_data[[1]],"lon")
+# lati_all <- rep(lat_all,each=length(lon_all))
+# long_all <- rep(lon_all,length(lat_all)) # coordinates rearranged
+# coord_all <- cbind(long_all,lati_all)
+# 
+# lapply(1:length(nh_files),function(x){nc_close(nh_data[[x]])})
 
-lapply(1:length(nh_files),function(x){nc_close(nh_data[[x]])})
-
-coord_subset <- cbind(Data_xtrm_standardized$longitudes[pix_to_keep],
-                      Data_xtrm_standardized$latitudes[pix_to_keep])
+coord_subset <- cbind(Data_xtrm_standardized$longitudes[number_pix_to_keep_in_969],
+                      Data_xtrm_standardized$latitudes[number_pix_to_keep_in_969])
 world <- map_data("world")
 
 
@@ -311,158 +332,22 @@ ggplot(data = DF_sci, aes(x=lon, y=lat)) +
         legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
   X11(width = 20, height = 5)
 
-plot(mean_yield[pix_to_keep],csi)
-cor.test(mean_yield[pix_to_keep], csi)
-cor.test(mean_yield[pix_to_keep], csi, method = "kendall")
-plot(var_yield[pix_to_keep],csi)
-cor.test(var_yield[pix_to_keep], csi)
-plot(mean_yield[pix_to_keep],var_yield[pix_to_keep])
-cor.test(mean_yield[pix_to_keep], var_yield[pix_to_keep])
-
-
-# # Plot specificity error ####
-# 
-# DF_speci <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], speci = speci)
-# 
-# ggplot(data = DF_speci, aes(x=lon, y=lat)) +
-#   geom_polygon(data = world, aes(long, lat, group=group),
-#                fill="white", color="black", size=0.3) +
-#   geom_tile(aes(fill=speci)) +
-#   scale_fill_gradient2(limits=c(0,1), midpoint = 0.5,
-#                        low = "black", mid = "red3", high = "yellow") +
-#   theme(panel.ontop = F, panel.grid = element_blank(),
-#         panel.border = element_rect(colour = "black", fill = NA),
-#         axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
-#   ylab("Lat (°N)") +
-#   xlab("Lon (°E)") +
-#   coord_fixed(xlim = c(-120, 135),
-#               ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
-#               ratio = 1.3)+
-#   labs(fill="Specif."
-#        #,title = paste("Specificity")
-#        #,subtitle = paste("Monthly meteo var + extreme indices, cutoff level=", round(segreg_th,3),", ",lambda_val, sep = "")
-#   )+
-#   theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
-#         legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
-#   X11(width = 20, height = 6)
-# 
-# plot(mean_yield,speci)
-# cor.test(mean_yield, speci)
-# cor.test(mean_yield, speci, method = "kendall")
-
-
-
-# Plot number of variables kept ####
-DF_numbcoeff <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], coeff_kep = nb_coeff_kept)
-
-ggplot(data = DF_numbcoeff, aes(x=lon, y=lat)) +
-  geom_polygon(data = world, aes(long, lat, group=group),
-               fill="white", color="black", size=0.3) +
-  geom_tile(aes(fill=nb_coeff_kept)) +
-  scale_fill_gradient(low = "pink", high = "darkblue") +
-  theme(panel.ontop = F, panel.grid = element_blank(),
-        panel.border = element_rect(colour = "black", fill = NA),
-        axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
-  ylab("Lat (°N)") +
-  xlab("Lon (°E)") +
-  coord_fixed(xlim = c(-120, 135),
-              ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
-              ratio = 1.3)+
-  labs(fill="Nb of var."
-       #,title = paste("Number of variables kept, simple",model_name,"regression, "),
-       #subtitle = paste("Monthly meteo var + extreme indices, ",lambda_val, sep = "")
-       )+
-  theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
-        legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
-  X11(width = 20, height = 5)
-
-# Histogram nb variables ####
-hist(nb_coeff_kept, main = paste0("Nb of variables kept, ",lambda_val), xlab = "number of variables", breaks=14)
-
-
-# # Difference nb var kept w/o extreme indices ####
-# nb_coeff_kept_extremes <- nb_coeff_kept
-# # load(file=paste0("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/nb_coeff_wo_xtrms_",
-# #                  lambda_name,"_V2020-03-20.RData")) # Pauline
-# load(file=paste0("D:/user/vogelj/Group_project/Code/Workspaces/nb_coeff_wo_xtrms_",
-#                  lambda_name,"_V2020-03-20.RData")) # Johannes
-# world <- map_data("world")
-# 
-# nbcoeff_sub <- nb_coeff_kept_extremes - nb_coeff_kept_wo_extremes
-# 
-# DF_sub <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], sub_score = nbcoeff_sub)
-# 
-# ggplot(data = DF_sub, aes(x=DF_sub$lon, y=DF_sub$lat)) +
-#   geom_polygon(data = world, aes(long, lat, group=group),
-#                fill="white", color="black", size=0.3) +
-#   geom_tile(aes(fill=DF_sub$sub_score)) +
-#   scale_fill_gradient2(low = "blue", high = "red") +
-#   theme(panel.ontop = F, panel.grid = element_blank(),
-#         panel.border = element_rect(colour = "black", fill = NA),
-#         axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
-#   ylab("Lat (°N)") +
-#   xlab("Lon (°E)") +
-#   coord_fixed(xlim = c(-120, 135),
-#               ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
-#               ratio = 1.3)+
-#   labs(fill="Diff in nb var",
-#        title = "Difference number of variable kept with xtrm - w/o xtrm",
-#        subtitle = paste("Adjusted cut-off", sep = ""))+
-#   theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
-#         legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
-#   X11(width = 20, height = 7)
-# 
-# 
-# mean_yield <- apply(X = Data_xtrm_non_standardized$yield, MARGIN = 1, FUN = mean, na.rm=T)
-# plot(mean_yield, csi_sub, ylab="csi with xtrms - w/o xtrms (lambdamin)")
+plot(mean_yield[number_pix_to_keep_in_969],csi)
+cor.test(mean_yield[number_pix_to_keep_in_969], csi)
+cor.test(mean_yield[number_pix_to_keep_in_969], csi, method = "kendall")
+plot(var_yield[number_pix_to_keep_in_969],csi)
+cor.test(var_yield[number_pix_to_keep_in_969], csi)
+plot(mean_yield[number_pix_to_keep_in_969],var_yield[number_pix_to_keep_in_969])
+cor.test(mean_yield[number_pix_to_keep_in_969], var_yield[number_pix_to_keep_in_969])
 
 
 
 
-# Plot number of extreme indices kept ####
-DF_numbextr <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], coeff_kep = nb_extr_kept)
-DF_numbextr$coeff_kep <- as.factor(DF_numbextr$coeff_kep)
 
-# mycolors <- c("orange", rgb(0.3,0.3,0.5), rgb(0,0,0.7),
-              # rgb(0.2,0.2,0.8), rgb(0.4,0.4,0.9), rgb(0.7,0.7,1), rgb(0.8,0.8,1), rgb(0.9,0.9,1))
-mycolors <- rev(hcl.colors(n=8,palette="Viridis"))
-# mycolors <- rev(hcl.colors(n=8,palette="Plasma"))
-
-ggplot(data = DF_numbextr, aes(x=lon, y=lat)) +
-  geom_polygon(data = world, aes(long, lat, group=group),
-               fill="white", color="black", size=0.3) +
-  geom_tile(aes(fill=coeff_kep)) +
-  scale_fill_manual(values = mycolors, ) +
-  theme(panel.ontop = F, panel.grid = element_blank(),
-        panel.border = element_rect(colour = "black", fill = NA),
-        axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
-  ylab("Lat (°N)") +
-  xlab("Lon (°E)") +
-  coord_fixed(xlim = c(-120, 135),
-              ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
-              ratio = 1.3)+
-  labs(fill="Nb extr.\n ind."
-       #,title = paste("Number of exteme indices kept, simple",model_name,"regression,"),
-       #subtitle = paste("Monthly meteo var + extreme indices, ",lambda_val, sep = "")
-       )+
-  theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
-        legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
-  X11(width = 20, height = 5)
-# ggsave(filename="D:/user/vogelj/Group_project/Output/Plots/num_extr_ind_viridis.pdf")
-
-mean_yield <- apply(X=Data_xtrm_non_standardized$yield, MARGIN = 1, FUN = mean, na.rm=T)
-
-pairs(cbind(mean_yield[pix_to_keep], csi, speci, nb_coeff_kept, nb_extr_kept), lower.panel = NULL)
-
-
-
-
-# Map of the number of season kept #####
+# number of season kept
 
 
 source("./Code/get_first_coeff_function.R")
-
-
 
 count_seas_and_var <- function(coefff){
   if (length(which((coefff)!=0))-1>0) {
@@ -488,11 +373,11 @@ count_seas_and_var <- function(coefff){
     if (nb_of_seas>0){
       return(nb_of_seas)
     } else {
-      return("No meteo var")
+      return("No met. var")
     }
     
   } else {
-    return("No meteo var")
+    return("No met. var")
   }#end if else
   
 }
@@ -502,15 +387,84 @@ for (pix in 1:final_pix_num) {
   nb_of_seas[pix] <- count_seas_and_var(coeff[[pix]])
 }
 
-DF_nbseason <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], nb_season = nb_of_seas)
-DF_nbseason$nb_season <- as.factor(DF_nbseason$nb_season)
 
-ggplot(data = DF_nbseason, aes(x=lon, y=lat)) +
+
+nb_meteo <- numeric(length=length(coeff))
+met_type <- numeric(length=length(coeff))
+meteo_type <- as.character(met_type)
+met_strings <- vector("list",length=length(coeff))
+met_vpd <- numeric(length=length(coeff))
+met_pr <- numeric(length=length(coeff))
+met_temp <- numeric(length=length(coeff))
+
+source("./Code/get_first_coeff_function.R")
+for (pix in 1:length(coeff)) {
+  if((length(which(coeff[[pix]]!=0))-1)<1){
+    nb_meteo[pix] <- 0
+  } else {
+    coeff_kept <- get_firstcoeffs(coeff = coeff[[pix]],
+                                  nb_of_coeff = (length(which(coeff[[pix]]!=0))-1))
+    nb_meteo[pix] <- length(unique(coeff_kept[,1]))
+    for (extr in c("dtr", "frs", "txx", "tnn", "rx5", "tx90p", "tn10p")) {
+      if (extr %in% unique(get_firstcoeffs(coeff = coeff[[pix]],
+                                           nb_of_coeff = length(coeff_kept[,1]))[,1])){
+        nb_meteo[pix] <- nb_meteo[pix] - 1
+        
+      }#end fi
+    }#end for xtrm
+    
+  }#end ifelse
+  met_string <- (c("vpd","pr","tmax") %in% unique(coeff_kept[,1])) 
+  met_strings[[pix]] <- met_string
+  if (identical(met_string, c(T,F,F))) {
+    met_type[pix] <- 1
+    meteo_type[pix] <- "VPD"
+  } else if (identical(met_string, c(F,T,F))) {
+    met_type[pix] <- 2
+    meteo_type[pix] <- "Pr"
+  } else if (identical(met_string, c(F,F,T))) {
+    met_type[pix] <- 3
+    meteo_type[pix] <- "Tmax"
+  } else if (identical(met_string, c(T,T,F))) {
+    met_type[pix] <- 4
+    meteo_type[pix] <- "VPD & Pr"
+  } else if (identical(met_string, c(T,F,T))) {
+    met_type[pix] <- 5
+    meteo_type[pix] <- "VPD & Tmax"
+  } else if (identical(met_string, c(F,T,T))) {
+    met_type[pix] <- 6
+    meteo_type[pix] <- "Pr & Tmax"
+  } else if (identical(met_string, c(T,T,T))) {
+    met_type[pix] <- 7
+    meteo_type[pix] <- "All"
+  } else if (identical(met_string, c(F,F,F)) | is.null(met_string)) {
+    met_type[pix] <- 8
+    meteo_type[pix] <- "None"
+  }
+  if ("vpd" %in% unique(coeff_kept[,1])) {met_vpd[pix] <- 1} 
+  if ("pr" %in% unique(coeff_kept[,1])) {met_temp[pix] <- 2} 
+  if ("tmax" %in% unique(coeff_kept[,1])) {met_pr[pix] <- 3}
+  
+}#end for pix
+
+
+# 3 plots combined: number of extreme indices, combination of meteovar and nb seasons ####
+
+
+# Plot number of extreme indices kept
+DF_numbextr <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], coeff_kep = nb_extr_kept)
+DF_numbextr$coeff_kep <- as.factor(DF_numbextr$coeff_kep)
+
+# mycolors <- c("orange", rgb(0.3,0.3,0.5), rgb(0,0,0.7),
+# rgb(0.2,0.2,0.8), rgb(0.4,0.4,0.9), rgb(0.7,0.7,1), rgb(0.8,0.8,1), rgb(0.9,0.9,1))
+mycolors <- rev(hcl.colors(n=8,palette="Viridis"))
+# mycolors <- rev(hcl.colors(n=8,palette="Plasma"))
+
+P1 <- ggplot(data = DF_numbextr, aes(x=lon, y=lat)) +
   geom_polygon(data = world, aes(long, lat, group=group),
                fill="white", color="black", size=0.3) +
-  geom_tile(aes(fill=DF_nbseason$nb_season)) +
-  scale_fill_manual(values = c("0"=viridis(6)[1], "1"=viridis(6)[3], "2"=viridis(6)[4],
-                               "3"=viridis(6)[5], "4"=viridis(6)[6], "No meteo var"="pink")) +
+  geom_tile(aes(fill=coeff_kep)) +
+  scale_fill_manual(values = mycolors, ) +
   theme(panel.ontop = F, panel.grid = element_blank(),
         panel.border = element_rect(colour = "black", fill = NA),
         axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
@@ -519,54 +473,102 @@ ggplot(data = DF_nbseason, aes(x=lon, y=lat)) +
   coord_fixed(xlim = c(-120, 135),
               ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
               ratio = 1.3)+
-  labs(fill="Nb of seasons"
+  labs(fill="Nb extr.\n ind."
+       #,title = paste("Number of exteme indices kept, simple",model_name,"regression,"),
+       #subtitle = paste("Monthly meteo var + extreme indices, ",lambda_val, sep = "")
+  )+
+  theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
+        legend.title = element_text(size = 15), legend.text = element_text(size = 14))
+#   + X11(width = 20, height = 5)
+
+
+# Combinations of meteorological variables
+DF_meteo_type <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], met_type = meteo_type)
+#DF_meteo_type$met_type <- as.factor(DF_meteo_type$met_type)
+#cols <- c("1" = "#7FC97F", "2" = "cadetblue2", "3" = "#386CB0", "4" = "#824D99", "5" = "#F0027F", "6" = "darkred" , "7" = "#FDC086", "8" = "#FFFF99")
+
+cols <- c("VPD" = "#7FC97F", "Pr" = "cadetblue2", "Tmax" = "#386CB0", "VPD & Pr" = "#824D99",
+          "VPD & Tmax" = "#F0027F", "Pr & Tmax" = "darkred" , "All" = "#FDC086", "None" = "#FFFF99")
+
+P2 <- ggplot(data = DF_meteo_type, aes(x=lon, y=lat)) +
+  geom_polygon(data = world, aes(long, lat, group=group),
+               fill="white", color="black", size=0.3) +
+  geom_tile(aes(fill=met_type)) +
+  scale_fill_manual(values = cols,breaks=c("VPD","Pr","Tmax","VPD & Pr","VPD & Tmax","Pr & Tmax", "All","None")) +
+  theme(panel.ontop = F, panel.grid = element_blank(),
+        panel.border = element_rect(colour = "black", fill = NA),
+        axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
+  ylab("Lat (°N)") +
+  xlab("Lon (°E)") +
+  coord_fixed(xlim = c(-120, 135),
+              ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
+              ratio = 1.3)+
+  labs(fill="Combination\nof met.\nvariables"
+  )+
+  theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
+        legend.title = element_text(size = 15), legend.text = element_text(size = 14))
+   # +X11(width = 20, height = 5)
+
+
+
+
+DF_nbseason <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], nb_season = nb_of_seas)
+DF_nbseason$nb_season <- as.factor(DF_nbseason$nb_season)
+
+
+#Plot nb of seasons
+P3 <- ggplot(data = DF_nbseason, aes(x=lon, y=lat)) +
+  geom_polygon(data = world, aes(long, lat, group=group),
+               fill="white", color="black", size=0.3) +
+  geom_tile(aes(fill=DF_nbseason$nb_season)) +
+  scale_fill_manual(values = c("0"=viridis(6)[1], "1"=viridis(6)[3], "2"=viridis(6)[4],
+                               "3"=viridis(6)[5], "4"=viridis(6)[6], "No met. var"="pink")) +
+  theme(panel.ontop = F, panel.grid = element_blank(),
+        panel.border = element_rect(colour = "black", fill = NA),
+        axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
+  ylab("Lat (°N)") +
+  xlab("Lon (°E)") +
+  coord_fixed(xlim = c(-120, 135),
+              ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
+              ratio = 1.3)+
+  labs(fill="Nb of seas."
        #,title = paste("Number of different seasons, simple",model_name,"regression"),
        #subtitle = paste("monthly meteo var + extreme indices, ",lambda_val, sep = "")
-       )+
+  )+
   theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
-        legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
-  X11(width = 20, height = 5)
+        legend.title = element_text(size = 15), legend.text = element_text(size = 14))
+# + X11(width = 20, height = 5)
 
 
-# # Difference CSI w/o extreme indices ####
-# csi_extremes <- csi
-# csi_sub <- csi_extremes - csi_wo_extremes
-# 
-# 
-# # load(file=paste0("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/csi_wo_xtrms_",
-# #                  lambda_name,"_V2020-03-20.RData")) # Pauline
-# load(file=paste0("D:/user/vogelj/Group_project/Code/Workspaces/csi_wo_xtrms_",
-#                  lambda_name,"_V2020-03-20.RData")) # Johannes
-# 
-# world <- map_data("world")
-# 
-# DF_sub <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], sub_score = csi_sub)
-# 
-# ggplot(data = DF_sub, aes(x=DF_sub$lon, y=DF_sub$lat)) +
-#   geom_polygon(data = world, aes(long, lat, group=group),
-#                fill="white", color="black", size=0.3) +
-#   geom_tile(aes(fill=DF_sub$sub_score)) +
-#   scale_fill_gradient2(low = "blue", high = "red") +
-#   theme(panel.ontop = F, panel.grid = element_blank(),
-#         panel.border = element_rect(colour = "black", fill = NA),
-#         axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
-#   ylab("Lat (°N)") +
-#   xlab("Lon (°E)") +
-#   coord_fixed(xlim = c(-120, 135),
-#               ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
-#               ratio = 1.3)+
-#   labs(fill="Diff in CSI",
-#        title = "Difference CSI with xtrm - w/o xtrm",
-#        subtitle = paste("Adjusted cut-off", sep = ""))+
-#   theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
-#         legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
-#   X11(width = 20, height = 7)
-# hist(csi_sub, main="csi with xtrms - w/o xtrms (lambdamin)")
-# 
-# mean_yield <- apply(X = Data_xtrm_non_standardized$yield, MARGIN = 1, FUN = mean, na.rm=T)
-# plot(mean_yield, csi_sub, ylab="csi with xtrms - w/o xtrms (lambdamin)")
+L1 <- get_legend(P1+ theme(legend.title = element_text(size=11),
+                           legend.text = element_text(size=10),
+                           legend.key.size = unit(0.7,"line")))
+L2 <- get_legend(P2+ theme(legend.title = element_text(size=11),
+                           legend.text = element_text(size=10),
+                           legend.key.size = unit(0.7,"line")))
+L3 <- get_legend(P3+ theme(legend.title = element_text(size=11),
+                           legend.text = element_text(size=10),
+                           legend.key.size = unit(0.7,"line")))
 
-
+ggarrange(P1 + theme(legend.position = "none", axis.title.x = element_text(size = 10),
+                     axis.title.y = element_text(size = 10),
+                     axis.text.x = element_text(size = 10),
+                     axis.text.y = element_text(size = 10)),
+          L1,
+          P2 + theme(legend.position = "none", axis.title.x = element_text(size = 10),
+                     axis.title.y = element_text(size = 10),
+                     axis.text.x = element_text(size = 10),
+                     axis.text.y = element_text(size = 10)),
+          L2,
+          P3 + theme(legend.position = "none", axis.title.x = element_text(size = 10),
+                     axis.title.y = element_text(size = 10),
+                     axis.text.x = element_text(size = 10),
+                     axis.text.y = element_text(size = 10)),
+          L3,
+          nrow = 3, ncol=2,labels = c("a)", "", "b)", "", "c)", "")
+          ,widths=c(8,1), heights=c(1,1,1)
+          )+
+  X11(width = 21, height = 15)
 
 
 
@@ -620,6 +622,37 @@ ggplot(data = DF_nbmeteo, aes(x=lon, y=lat)) +
 
 
 
+# Plot number of variables kept ####
+DF_numbcoeff <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], coeff_kep = nb_coeff_kept)
+
+ggplot(data = DF_numbcoeff, aes(x=lon, y=lat)) +
+  geom_polygon(data = world, aes(long, lat, group=group),
+               fill="white", color="black", size=0.3) +
+  geom_tile(aes(fill=nb_coeff_kept)) +
+  scale_fill_gradient(low = "pink", high = "darkblue") +
+  theme(panel.ontop = F, panel.grid = element_blank(),
+        panel.border = element_rect(colour = "black", fill = NA),
+        axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
+  ylab("Lat (°N)") +
+  xlab("Lon (°E)") +
+  coord_fixed(xlim = c(-120, 135),
+              ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
+              ratio = 1.3)+
+  labs(fill="Nb of var."
+       #,title = paste("Number of variables kept, simple",model_name,"regression, "),
+       #subtitle = paste("Monthly meteo var + extreme indices, ",lambda_val, sep = "")
+  )+
+  theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
+        legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
+  X11(width = 20, height = 5)
+
+# Histogram nb variables ####
+hist(nb_coeff_kept, main = paste0("Nb of variables kept, ",lambda_val), xlab = "number of variables", breaks=14)
+
+
+
+
+
 
 # ##### Differences wo extreme indices #####
 # 
@@ -640,7 +673,84 @@ ggplot(data = DF_nbmeteo, aes(x=lon, y=lat)) +
 # mean(nb_extr_kept)
 
 
+# # Difference nb var kept w/o extreme indices ####
+# nb_coeff_kept_extremes <- nb_coeff_kept
+# # load(file=paste0("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/nb_coeff_wo_xtrms_",
+# #                  lambda_name,"_V2020-03-20.RData")) # Pauline
+# load(file=paste0("D:/user/vogelj/Group_project/Code/Workspaces/nb_coeff_wo_xtrms_",
+#                  lambda_name,"_V2020-03-20.RData")) # Johannes
+# world <- map_data("world")
+# 
+# nbcoeff_sub <- nb_coeff_kept_extremes - nb_coeff_kept_wo_extremes
+# 
+# DF_sub <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], sub_score = nbcoeff_sub)
+# 
+# ggplot(data = DF_sub, aes(x=DF_sub$lon, y=DF_sub$lat)) +
+#   geom_polygon(data = world, aes(long, lat, group=group),
+#                fill="white", color="black", size=0.3) +
+#   geom_tile(aes(fill=DF_sub$sub_score)) +
+#   scale_fill_gradient2(low = "blue", high = "red") +
+#   theme(panel.ontop = F, panel.grid = element_blank(),
+#         panel.border = element_rect(colour = "black", fill = NA),
+#         axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
+#   ylab("Lat (°N)") +
+#   xlab("Lon (°E)") +
+#   coord_fixed(xlim = c(-120, 135),
+#               ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
+#               ratio = 1.3)+
+#   labs(fill="Diff in nb var",
+#        title = "Difference number of variable kept with xtrm - w/o xtrm",
+#        subtitle = paste("Adjusted cut-off", sep = ""))+
+#   theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
+#         legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
+#   X11(width = 20, height = 7)
+# 
+# 
+# mean_yield <- apply(X = Data_xtrm_non_standardized$yield, MARGIN = 1, FUN = mean, na.rm=T)
+# plot(mean_yield, csi_sub, ylab="csi with xtrms - w/o xtrms (lambdamin)")
 
+
+
+
+
+
+# # Difference CSI w/o extreme indices ####
+# csi_extremes <- csi
+# csi_sub <- csi_extremes - csi_wo_extremes
+# 
+# 
+# # load(file=paste0("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/csi_wo_xtrms_",
+# #                  lambda_name,"_V2020-03-20.RData")) # Pauline
+# load(file=paste0("D:/user/vogelj/Group_project/Code/Workspaces/csi_wo_xtrms_",
+#                  lambda_name,"_V2020-03-20.RData")) # Johannes
+# 
+# world <- map_data("world")
+# 
+# DF_sub <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], sub_score = csi_sub)
+# 
+# ggplot(data = DF_sub, aes(x=DF_sub$lon, y=DF_sub$lat)) +
+#   geom_polygon(data = world, aes(long, lat, group=group),
+#                fill="white", color="black", size=0.3) +
+#   geom_tile(aes(fill=DF_sub$sub_score)) +
+#   scale_fill_gradient2(low = "blue", high = "red") +
+#   theme(panel.ontop = F, panel.grid = element_blank(),
+#         panel.border = element_rect(colour = "black", fill = NA),
+#         axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
+#   ylab("Lat (°N)") +
+#   xlab("Lon (°E)") +
+#   coord_fixed(xlim = c(-120, 135),
+#               ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
+#               ratio = 1.3)+
+#   labs(fill="Diff in CSI",
+#        title = "Difference CSI with xtrm - w/o xtrm",
+#        subtitle = paste("Adjusted cut-off", sep = ""))+
+#   theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
+#         legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
+#   X11(width = 20, height = 7)
+# hist(csi_sub, main="csi with xtrms - w/o xtrms (lambdamin)")
+# 
+# mean_yield <- apply(X = Data_xtrm_non_standardized$yield, MARGIN = 1, FUN = mean, na.rm=T)
+# plot(mean_yield, csi_sub, ylab="csi with xtrms - w/o xtrms (lambdamin)")
 
 #### Barplot: combinations of months and variables ####
 coefs_seas <- sapply(1:length(coeff), function(x) names(numLevels_list[[x]])[coeff[[x]][-1]!=0])
@@ -710,92 +820,7 @@ for (varia in 1:length(allvariables)) {
 
 
 
-nb_meteo <- numeric(length=length(coeff))
-met_type <- numeric(length=length(coeff))
-meteo_type <- as.character(met_type)
-met_strings <- vector("list",length=length(coeff))
-met_vpd <- numeric(length=length(coeff))
-met_pr <- numeric(length=length(coeff))
-met_temp <- numeric(length=length(coeff))
 
-source("./Code/get_first_coeff_function.R")
-for (pix in 1:length(coeff)) {
-  if((length(which(coeff[[pix]]!=0))-1)<1){
-    nb_meteo[pix] <- 0
-  } else {
-    coeff_kept <- get_firstcoeffs(coeff = coeff[[pix]],
-                                  nb_of_coeff = (length(which(coeff[[pix]]!=0))-1))
-    nb_meteo[pix] <- length(unique(coeff_kept[,1]))
-    for (extr in c("dtr", "frs", "txx", "tnn", "rx5", "tx90p", "tn10p")) {
-      if (extr %in% unique(get_firstcoeffs(coeff = coeff[[pix]],
-                                           nb_of_coeff = length(coeff_kept[,1]))[,1])){
-        nb_meteo[pix] <- nb_meteo[pix] - 1
-        
-      }#end fi
-    }#end for xtrm
-    
-  }#end ifelse
-  met_string <- (c("vpd","pr","tmax") %in% unique(coeff_kept[,1])) 
-  met_strings[[pix]] <- met_string
-  if (identical(met_string, c(T,F,F))) {
-    met_type[pix] <- 1
-    meteo_type[pix] <- "VPD"
-  } else if (identical(met_string, c(F,T,F))) {
-    met_type[pix] <- 2
-    meteo_type[pix] <- "Pr"
-  } else if (identical(met_string, c(F,F,T))) {
-    met_type[pix] <- 3
-    meteo_type[pix] <- "T"
-  } else if (identical(met_string, c(T,T,F))) {
-    met_type[pix] <- 4
-    meteo_type[pix] <- "VPD & Pr"
-  } else if (identical(met_string, c(T,F,T))) {
-    met_type[pix] <- 5
-    meteo_type[pix] <- "VPD & T"
-  } else if (identical(met_string, c(F,T,T))) {
-    met_type[pix] <- 6
-    meteo_type[pix] <- "Pr & T"
-  } else if (identical(met_string, c(T,T,T))) {
-    met_type[pix] <- 7
-    meteo_type[pix] <- "All"
-  } else if (identical(met_string, c(F,F,F)) | is.null(met_string)) {
-    met_type[pix] <- 8
-    meteo_type[pix] <- "None"
-  }
-  if ("vpd" %in% unique(coeff_kept[,1])) {met_vpd[pix] <- 1} 
-  if ("pr" %in% unique(coeff_kept[,1])) {met_temp[pix] <- 2} 
-  if ("tmax" %in% unique(coeff_kept[,1])) {met_pr[pix] <- 3}
-  
-}#end for pix
-
-
-# Combinations of meteorological variables
-DF_meteo_type <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], met_type = meteo_type)
-#DF_meteo_type$met_type <- as.factor(DF_meteo_type$met_type)
-#cols <- c("1" = "#7FC97F", "2" = "cadetblue2", "3" = "#386CB0", "4" = "#824D99", "5" = "#F0027F", "6" = "darkred" , "7" = "#FDC086", "8" = "#FFFF99")
-
-cols <- c("VPD" = "#7FC97F", "Pr" = "cadetblue2", "Tmax" = "#386CB0", "VPD & Pr" = "#824D99",
-          "VPD & Tmax" = "#F0027F", "Pr & Tmax" = "darkred" , "All" = "#FDC086", "None" = "#FFFF99")
-
-ggplot(data = DF_meteo_type, aes(x=lon, y=lat)) +
-  geom_polygon(data = world, aes(long, lat, group=group),
-               fill="white", color="black", size=0.3) +
-  geom_tile(aes(fill=met_type)) +
-  scale_fill_manual(values = cols,breaks=c("VPD","Pr","Tmax","VPD & Pr","VPD & Tmax","Pr & Tmax", "All","None")) +
-  theme(panel.ontop = F, panel.grid = element_blank(),
-        panel.border = element_rect(colour = "black", fill = NA),
-        axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
-  ylab("Lat (°N)") +
-  xlab("Lon (°E)") +
-  coord_fixed(xlim = c(-120, 135),
-              ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
-              ratio = 1.3)+
-  labs(fill="Combination\nof met.\nvariables"
-  )+
-  theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
-        legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
-  X11(width = 20, height = 5)
-#ggsave("D:/user/vogelj/Group_project/Output/Plots/meteotype.pdf")
 
 
 # Indiviual monthly variable predictors
@@ -823,43 +848,3 @@ ggplot(data = DF_meteo_cat, aes(x=lon, y=lat)) +
   theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
         legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
   X11(width = 20, height = 6)
-ggsave("D:/user/vogelj/Group_project/Output/Plots/met_vpd.pdf")
-# ggsave("D:/user/vogelj/Group_project/Output/Plots/met_temp.pdf")
-# ggsave("D:/user/vogelj/Group_project/Output/Plots/met_pr.pdf")
-
-
-
-
-
-
-# Compute cutoff after discarding pixels ####
-
-
-source("./Code/Simple_Lasso_Ridge_ElasticNet/cutoff_adj_glmnet_lambda1se.R")
-y1_train_list_simple_lasso <- list()
-x1_train_list_simple_lasso <- list()
-Model_chosen_discar <- list()
-for (pixel in 1:final_pix_num) {
-  pix <- pix_to_keep[pixel]
-  
-  y1_train_list_simple_lasso[[pixel]] <- y1_train_list[[pix]]
-  x1_train_list_simple_lasso[[pixel]] <- x1_train_list[[pix]]
-  Model_chosen_discar[[pixel]] <- Model_chosen[[pix]]
-  
-}#end pixel
-
-work_pix_tmp <- numeric()
-for (pixel in 1:final_pix_num) {
-  pix <- pix_to_keep[pixel]
-  if(is.character(Model_chosen[[pix]])){work_pix_tmp[pixel]<-0} else {work_pix_tmp[pixel]<-1}
-}#end for pix
-
-work_pix <- which(work_pix_tmp==1)
-library(pbapply)
-#return the mean value, over all pixels, of the adjusted cutoff
-cutoff_simple_lasso <- adjust_cutoff(model_vector = Model_chosen_discar,x1_train_list = x1_train_list_simple_lasso,
-                                     y1_train_list = y1_train_list_simple_lasso,
-                                     work_pix = work_pix, cost_fp = 100, cost_fn= 100)
-#with 969 pixels, _V2020-03-20
-segreg_th_adj_1se_after_disc <- cutoff_simple_lasso
-segreg_th_adj_1se_after_disc <- 0.6513794
