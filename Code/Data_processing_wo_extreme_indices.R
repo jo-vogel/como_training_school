@@ -90,7 +90,13 @@ vpd <- array(data = nh_variables[[which(nh_files=="meteo_vpd_NH.nc")]],
 #earn some space
 rm(nh_variables)
 
+row_mean_yield <- apply(yields, MARGIN = 1, FUN=mean, na.rm=T)
+perc10_yields <- quantile(row_mean_yield, probs=0.1)
 
+GP_kept_after_10thperc <- cbind(lon_kept[row_mean_yield>perc10_yields], lat_kept[row_mean_yield>perc10_yields])
+colnames(GP_kept_after_10thperc) <- c("longitudes", "latitudes")
+
+save(GP_kept_after_10thperc, file = paste0(path_to_NH_files,"/895gridpoints_kept_after10thpercyield.Rdata"))
 
 ##### temporal reduction ####
 min_sowing_day <- apply(X = sowing_date, MARGIN = 1, FUN = min)
