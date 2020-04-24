@@ -198,7 +198,7 @@ segreg_th <- segreg_th_adj_1se
 
 ######### Load Data for the initials 995 Pixels #########
 # You can find it in Drive: Figures/Data-Processing #####
-load("C:/Users/39349/Documents/DAMOCLES/Data_global/Data_995_pixR.RData")
+load("C:/Users/39349/Documents/DAMOCLES/Data_global/Data_995_pixR_quant.RData.RData")
 
 Mean_yields_995<- apply(yields_995,MARGIN = 1, FUN = mean, na.rm=T)  #Median for the row
 
@@ -207,8 +207,9 @@ Mean_grow_season_995<- apply(length_growseas_995,1,MARGIN = 1, FUN = mean, na.rm
 
 #Remove pixels with low mean yield, lower than the10th percentile on the 995 VERY initial pixels
 mean_yield <- apply(Data_xtrm_non_standardized$yield,MARGIN = 1, FUN = mean, na.rm=T)
-pix_to_keep <- which(mean_yield > quantile(Mean_yields_995,0.10))
-excluded_pixel<-which(mean_yield <= quantile(Mean_yields_995,0.10))
+
+pix_to_keep <- which(mean_yield > quantile_10_raw_data)
+excluded_pixel<-which(mean_yield <= quantile_10_raw_data)
 
 final_pix_num <- length(pix_to_keep)
 
@@ -370,7 +371,7 @@ cor.test(mean_yield[pix_to_keep], var_yield[pix_to_keep])
 
 
 #Criterion for excluded pixels that are in the plot
-
+#Mean Yield< quantile 0.1 calculated on the raw data Yield (before excluding year with GrowS>365)#
   
   
 #Mean Yield and CSI
@@ -394,8 +395,6 @@ legend("topleft",c("Excluded pixels","Included pixels"),col=c("red","black"), pc
 
 #Just excluded pixels
 
-
-
 plot(var_yield[excluded_pixel], csi_all[excluded_pixel],col="red",pch=19, main="Only excluded pixel")
 
 
@@ -403,19 +402,25 @@ plot(var_yield[excluded_pixel], csi_all[excluded_pixel],col="red",pch=19, main="
 # MAP Plot Mean Yield ####
 # Plot with the initial 995 pixels #
 
-excluded_pixel_995<-which(Mean_yields_995<= quantile(Mean_yields_995,0.10))
-pix_to_keep_995<- which(Mean_yields_995>quantile(Mean_yields_995,0.10))
+
+excluded_pixel_995<-which(Mean_yields_995<= quantile_10_raw_data)
+pix_to_keep_995<- which(Mean_yields_995> quantile_10_raw_data)
+
+#excluded_pixel_995<-which(Mean_yields_995<= quantile(Mean_yields_995,0.10))
+#pix_to_keep_995<- which(Mean_yields_995>quantile(Mean_yields_995,0.10))
 
 
 
 pixel<-rep(1:995,1)
 
-#Plot data Processing
+#Plot data Processing: scatterplot pixels and mean yields
+
 plot(pixel,Mean_yields_995, xlab="Pixels", ylab="Mean Yield")
 points(pixel[excluded_pixel_995],Mean_yields_995[excluded_pixel_995], col="red",pch=16)
 points(pixel[pix_to_rm],Mean_yields_995[pix_to_rm],col="green",pch=16)
 legend("topleft",c("5th percentile yield==0","Mean Yield< 10th percentile"),col=c("green","red"), pch=19)
 
+# MAP Plot Mean Yield 
 
 DF_meanY <- data.frame(lon=coord_all_995[,1], lat = coord_all_995[,2], meany = Mean_yields_995)
 
