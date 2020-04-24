@@ -198,7 +198,7 @@ segreg_th <- segreg_th_adj_1se
 
 ######### Load Data for the initials 995 Pixels #########
 # You can find it in Drive: Figures/Data-Processing #####
-load("C:/Users/39349/Documents/DAMOCLES/Data_global/Data_995_pixR.RData")
+load("C:/Users/39349/Documents/DAMOCLES/Data_global/Data_995_pixR_quant.RData.RData")
 
 Mean_yields_995<- apply(yields_995,MARGIN = 1, FUN = mean, na.rm=T)  #Median for the row
 
