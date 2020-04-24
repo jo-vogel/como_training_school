@@ -78,11 +78,28 @@ coefs_seas_eur_tab <-  as.data.frame(table(coefs_seas_eur_vec))
 coefs_seas_no_am_tab <- as.data.frame(table(coefs_seas_no_am_vec))
 coefs_seas_asia_tab <- as.data.frame(table(coefs_seas_asia_vec))
 coefs_seas_vec_tab <- as.data.frame(table(coefs_seas_vec))
+
+# correct variable names
+list_coefs <- list(coefs_seas_afr_tab,coefs_seas_eur_tab,coefs_seas_no_am_tab,coefs_seas_asia_tab,coefs_seas_vec_tab)
+for (i in 1:length(list_coefs)){
+  list_coefs[[i]][,1] <- gsub(x=list_coefs[[i]][,1], pattern="vpd", replacement = "VPD")
+  list_coefs[[i]][,1] <- gsub(x=list_coefs[[i]][,1], pattern="pr", replacement = "Pr")
+  list_coefs[[i]][,1] <- gsub(x=list_coefs[[i]][,1], pattern="APr", replacement = "Apr") # recorrect April
+  list_coefs[[i]][,1] <- gsub(x=list_coefs[[i]][,1], pattern="tmax", replacement = "Tmax")
+  list_coefs[[i]][,1] <- gsub(x=list_coefs[[i]][,1], pattern="txx", replacement = "TXx")
+  list_coefs[[i]][,1] <- gsub(x=list_coefs[[i]][,1], pattern="tnn", replacement = "TNn")
+  list_coefs[[i]][,1] <- gsub(x=list_coefs[[i]][,1], pattern="rx5", replacement = "Rx5day")
+  list_coefs[[i]][,1] <- gsub(x=list_coefs[[i]][,1], pattern="tx90p", replacement = "TX90p")
+  list_coefs[[i]][,1] <- gsub(x=list_coefs[[i]][,1], pattern="tn10p", replacement = "TN10p")
+}
+coefs_seas_asia_tab[,1] <- coefs_seas_vec_tab[,1]
+
 colnames(coefs_seas_afr_tab) <- c("Variables","Freq_Afr")
 colnames(coefs_seas_eur_tab) <- c("Variables","Freq_Eur")
 colnames(coefs_seas_no_am_tab) <- c("Variables","Freq_No_Am")
 colnames(coefs_seas_asia_tab) <- c("Variables","Freq_Asia")
 colnames(coefs_seas_vec_tab) <- c("Variables","Freq_All")
+
 
 coefs_all_cont <- merge(coefs_seas_afr_tab,coefs_seas_eur_tab,all=T,by="Variables")
 coefs_all_cont <- merge(coefs_all_cont,coefs_seas_no_am_tab,all=T,by="Variables")
@@ -94,6 +111,8 @@ row.names(coefs_all_cont_mat) <- coefs_all_cont_mat[,1]
 coefs_all_cont_mat[which(is.na(coefs_all_cont_mat))] <- 0
 # coefs_all_cont_mat <- coefs_all_cont_mat[,-1]
 coefs_all_cont_mat <- coefs_all_cont_mat[,-c(1,6)]
+
+
 
 
 # Plot coefficients by continent
@@ -123,3 +142,50 @@ barplot(t(coefs_all_cont_mat),horiz=T,las=1,col=c("brown3","DarkOrange2","golden
         xlab="Number of grid points, where variable is included in the model",cex.names=0.6,
         legend.text=c("Africa","Europe","North America","Asia"),args.legend =list(x= "bottomright"))
 dev.off()
+
+
+
+# 4 Plots in one line (all, N.America, Europe, Asia) ####
+
+line2user <- function(line, side) { # from https://stackoverflow.com/questions/14660372/common-main-title-of-a-figure-panel-compiled-with-parmfrow
+  lh <- par('cin')[2] * par('cex') * par('lheight')
+  x_off <- diff(grconvertX(0:1, 'inches', 'user'))
+  y_off <- diff(grconvertY(0:1, 'inches', 'user'))
+  switch(side,
+         `1` = par('usr')[3] - line * y_off * lh,
+         `2` = par('usr')[1] - line * x_off * lh,
+         `3` = par('usr')[4] + line * y_off * lh,
+         `4` = par('usr')[2] + line * x_off * lh,
+         stop("side must be 1, 2, 3, or 4", call.=FALSE))
+}
+
+
+# sort them in the same way: sort by one column; they are already sorted in coefs_all_cont
+# coefs_all_cont2 <- coefs_all_cont[order(coefs_all_cont$Freq_All),]
+pdf(file="D:/user/vogelj/Group_project/Output/Plots/barplot_variables_lambda1se_separate_continents.pdf",
+    width=16,height=8)
+# x11(width=16,height=8)
+par(mfrow=c(1,4),mar=c(c(5, 4, 1, 0.5)),oma=c(0,4,2,0))
+# title("Number of grid points, where variable is included in the model")
+# text(x=0,y=0,"Number of grid points, where variable is included in the model")
+barplot(t(coefs_all_cont_mat),horiz=T,las=1,col=c("brown3","DarkOrange2","goldenrod3","burlywood1"),
+        xlab="",cex.names=1,font=2,
+        legend.text=c("Africa","Europe","North America","Asia"),args.legend =list(x= "bottomright",cex=1.5,text.font=2),main="")
+mtext("All continents",side=3,font=2,line=-0.8, cex=1.2)
+mtext("a)",side=3,font=2,line=-0.2, adj=0.1,cex=1.6)
+barplot(coefs_all_cont$Freq_No_Am,horiz=T,las=1,col="LightCyan3",main="",
+        xlab="",cex.names=0.6)
+mtext("North America",side=3,font=2,line=-0.8, cex=1.2)
+mtext("b)",side=3,font=2,line=-0.2, adj=0.1,cex=1.6)
+barplot(coefs_all_cont$Freq_Eur,horiz=T,las=1,col="LightCyan3",main="",
+        xlab="",cex.names=0.6)
+mtext("Europe",side=3,font=2,line=-0.8, cex=1.3)
+mtext("c)",side=3,font=2,line=-0.2, adj=0.1,cex=1.6)
+text(line2user(line=mean(par('mar')[c(2, 3)]), side=2), 
+     line2user(line=3.5, side=1), 'Number of grid points, where variable is included in the model', xpd=NA, cex=1.5, font=2)
+barplot(coefs_all_cont$Freq_Asia,horiz=T,las=1,col="LightCyan3",main="",
+        xlab="",cex.names=0.6)
+mtext("Asia",side=3,font=2,line=-0.8, cex=1.2)
+mtext("d)",side=3,font=2,line=-0.2, adj=0.1,cex=1.6)
+dev.off()
+
