@@ -28,10 +28,10 @@ europe <- subset(continents,subset=continents@data[["CONTINENT"]]=="Europe")
 no_am <- subset(continents,subset=continents@data[["CONTINENT"]]=="North America")
 asia <- subset(continents,subset=continents@data[["CONTINENT"]]=="Asia")
 
-# connect 969 pixels to their coordinates
-work_pix <- 1:969
+# connect final pixels to their coordinates
+work_pix <- 1:final_pix_num
 coord_assigned <- cbind(coord_all,rep(NA,320*76))
-for (i in seq_along(work_pix)){
+for (i in seq_along(1:final_pix_num)){
   coord_assigned[loc_pix[i],3] <- i
 }
 
@@ -43,11 +43,12 @@ loc_eur_pixels <- extract(loc_ras,europe)
 loc_no_am_pixels <- extract(loc_ras,no_am)
 loc_asia_pixels <- extract(loc_ras,asia)
 
-sum(!is.na(loc_eur_pixels[[1]])) # 233 pixels
-sum(!is.na(loc_no_am_pixels[[1]])) # 421 pixels
-sum(!is.na(loc_afr_pixels[[1]])) # 45 pixels
-sum(!is.na(loc_asia_pixels[[1]])) # 265 pixels
+sum(!is.na(loc_eur_pixels[[1]])) # 233 / 233 pixels
+sum(!is.na(loc_no_am_pixels[[1]])) # 421 / 419 pixels
+sum(!is.na(loc_afr_pixels[[1]])) # 45 / 22 pixels
+sum(!is.na(loc_asia_pixels[[1]])) # 265 / 210 pixels
 # 45+233+421+265=964; 969-964: 5 pixel are missing
+# 22+233+419+210=884; 889-884: 5 pixel are missing
 
 loc_afr_pixels_num <- loc_afr_pixels[[1]][!is.na(loc_afr_pixels[[1]])] 
 loc_eur_pixels_num <- loc_eur_pixels[[1]][!is.na(loc_eur_pixels[[1]])]
@@ -55,9 +56,14 @@ loc_no_am_pixels_num <- loc_no_am_pixels[[1]][!is.na(loc_no_am_pixels[[1]])]
 loc_asia_pixels_num <- loc_asia_pixels[[1]][!is.na(loc_asia_pixels[[1]])]
 
 # add missing points: see extra file Missing_points.r
-loc_eur_pixels_num <- c(loc_eur_pixels_num,529)
-loc_no_am_pixels_num <- c(loc_no_am_pixels_num,470)
-loc_asia_pixels_num <- c(loc_asia_pixels_num,33, 372, 642)
+# for 969 pixels
+# loc_eur_pixels_num <- c(loc_eur_pixels_num,529)
+# loc_no_am_pixels_num <- c(loc_no_am_pixels_num,470)
+# loc_asia_pixels_num <- c(loc_asia_pixels_num,33, 372, 642)
+# for 889 pixels
+loc_eur_pixels_num <- c(loc_eur_pixels_num,450)
+loc_no_am_pixels_num <- c(loc_no_am_pixels_num,391)
+loc_asia_pixels_num <- c(loc_asia_pixels_num,3, 294, 563)
 
 # Get data into right format for the plot (there should be a simpler approach than this)
 coefs_seas <- sapply(1:length(coeff), function(x) names(numLevels_list[[x]])[coeff[[x]][-1]!=0])

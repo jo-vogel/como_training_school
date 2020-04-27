@@ -821,12 +821,12 @@ dev.off()
 ##### Plot of 1 variable (in the 10 most present variables) #####
 top10variables <- names(sort(table(coefs_seas_vec), decreasing = T)[1:10])
 allvariables <- colnames(Model_data)[-1]
-varia_names_extr <- c("dtr","frs","TXx","TNn","Rx5day","TX90p","TN10p")
+# varia_names_extr <- c("dtr","frs","TXx","TNn","Rx5day","TX90p","TN10p")
 
 # par(mfrow=c(4,2))
 # for (varia in 1:10) {
-# for (varia in 1:length(allvariables)) {
-for (varia in 1:7) {
+for (varia in 1:length(allvariables)) {
+# for (varia in 1:7) {
     
     # varia_name <- top10variables[varia]
     varia_name <- allvariables[varia]
@@ -835,7 +835,7 @@ for (varia in 1:7) {
     for (pix in 1:final_pix_num) {
       varia_in_pix[pix] <- (varia_name %in% row.names(coeff[[pix]])[which(coeff[[pix]]!=0)])
     }#end for pix
-    varia_name <- varia_names_extr[varia] # only for ext. ind. naming
+    # varia_name <- varia_names_extr[varia] # only for ext. ind. naming
     
     DF_var <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], var_in = varia_in_pix)
     DF_var$var_in <- as.factor(DF_var$var_in)
@@ -898,3 +898,6 @@ ggplot(data = DF_meteo_cat, aes(x=lon, y=lat)) +
   theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
         legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
   X11(width = 20, height = 6)
+
+
+source("./Code/regions_barplot.r") # create barplot figure with variable number of all grid points categorized by continent

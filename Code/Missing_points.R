@@ -3,14 +3,16 @@
 # subfile for regions_barplot.r
 # Missing_points is a small script to identify, which points are not extracted correctly using the continental shapefiles. 
 
+final_pix_num <- 889
+
 all_num <- c(loc_afr_pixels_num,loc_eur_pixels_num,loc_no_am_pixels_num,loc_asia_pixels_num)
-miss_points <- !(c(1:969) %in% all_num) # five points are missing from the overlay with the shapefiles
+miss_points <- !(c(1:final_pix_num) %in% all_num) # five points are missing from the overlay with the shapefiles
 which(miss_points)
 coord_assigned[loc_pix[miss_points],] 
 # 33, 372, 642 are in asia, 470 is in north america, 529 is in Europe (see map below)
 coord_subset[miss_points,]
 
-afr_loc_points <- (c(1:969) %in% loc_afr_pixels_num)
+afr_loc_points <- (c(1:final_pix_num) %in% loc_afr_pixels_num)
 
 # does not work: they are inverted
 # missing_points <- xyFromCell(loc_ras,loc_pix[miss_points])
