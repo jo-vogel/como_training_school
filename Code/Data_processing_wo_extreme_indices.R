@@ -68,6 +68,13 @@ growingseason_length <- matrix(data=nh_variables[[which(nh_files=="crop_growings
                                nrow=length(lati)*length(long),
                                ncol=dim(nh_variables[[which(nh_files=="crop_growingseason_length_NH.nc")]])[3])[spatial_indices_kept,]
 
+mean_GS_before_rm_GStoolong <- apply(X = growingseason_length, MARGIN = 1, FUN = mean)
+
+Mean_GSlength_before_rm_GStoolong <- cbind(mean_GS_before_rm_GStoolong, lon_kept, lat_kept)
+
+save(Mean_GSlength_before_rm_GStoolong, file = paste0(path_to_NH_files,"/mean_growingseasonlength_before_process.Rdata"))
+
+
 sowing_date <- matrix(data=nh_variables[[which(nh_files=="crop_sowing_date_NH.nc")]],
                       nrow=length(lati)*length(long),
                       ncol=dim(nh_variables[[which(nh_files=="crop_sowing_date_NH.nc")]])[3])[spatial_indices_kept,]
@@ -143,6 +150,11 @@ max_growingseason_length <- apply(X = growingseason_length_corrected, MARGIN = 1
 
 #that's better:
 plot(max_growingseason_length, xlab="pixel index", ylab="Max growing season length")
+
+
+mean_GS_after_rm_GStoolong <- apply(X = growingseason_length_corrected, MARGIN = 1, FUN = mean, na.rm=T)
+Mean_GSlength_after_rm_GStoolong <- cbind(mean_GS_after_rm_GStoolong, lon_kept, lat_kept)
+save(Mean_GSlength_after_rm_GStoolong, file = paste0(path_to_NH_files,"/mean_growingseasonlength_after_rm_GStoolong.Rdata"))
 
 harvest_day <- sowing_date_corrected + growingseason_length_corrected
 
