@@ -92,7 +92,7 @@ for (i in 1:length(list_coefs)){
   list_coefs[[i]][,1] <- gsub(x=list_coefs[[i]][,1], pattern="tx90p", replacement = "TX90p")
   list_coefs[[i]][,1] <- gsub(x=list_coefs[[i]][,1], pattern="tn10p", replacement = "TN10p")
 }
-coefs_seas_asia_tab[,1] <- coefs_seas_vec_tab[,1]
+coefs_seas_afr_tab <- list_coefs[[1]];coefs_seas_eur_tab <- list_coefs[[2]];coefs_seas_no_am_tab <- list_coefs[[3]];coefs_seas_asia_tab <- list_coefs[[4]];coefs_seas_vec_tab <- list_coefs[[5]]
 
 colnames(coefs_seas_afr_tab) <- c("Variables","Freq_Afr")
 colnames(coefs_seas_eur_tab) <- c("Variables","Freq_Eur")
