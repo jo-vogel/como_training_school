@@ -50,6 +50,8 @@ library(abind);library(stringr);library(tictoc);library(ggplot2);library(viridis
 path <- "C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/Data/Global"
 # Johannes
 path <- "D:/user/vogelj/Group_project/Data"
+# Cristina
+path <- "C:/Users/39349/Documents/DAMOCLES/Data_global"
 
 load(paste0(path,"/extremeindices_and_monthlymeteovar_rescaled_V2020-03-20.Rdata"))
 load(paste0(path,"/extremeindices_and_monthlymeteovar_V2020-03-20.Rdata"))
@@ -170,6 +172,15 @@ load(paste0("D:/user/vogelj/Group_project/Code/Workspaces/Lasso_lambda1se_month_
              seed, "_train", train_size,"_969GP.RData"))
 # load(paste0("D:/user/vogelj/Group_project/Code/Workspaces/Lasso_lambdamin_month_xtrm_LASSO_threshbadyield005_seed",
 #              seed, "_train", train_size,"_969GP.RData"))
+
+
+
+#Cristina
+
+load(paste0("C:/Users/39349/Documents/DAMOCLES/Final Workspace LASSO/Lasso_lambda1se_month_xtrm_LASSO_threshbadyield005_seed",
+            seed, "_train", train_size,"_969GP.RData"))
+load(paste0("C:/Users/39349/Documents/DAMOCLES/Final Workspace LASSO/Lasso_lambdamin_month_xtrm_LASSO_threshbadyield005_seed",
+            seed, "_train", train_size,"_969GP.RData"))
 
 
 Model_chosen <- lasso_model_lambda1se
@@ -435,8 +446,8 @@ cor.test(var_yield[number_pix_to_keep_in_969], csi)
 plot(mean_yield[number_pix_to_keep_in_969],var_yield[number_pix_to_keep_in_969])
 cor.test(mean_yield[number_pix_to_keep_in_969], var_yield[number_pix_to_keep_in_969])
 
-
-
+plot(mean_yield[number_pix_to_keep_in_969]/1000, csi,col="black",pch=19, xlab="Mean yield [t/ha]", ylab="CSI", cex.lab=1.2, cex.axis=1.2,  cex.sub=1.2) 
+#plot(mean_yield[number_pix_to_keep_in_969], csi,col="black",pch=19, xlab="Mean yield [kg/ha]", ylab="CSI", cex.lab=1.2, cex.axis=1.2,  cex.sub=1.2) 
 
 
 # number of season kept
