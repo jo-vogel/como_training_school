@@ -39,6 +39,42 @@ library(ncdf4);library(glmnet);library(InformationValue);library(ROCR);library(g
 library(abind);library(stringr);library(tictoc);library(ggplot2);library(viridis)
 
 
+##### Plot Raw mean yield, and pixels that were removed #####
+# load raw mean yield, in the drive folder Data/Global Data
+load("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/Data/Global/RawMeanYield_995GP.Rdata")
+
+
+
+DF_meanY <- data.frame(lon=coord_all_995[,1], lat = coord_all_995[,2], meany = Mean_yields_995)
+
+DF_meanY_kept<-DF_meanY [pix_to_keep_995,]
+DF_meanY_EX2<-DF_meanY [excluded_pixel_995,]
+DF_meanY_EX1<- DF_meanY [pix_to_rm,]
+
+p1<-ggplot(data = DF_meanY, aes(x=lon, y=lat)) +
+  geom_polygon(data = world, aes(long, lat, group=group),
+               fill="white", color="black", size=0.3)+  geom_tile(aes(fill=meany)) +
+  scale_fill_gradient2(midpoint = max(Mean_yields_995, na.rm = T)/2,
+                       limits=c(0,max(Mean_yields_995)),
+                       low = "black", mid = "red3", high = "yellow") +
+  #scale_shape_manual(values=c("Excluded pixels"=4, "Exc2=15"))+
+  theme(panel.ontop = F, panel.grid = element_blank(),
+        panel.border = element_rect(colour = "black", fill = NA),
+        axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
+  ylab("Lat (°N)") +
+  xlab("Lon (°E)") +
+  coord_fixed(xlim = c(-115, 130),
+              ylim = c(min(coord_all_995[,2]), max(coord_all_995[,2])),
+              ratio = 1.3)+
+  labs(fill="Mean Yield"  )+
+  theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
+        legend.title = element_text(size = 15), legend.text = element_text(size = 14))+
+  geom_point(data = DF_meanY_EX2, aes(x = lon, y = lat), color = "yellow", size = 0.8, pch=4)+
+  geom_point(data = DF_meanY_EX1, aes(x = lon, y = lat), color = "yellow", size = 0.4, pch=15)
+
+
+
+
 
 
 ##### Load standardized Data #####
