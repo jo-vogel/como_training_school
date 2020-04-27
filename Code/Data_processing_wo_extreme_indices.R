@@ -90,10 +90,15 @@ vpd <- array(data = nh_variables[[which(nh_files=="meteo_vpd_NH.nc")]],
 #earn some space
 rm(nh_variables)
 
-row_mean_yield <- apply(yields, MARGIN = 1, FUN=mean, na.rm=T)
-perc10_yields <- quantile(row_mean_yield, probs=0.1)
+raw_mean_yield <- apply(yields, MARGIN = 1, FUN=mean, na.rm=T)
 
-GP_kept_after_10thperc <- cbind(lon_kept[row_mean_yield>perc10_yields], lat_kept[row_mean_yield>perc10_yields])
+Raw_mean_yield <- cbind(raw_mean_yield, lon_kept, lat_kept)
+colnames(Raw_mean_yield) <- c("mean_yield","longitudes", "latitudes")
+save(Raw_mean_yield, file = paste0(path_to_NH_files,"/RawMeanYield_995GP.Rdata"))
+
+perc10_yields <- quantile(raw_mean_yield, probs=0.1)
+
+GP_kept_after_10thperc <- cbind(lon_kept[raw_mean_yield>perc10_yields], lat_kept[raw_mean_yield>perc10_yields])
 colnames(GP_kept_after_10thperc) <- c("longitudes", "latitudes")
 
 save(GP_kept_after_10thperc, file = paste0(path_to_NH_files,"/895gridpoints_kept_after10thpercyield.Rdata"))
