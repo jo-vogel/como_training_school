@@ -3,7 +3,7 @@
 ###########   NH crop model, monthly meteovar, XtrM indices        ###########
 ###########               Author: Pauline Rivoire                  ###########
 ##############################################################################
-# It is structured in the following way:
+# It WAS structured in the following way: (structure to be updated)
 # a) Load the desired model
 # b) plot map CSI
 # c) plot map specificity
@@ -46,9 +46,10 @@ library(abind);library(stringr);library(tictoc);library(ggplot2);library(viridis
 ##### Load standardized Data #####
 
 # in the drive folder Data/Global Data
-
-# path <- "C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/Data/Global" #Pauline's Laptop
-path <- "D:/user/vogelj/Group_project/Data" # Johannes
+# Pauline
+path <- "C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/Data/Global"
+# Johannes
+path <- "D:/user/vogelj/Group_project/Data"
 
 load(paste0(path,"/extremeindices_and_monthlymeteovar_rescaled_V2020-03-20.Rdata"))
 load(paste0(path,"/extremeindices_and_monthlymeteovar_V2020-03-20.Rdata"))
@@ -156,8 +157,10 @@ for (i in 1:pix_num){
 # Models/LASSO-Ridge regression/regression_output_Global_data/Lasso_lambda1se_month_xtrm_LASSO_threshbadyield005_seed1994_train70_969GP.RData
 # Models/LASSO-Ridge regression/regression_output_Global_data/Lasso_lambdamin_month_xtrm_LASSO_threshbadyield005_seed1994_train70_969GP.RData
 
-# load(file = paste0("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/SensitivityAnalysis/Lasso_lambda1se_month_xtrm_LASSO_threshbadyield005_seed",
-                   # seed, "_train", train_size,"_969GP.RData"))
+
+# Pauline
+load(file = paste0("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/SensitivityAnalysis/Lasso_lambda1se_month_xtrm_LASSO_threshbadyield005_seed",
+seed, "_train", train_size,"_969GP.RData"))
 # load(file = paste0("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/SensitivityAnalysis/Lasso_lambdamin_month_xtrm_LASSO_threshbadyield005_seed",
 #                    seed, "_train", train_size,"_969GP.RData"))
 
@@ -236,6 +239,48 @@ ggplot(data = DF_meanY, aes(x=lon, y=lat)) +
   X11(width = 20, height = 6)
 
 
+
+##### Map mean growing season length #####
+# load mean growing season, in the drive folder Data/Global Data
+load(paste0(path,"/mean_growingseasonlength_before_process.Rdata"))
+load(paste0(path,"/mean_growingseasonlength_after_rm_GStoolong.Rdata"))
+
+world <- map_data("world")
+
+#Choose before or after rm GS too long
+GSlength <- Mean_GSlength_before_rm_GStoolong
+GSlength <- Mean_GSlength_after_rm_GStoolong
+
+world <- map_data("world")
+
+# plot CSI=(hits)/(hits + misses + false alarm) ####
+DF_GSl <- data.frame(lon=GSlength[,"lon_kept"], lat = GSlength[,"lat_kept"],
+                     GSl = GSlength[,1])
+
+ggplot(data = DF_GSl, aes(x=DF_GSl$lon, y=DF_GSl$lat)) +
+  geom_polygon(data = world, aes(long, lat, group=group),
+               fill="white", color="black", size=0.3) +
+  geom_tile(aes(fill=DF_GSl$GSl)) +
+  scale_fill_gradient2(midpoint = max(DF_GSl$GSl, na.rm = T)/2,
+                       #limits=c(0,1),
+                       low = "#bfd3e6", mid = "#8c96c6", high = "#810f7c") +
+  theme(panel.ontop = F, panel.grid = element_blank(),
+        panel.border = element_rect(colour = "black", fill = NA),
+        axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
+  ylab("Lat (°N)") +
+  xlab("Lon (°E)") +
+  coord_fixed(xlim = c(-120, 135),
+              ylim = c(min(DF_GSl$lat)-1, max(DF_GSl$lat+1)),
+              ratio = 1.3)+
+  labs(fill="Mean growing\nseason length\n(days)"
+       #,title = paste("CSI, simple",model_name,"regression, "),
+       #subtitle = paste("Monthly meteo var + extreme indices, cutoff level=", round(segreg_th,3),", ",lambda_val, sep = "")
+  )+
+  theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
+        legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
+  X11(width = 20, height = 6)
+
+##### Map number of month used in the analysis #####
 
 
 
