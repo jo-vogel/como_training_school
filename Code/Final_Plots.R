@@ -46,12 +46,12 @@ library(abind);library(stringr);library(tictoc);library(ggplot2);library(viridis
 ##### Load standardized Data #####
 
 # in the drive folder Data/Global Data
-#Pauline's Laptop
-load("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/Data/Global/extremeindices_and_monthlymeteovar_rescaled_V2020-03-20.Rdata")
-load("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/Data/Global/extremeindices_and_monthlymeteovar_V2020-03-20.Rdata")
-# Johannes
-# load("D:/user/vogelj/Group_project/Data/extremeindices_and_monthlymeteovar_rescaled_V2020-03-20.Rdata")
-# load("D:/user/vogelj/Group_project/Data/extremeindices_and_monthlymeteovar_V2020-03-20.Rdata")
+
+# path <- "C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/Data/Global" #Pauline's Laptop
+path <- "D:/user/vogelj/Group_project/Data" # Johannes
+
+load(paste0(path,"/extremeindices_and_monthlymeteovar_rescaled_V2020-03-20.Rdata"))
+load(paste0(path,"/extremeindices_and_monthlymeteovar_V2020-03-20.Rdata"))
 
 
 ##### Process data #####
@@ -156,16 +156,15 @@ for (i in 1:pix_num){
 # Models/LASSO-Ridge regression/regression_output_Global_data/Lasso_lambda1se_month_xtrm_LASSO_threshbadyield005_seed1994_train70_969GP.RData
 # Models/LASSO-Ridge regression/regression_output_Global_data/Lasso_lambdamin_month_xtrm_LASSO_threshbadyield005_seed1994_train70_969GP.RData
 
-load(file = paste0("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/SensitivityAnalysis/Lasso_lambda1se_month_xtrm_LASSO_threshbadyield005_seed",
-                   seed, "_train", train_size,"_969GP.RData"))
+# load(file = paste0("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/SensitivityAnalysis/Lasso_lambda1se_month_xtrm_LASSO_threshbadyield005_seed",
+                   # seed, "_train", train_size,"_969GP.RData"))
 # load(file = paste0("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/SensitivityAnalysis/Lasso_lambdamin_month_xtrm_LASSO_threshbadyield005_seed",
 #                    seed, "_train", train_size,"_969GP.RData"))
 
 
-
 # Johannes
-# load(paste0("D:/user/vogelj/Group_project/Code/Workspaces/Lasso_lambda1se_month_xtrm_LASSO_threshbadyield005_seed",
-#              seed, "_train", train_size,"_969GP.RData"))
+load(paste0("D:/user/vogelj/Group_project/Code/Workspaces/Lasso_lambda1se_month_xtrm_LASSO_threshbadyield005_seed",
+             seed, "_train", train_size,"_969GP.RData"))
 # load(paste0("D:/user/vogelj/Group_project/Code/Workspaces/Lasso_lambdamin_month_xtrm_LASSO_threshbadyield005_seed",
 #              seed, "_train", train_size,"_969GP.RData"))
 
@@ -178,7 +177,7 @@ lambda_name <- lambda_NAMES[2]
 
 #Remove pixels with low mean yield, lower than the10th percentile on the 995 VERY initial pixels, on row yield ####
 # in the drive folder Data/Global Data
-load("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/Data/Global/895gridpoints_kept_after10thpercyield.Rdata")
+load(paste0(path,"/895gridpoints_kept_after10thpercyield.Rdata"))
 
 coord_969 <- cbind(Data_xtrm_standardized$longitudes,
                    Data_xtrm_standardized$latitudes)
@@ -197,7 +196,7 @@ number_pix_to_keep_in_969 <- which(pix_to_keep==1)
 
 ##### Plot Raw mean yield, and pixels that were removed #####
 # load raw mean yield, in the drive folder Data/Global Data
-load("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/Data/Global/RawMeanYield_995GP.Rdata")
+load(paste0(path,"/RawMeanYield_995GP.Rdata"))
 world <- map_data("world")
 
 
@@ -826,14 +825,14 @@ varia_names_extr <- c("dtr","frs","TXx","TNn","Rx5day","TX90p","TN10p")
 
 # par(mfrow=c(4,2))
 # for (varia in 1:10) {
-for (varia in 1:length(allvariables)) {
-# for (varia in 1:7) {
+# for (varia in 1:length(allvariables)) {
+for (varia in 1:7) {
     
     # varia_name <- top10variables[varia]
     varia_name <- allvariables[varia]
     varia_in_pix <- numeric()
     plots <- vector("list",length=(length(allvariables)))
-    for (pix in 1:pix_num) {
+    for (pix in 1:final_pix_num) {
       varia_in_pix[pix] <- (varia_name %in% row.names(coeff[[pix]])[which(coeff[[pix]]!=0)])
     }#end for pix
     varia_name <- varia_names_extr[varia] # only for ext. ind. naming
