@@ -222,18 +222,17 @@ for (pix in 1:length(Raw_mean_yield[,"raw_mean_yield"])) {#find grid points in c
 
 
 DF_meanY <- data.frame(lon=Raw_mean_yield[,"longitude"], lat = Raw_mean_yield[,"latitude"],
-                       meany = Raw_mean_yield[,"raw_mean_yield"])
+                       meany = Raw_mean_yield[,"raw_mean_yield"]/1000)
 
 DF_meanY_EX <- data.frame(lon = Raw_mean_yield[as.logical(1-pix_to_keep_in_995),"longitude"],
                           lat = Raw_mean_yield[as.logical(1-pix_to_keep_in_995),"latitude"])
-# p1<-
+
 ggplot(data = DF_meanY, aes(x=lon, y=lat)) +
   geom_polygon(data = world, aes(long, lat, group=group),
                fill="white", color="black", size=0.3)+  geom_tile(aes(fill=DF_meanY$meany)) +
   scale_fill_gradient2(midpoint = max(DF_meanY$meany, na.rm = T)/2,
                        limits=c(0,max(DF_meanY$meany)),
                        low = "#f7fcb9", mid = "#addd8e", high = "#31a354") +
-  #scale_shape_manual(values=c("Excluded pixels"=4, "Exc2=15"))+
   theme(panel.ontop = F, panel.grid = element_blank(),
         panel.border = element_rect(colour = "black", fill = NA),
         axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
@@ -242,7 +241,7 @@ ggplot(data = DF_meanY, aes(x=lon, y=lat)) +
   coord_fixed(xlim = c(-115, 130),
               ylim = c(min(DF_meanY$lat), max(DF_meanY$lat)),
               ratio = 1.3)+
-  labs(fill="Mean yield\n(kg/ha)"  )+
+  labs(fill="Mean yield\n(t/ha)"  )+
   theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
         legend.title = element_text(size = 15), legend.text = element_text(size = 14))+
   geom_point(data = DF_meanY_EX, aes(x = DF_meanY_EX$lon, y = DF_meanY_EX$lat),
@@ -264,7 +263,6 @@ GSlength <- Mean_GSlength_after_rm_GStoolong
 
 world <- map_data("world")
 
-# plot CSI=(hits)/(hits + misses + false alarm) ####
 DF_GSl <- data.frame(lon=GSlength[,"lon_kept"], lat = GSlength[,"lat_kept"],
                      GSl = GSlength[,1])
 
@@ -291,9 +289,44 @@ ggplot(data = DF_GSl, aes(x=DF_GSl$lon, y=DF_GSl$lat)) +
         legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
   X11(width = 20, height = 6)
 
+
 ##### Map number of month used in the analysis #####
 
+coord_subset <- cbind(Data_xtrm_standardized$longitudes[number_pix_to_keep_in_969],
+                      Data_xtrm_standardized$latitudes[number_pix_to_keep_in_969])
+world <- map_data("world")
 
+nb_month_GS <- integer(length = final_pix_num)
+for (pix in 1:final_pix_num) {
+  pixel <- number_pix_to_keep_in_969[pix]
+  nb_month_GS[pix] <- sum(substr(colnames(x1_train_list[[pixel]]), start = 1, stop = 3)=="pr_")
+}
+
+DF_GSmonth <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2],
+                         GSl = nb_month_GS)
+
+ggplot(data = DF_GSmonth, aes(x=DF_GSmonth$lon, y=DF_GSmonth$lat)) +
+  geom_polygon(data = world, aes(long, lat, group=group),
+               fill="white", color="black", size=0.3) +
+  geom_tile(aes(fill=DF_GSmonth$GSl)) +
+  scale_fill_gradient2(midpoint = max(DF_GSmonth$GSl, na.rm = T)/2,
+                       #limits=c(0,1),
+                       low = "#f7fcfd", mid = "#8c96c6", high = "#4d004b") +
+  theme(panel.ontop = F, panel.grid = element_blank(),
+        panel.border = element_rect(colour = "black", fill = NA),
+        axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
+  ylab("Lat (°N)") +
+  xlab("Lon (°E)") +
+  coord_fixed(xlim = c(-120, 135),
+              ylim = c(min(DF_GSmonth$lat)-1, max(DF_GSmonth$lat+1)),
+              ratio = 1.3)+
+  labs(fill="Growing season\nlength (months)"
+       #,title = paste("CSI, simple",model_name,"regression, "),
+       #subtitle = paste("Monthly meteo var + extreme indices, cutoff level=", round(segreg_th,3),", ",lambda_val, sep = "")
+  )+
+  theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
+        legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
+  X11(width = 20, height = 5)
 
 
 ##### Adjust cutoff level #####
@@ -410,6 +443,7 @@ var_yield <- apply(Data_xtrm_non_standardized$yield,MARGIN = 1, FUN = var, na.rm
 coord_subset <- cbind(Data_xtrm_standardized$longitudes[number_pix_to_keep_in_969],
                       Data_xtrm_standardized$latitudes[number_pix_to_keep_in_969])
 world <- map_data("world")
+
 
 
 # plot CSI=(hits)/(hits + misses + false alarm) ####
