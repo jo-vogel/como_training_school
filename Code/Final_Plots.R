@@ -442,6 +442,12 @@ var_yield <- apply(Data_xtrm_non_standardized$yield,MARGIN = 1, FUN = var, na.rm
 
 coord_subset <- cbind(Data_xtrm_standardized$longitudes[number_pix_to_keep_in_969],
                       Data_xtrm_standardized$latitudes[number_pix_to_keep_in_969])
+
+# save final coordinates on Pauline's Laptop
+save(coord_subset, file = "C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/Final_889GP_coordinates.Rdata")
+saveRDS(coord_subset, file = "C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/Final_889GP_coordinates.rds")
+write.csv(coord_subset, file = "C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/Final_889GP_coordinates.csv")
+
 world <- map_data("world")
 
 
