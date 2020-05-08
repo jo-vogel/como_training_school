@@ -369,6 +369,8 @@ coeff  <-list()
 speci <- rep(NA, final_pix_num)
 sensi <- rep(NA, final_pix_num)
 csi <- rep(NA, final_pix_num)
+nb_training_years <- rep(NA, final_pix_num)
+nb_testing_years <- rep(NA, final_pix_num)
 
 for (pixel in 1:final_pix_num) {
   pix <- number_pix_to_keep_in_969[pixel]
@@ -393,8 +395,14 @@ for (pixel in 1:final_pix_num) {
     csi[pixel] <- 0
   }
   
+  nb_training_years[pixel] <- length(training_indices[[pix]])
+  nb_testing_years[pixel] <- length(testing_indices[[pix]])
+  
 }#end pixel
 
+plot(sort((1600 - (nb_training_years + nb_testing_years))[which(nb_training_years + nb_testing_years != 1600)]),
+     ylab="number of years with GS too long",
+     xlab="pixels with some GS too long\n(sorted by increasing nb)")
 
 extreme_in_coeff <- function(coeff_list){ #function to check how many extreme indeices are kept as predictors
   extreme_indices <- c("dtr", "frs", "txx", "tnn", "rx5", "tx90p", "tn10p")
