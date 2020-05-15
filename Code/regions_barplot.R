@@ -177,21 +177,21 @@ par(mfrow=c(1,4),mar=c(c(5, 4, 1, 0.5)),oma=c(0,4,2,0))
 barplot(t(coefs_all_cont_mat),horiz=T,las=1,col=c("brown3","DarkOrange2","goldenrod3","burlywood1"),
         xlab="",cex.names=1,font=2,
         legend.text=c("Africa","Europe","North America","Asia"),args.legend =list(x= "bottomright",cex=1.5,text.font=2),main="")
-mtext("All continents",side=3,font=2,line=-0.8, cex=1.2)
+mtext("All continents",side=3,font=2,line=-0.8, cex=1.4)
 mtext("a)",side=3,font=2,line=-0.2, adj=0.1,cex=1.6)
 barplot(coefs_all_cont$Freq_No_Am,horiz=T,las=1,col="LightCyan3",main="",
-        xlab="",cex.names=0.6)
-mtext("North America",side=3,font=2,line=-0.8, cex=1.2)
+        xlab="",cex.names=0.6,font=2)
+mtext("North America",side=3,font=2,line=-0.8, cex=1.4)
 mtext("b)",side=3,font=2,line=-0.2, adj=0.1,cex=1.6)
 barplot(coefs_all_cont$Freq_Eur,horiz=T,las=1,col="LightCyan3",main="",
-        xlab="",cex.names=0.6)
-mtext("Europe",side=3,font=2,line=-0.8, cex=1.3)
+        xlab="",cex.names=0.6,font=2)
+mtext("Europe",side=3,font=2,line=-0.8, cex=1.4)
 mtext("c)",side=3,font=2,line=-0.2, adj=0.1,cex=1.6)
 text(line2user(line=mean(par('mar')[c(2, 3)]), side=2), 
-     line2user(line=3.5, side=1), 'Number of grid points, where variable is included in the model', xpd=NA, cex=1.5, font=2)
+     line2user(line=3.5, side=1), 'Number of grid points, for which the predictor is included in the regression model', xpd=NA, cex=2.2)
 barplot(coefs_all_cont$Freq_Asia,horiz=T,las=1,col="LightCyan3",main="",
-        xlab="",cex.names=0.6)
-mtext("Asia",side=3,font=2,line=-0.8, cex=1.2)
+        xlab="",cex.names=0.6,font=2)
+mtext("Asia",side=3,font=2,line=-0.8, cex=1.4)
 mtext("d)",side=3,font=2,line=-0.2, adj=0.1,cex=1.6)
 dev.off()
 
