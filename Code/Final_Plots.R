@@ -309,9 +309,9 @@ ggplot(data = DF_GSmonth, aes(x=DF_GSmonth$lon, y=DF_GSmonth$lat)) +
   geom_polygon(data = world, aes(long, lat, group=group),
                fill="white", color="black", size=0.3) +
   geom_tile(aes(fill=DF_GSmonth$GSl)) +
-  scale_fill_gradient2(midpoint = max(DF_GSmonth$GSl, na.rm = T)/2,
+  scale_fill_gradient2(midpoint = 12,
                        #limits=c(0,1),
-                       low = "#f7fcfd", mid = "#8c96c6", high = "#4d004b") +
+                       low = "#edf8b1", mid = "#41b6c4", high = "#081d58") +
   theme(panel.ontop = F, panel.grid = element_blank(),
         panel.border = element_rect(colour = "black", fill = NA),
         axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
@@ -783,7 +783,9 @@ ggplot(data = DF_numbcoeff, aes(x=lon, y=lat)) +
   geom_polygon(data = world, aes(long, lat, group=group),
                fill="white", color="black", size=0.3) +
   geom_tile(aes(fill=nb_coeff_kept)) +
-  scale_fill_gradient(low = "pink", high = "darkblue") +
+  scale_fill_gradient2(midpoint = max(DF_numbcoeff$coeff_kep, na.rm = T)/2,
+                       #limits=c(0,1),
+                       low = "#e7e1ef", mid = "#c994c7", high = "#dd1c77") +
   theme(panel.ontop = F, panel.grid = element_blank(),
         panel.border = element_rect(colour = "black", fill = NA),
         axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
