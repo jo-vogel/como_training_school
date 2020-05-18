@@ -729,7 +729,8 @@ ggplot(data = DF_numbcoeff, aes(x=lon, y=lat)) +
   geom_tile(aes(fill=DF_numbcoeff$levels_nb_var)) +
   scale_fill_manual(values=c("0 - 5"="#f1eef6", "5 - 10"="#d4b9da", "10 - 15"="#c994c7",
                              "15 - 20"="#df65b0", "20 - 25"="#dd1c77", "25 - 30"="#980043"),
-                    breaks=c("0 - 5", "5 - 10", "10 - 15", "15 - 20", "20 - 25", "25 - 30"))+
+                    breaks=c("0 - 5", "5 - 10", "10 - 15", "15 - 20", "20 - 25", "25 - 30"),
+                    label=c("0 - 4", "5 - 9", "10 - 14", "15 - 10", "20 - 24", "25 - 29"))+
   # scale_fill_gradient(low = "#e7e1ef", high = "#dd1c77") +
   theme(panel.ontop = F, panel.grid = element_blank(),
         panel.border = element_rect(colour = "black", fill = NA),
