@@ -891,8 +891,9 @@ for (varia in 1:length(allvariables)) {
       geom_polygon(data = world, aes(long, lat, group=group),
                    fill="white", color="black", size=0.3) +
       geom_tile(aes(fill=DF_var$var_in)) +
-      scale_fill_manual(values = c("1"="#fc8d62", "0"="#8da0cb"),
-                        label= c("1"="Yes", "0"="No"), drop=F) +
+      scale_fill_manual(drop=F,values = c("1"="#fc8d62", "0"="#8da0cb"),
+                        label= c("1"="Yes", "0"="No"),
+                        breaks=c("1","0"), limits=c(0,1)) +
       theme(panel.ontop = F, panel.grid = element_blank(),
             panel.border = element_rect(colour = "black", fill = NA),
             axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
@@ -953,3 +954,5 @@ failed_pix <- sapply(1:final_pix_num, function(x) !any(fitted_bad_yield[[x]] == 
 sum(failed_pix)
 summary(nb_coeff_kept)
 summary(nb_extr_kept)
+sum(meteo_type=="All")/final_pix_num
+sum(meteo_type=="VPD" | meteo_type=="VPD & Tmax" | meteo_type=="VPD & Pr" |meteo_type=="All")/final_pix_num
