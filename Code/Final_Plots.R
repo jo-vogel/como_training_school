@@ -45,7 +45,7 @@ library(abind);library(stringr);library(tictoc);library(ggplot2);library(viridis
 
 ##### Load standardized Data #####
 
-# in the drive folder Data/Global Data
+# in the drive folder Data/Global_Data/Final_Data
 # Pauline
 path <- "C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/Data/Global"
 # Johannes
@@ -53,19 +53,20 @@ path <- "D:/user/vogelj/Group_project/Data"
 # Cristina
 path <- "C:/Users/39349/Documents/DAMOCLES/Data_global"
 
-load(paste0(path,"/extremeindices_and_monthlymeteovar_rescaled_V2020-03-20.Rdata"))
-load(paste0(path,"/extremeindices_and_monthlymeteovar_V2020-03-20.Rdata"))
+load(paste0(path,"/extremeindices_and_monthlymeteovar_rescaled_995pix.Rdata"))
+load(paste0(path,"/extremeindices_and_monthlymeteovar_995pix.Rdata"))
 
 
 ##### Process data #####
-yield_3dim <- array(Data_xtrm_standardized$yield,dim=c(969,1,1600))
-dtr_3dim <- array(Data_xtrm_standardized$dtr,dim=c(969,1,1600))
-frs_3dim <- array(Data_xtrm_standardized$frs,dim=c(969,1,1600))
-txx_3dim <- array(Data_xtrm_standardized$txx,dim=c(969,1,1600))
-tnn_3dim <- array(Data_xtrm_standardized$tnn,dim=c(969,1,1600))
-rx5_3dim <- array(Data_xtrm_standardized$rx5,dim=c(969,1,1600))
-tx90p_3dim <- array(Data_xtrm_standardized$tx90p,dim=c(969,1,1600))
-tn10p_3dim <- array(Data_xtrm_standardized$tn10p,dim=c(969,1,1600))
+total_nb_pix <- length(Data_xtrm_non_standardized$longitudes)
+yield_3dim <- array(Data_xtrm_standardized$yield,dim=c(total_nb_pix,1,1600))
+dtr_3dim <- array(Data_xtrm_standardized$dtr,dim=c(total_nb_pix,1,1600))
+frs_3dim <- array(Data_xtrm_standardized$frs,dim=c(total_nb_pix,1,1600))
+txx_3dim <- array(Data_xtrm_standardized$txx,dim=c(total_nb_pix,1,1600))
+tnn_3dim <- array(Data_xtrm_standardized$tnn,dim=c(total_nb_pix,1,1600))
+rx5_3dim <- array(Data_xtrm_standardized$rx5,dim=c(total_nb_pix,1,1600))
+tx90p_3dim <- array(Data_xtrm_standardized$tx90p,dim=c(total_nb_pix,1,1600))
+tn10p_3dim <- array(Data_xtrm_standardized$tn10p,dim=c(total_nb_pix,1,1600))
 
 Model_data <- abind(yield_3dim,dtr_3dim,frs_3dim,txx_3dim,tnn_3dim,rx5_3dim,tx90p_3dim,tn10p_3dim
                     ,Data_xtrm_standardized$tasmax,Data_xtrm_standardized$vpd,Data_xtrm_standardized$pr,along=2)
@@ -80,10 +81,10 @@ colnames(Model_data) <- c("Yield", "dtr", "frs", "txx", "tnn", "rx5", "tx90p", "
                           "pr_Feb_Y2","pr_Mar_Y2","pr_Apr_Y2","pr_May_Y2","pr_Jun_Y2","pr_Jul_Y2",
                           "pr_Aug_Y2","pr_Sep_Y2","pr_Oct_Y2","pr_Nov_Y2","pr_Dec_Y2")
 
-pix_num <- dim(Model_data)[1]
+
 Yield <- Data_xtrm_standardized$yield
 low_yield <- apply(Yield, MARGIN = 1, FUN=quantile, probs=threshold, na.rm=T)
-cy <- t(sapply(1:pix_num,function(x){ifelse(Yield[x,]<low_yield[x],0,1)})) # identical for standardised and non-standardised yield
+cy <- t(sapply(1:total_nb_pix,function(x){ifelse(Yield[x,]<low_yield[x],0,1)})) # identical for standardised and non-standardised yield
 
 cy_reshaped <- array(data=cy,dim=c(dim(cy)[1],1,1600))
 
@@ -91,8 +92,8 @@ Model_data[,1,] <-cy_reshaped
 
 
 # Exclude NA variable columns
-na_col <- matrix(data=NA,nrow=pix_num,ncol=dim(Model_data)[2])
-for (j in 1:pix_num){
+na_col <- matrix(data=NA,nrow=total_nb_pix,ncol=dim(Model_data)[2])
+for (j in 1:total_nb_pix){
   for (i in 1:dim(Model_data)[2]){
     na_col[j,i] <- all(is.na(Model_data[j,i,])) # TRUE if entire column is NA
   }
@@ -100,8 +101,8 @@ for (j in 1:pix_num){
 non_na_col <- !na_col # columns without NAs
 non_na_col[,1] <- FALSE # exclude yield (it is no predictor and should therefore be ignored)
 
-na_time <- vector("list",length=pix_num) # for each pixel, the positions of NAs over time
-for (j in 1:pix_num){
+na_time <- vector("list",length=total_nb_pix) # for each pixel, the positions of NAs over time
+for (j in 1:total_nb_pix){
   na_time[[j]] <- which(is.na(Model_data[j,1,])) # locations of years with NA values
 }
 
@@ -109,13 +110,13 @@ for (j in 1:pix_num){
 ##### Split data into training and testing data set #####
 vec <- 1:1600
 
-years_with_na <- vector("logical",length=pix_num)
-for (i in 1:pix_num){
+years_with_na <- vector("logical",length=total_nb_pix)
+for (i in 1:total_nb_pix){
   years_with_na[i] <- ifelse(length(na_time[[i]] ) ==0,F,T)
 }
 
-training_indices <- vector("list",length=pix_num)
-testing_indices <- vector("list",length=pix_num)
+training_indices <- vector("list",length=total_nb_pix)
+testing_indices <- vector("list",length=total_nb_pix)
 
 
 
@@ -123,7 +124,7 @@ seed=1994
 train_size <- 70
 
 set.seed(seed)
-for (x in 1:pix_num) {
+for (x in 1:total_nb_pix) {
   if (years_with_na[x]) {
     training_indices[[x]] <- sort(sample(x=vec[-na_time[[x]]], size = floor((1600-length(na_time[[x]]))*(train_size/100))))
     testing_indices[[x]] <- vec[-c(na_time[[x]], training_indices[[x]])]
@@ -134,10 +135,10 @@ for (x in 1:pix_num) {
 }
 
 
-Training_Data <- lapply(1:pix_num,function(x){Model_data[x,,training_indices[[x]]]})
-Testing_Data <- lapply(1:pix_num,function(x){Model_data[x,,testing_indices[[x]]]})
+Training_Data <- lapply(1:total_nb_pix,function(x){Model_data[x,,training_indices[[x]]]})
+Testing_Data <- lapply(1:total_nb_pix,function(x){Model_data[x,,testing_indices[[x]]]})
 
-pix_in <- 1:pix_num
+pix_in <- 1:total_nb_pix
 
 
 x1_train_list <- lapply(seq_along(pix_in), function(x){ as.data.frame(t(Training_Data[[x]][non_na_col[x,],]))}) # predictors
@@ -147,8 +148,8 @@ y1_test_list <- lapply(seq_along(pix_in), function(x){Testing_Data[[x]][1,]}) # 
 
 
 var_num <- apply(non_na_col,1,sum)
-numLevels_list <- sapply(1:pix_num, function(x){ rep(1,times=var_num[x])})
-for (i in 1:pix_num){
+numLevels_list <- sapply(1:total_nb_pix, function(x){ rep(1,times=var_num[x])})
+for (i in 1:total_nb_pix){
   names(numLevels_list[[i]]) <-  colnames(x1_test_list[[i]])
 }
 
@@ -156,31 +157,31 @@ for (i in 1:pix_num){
 ##### Load the model #####
 
 # On the Drive you can find my data in:
-# Models/LASSO-Ridge regression/regression_output_Global_data/Lasso_lambda1se_month_xtrm_LASSO_threshbadyield005_seed1994_train70_969GP.RData
-# Models/LASSO-Ridge regression/regression_output_Global_data/Lasso_lambdamin_month_xtrm_LASSO_threshbadyield005_seed1994_train70_969GP.RData
+# Models/LASSO-Ridge regression/Lasso_glmnet_final_results/Lasso_lambda1se_month_xtrm_LASSO_threshbadyield005_seed1994_train70_995pixels.RData
+# Models/LASSO-Ridge regression/Lasso_glmnet_final_results/Lasso_lambda1se_month_xtrm_LASSO_threshbadyield005_seed1994_train70_995pixels.RData
 
 
 # Pauline
-load(file = paste0("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/SensitivityAnalysis/Lasso_lambda1se_month_xtrm_LASSO_threshbadyield005_seed",
-seed, "_train", train_size,"_969GP.RData"))
-# load(file = paste0("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/SensitivityAnalysis/Lasso_lambdamin_month_xtrm_LASSO_threshbadyield005_seed",
-#                    seed, "_train", train_size,"_969GP.RData"))
+load(file = paste0("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/Lasso_lambda1se_month_xtrm_LASSO_threshbadyield005_seed",
+seed, "_train", train_size,"_995pixels.Rdata"))
+# load(file = paste0("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/Lasso_lambdamin_month_xtrm_LASSO_threshbadyield005_seed",
+#                    seed, "_train", train_size,"_995pixels.Rdata"))
 
 
 # Johannes
 load(paste0("D:/user/vogelj/Group_project/Code/Workspaces/Lasso_lambda1se_month_xtrm_LASSO_threshbadyield005_seed",
-             seed, "_train", train_size,"_969GP.RData"))
+             seed, "_train", train_size,"_995pixels.Rdata"))
 # load(paste0("D:/user/vogelj/Group_project/Code/Workspaces/Lasso_lambdamin_month_xtrm_LASSO_threshbadyield005_seed",
-#              seed, "_train", train_size,"_969GP.RData"))
+#              seed, "_train", train_size,"_995pixels.Rdata"))
 
 
 
 #Cristina
 
 load(paste0("C:/Users/39349/Documents/DAMOCLES/Final Workspace LASSO/Lasso_lambda1se_month_xtrm_LASSO_threshbadyield005_seed",
-            seed, "_train", train_size,"_969GP.RData"))
+            seed, "_train", train_size,"_995pixels.Rdata"))
 load(paste0("C:/Users/39349/Documents/DAMOCLES/Final Workspace LASSO/Lasso_lambdamin_month_xtrm_LASSO_threshbadyield005_seed",
-            seed, "_train", train_size,"_969GP.RData"))
+            seed, "_train", train_size,"_995pixels.Rdata"))
 
 
 Model_chosen <- lasso_model_lambda1se
@@ -188,44 +189,23 @@ lambda_val <- lambda_VALS[2]
 lambda_name <- lambda_NAMES[2]
 
 
-
-#Remove pixels with low mean yield, lower than the10th percentile on the 995 VERY initial pixels, on row yield ####
-# in the drive folder Data/Global Data
-load(paste0(path,"/895gridpoints_kept_after10thpercyield.Rdata"))
-
-coord_969 <- cbind(Data_xtrm_standardized$longitudes,
-                   Data_xtrm_standardized$latitudes)
-pix_to_keep <- logical(length = dim(coord_969)[1])
-for (pix in 1:dim(coord_969)[1]) {#find grid points in common in the 969 pixels and the 895 pixels
-  pix_to_keep[pix] <- (min((GP_kept_after_10thperc[,1]-coord_969[pix,1])^2+
-                                     (GP_kept_after_10thperc[,2]-coord_969[pix,2])^2)==0)
-}
-
-final_pix_num <- sum(pix_to_keep)
-
-number_pix_to_keep_in_969 <- which(pix_to_keep==1)
-
-
-
-
 ##### Plot Raw mean yield, and pixels that were removed #####
-# load raw mean yield, in the drive folder Data/Global Data
+
+# in the drive folder Data/Global Data/Final_Data
+
+#Pixels kept
+load(paste0(path,"/final_889pixels_coords.Rdata"))
+#Raw mean yield
 load(paste0(path,"/RawMeanYield_995GP.Rdata"))
+
 world <- map_data("world")
 
+DF_meanY <- data.frame(lon=Raw_mean_yield[,"longitudes"], lat = Raw_mean_yield[,"latitudes"],
+                       meany = Raw_mean_yield[,"mean_yield"]/1000)
 
-pix_to_keep_in_995 <- logical(length = length(Raw_mean_yield[,"raw_mean_yield"]))
-for (pix in 1:length(Raw_mean_yield[,"raw_mean_yield"])) {#find grid points in common in the 969 pixels and the 895 pixels
-  pix_to_keep_in_995[pix] <- (min((coord_969[as.logical(pix_to_keep),1]-Raw_mean_yield[pix,"longitude"])^2+
-                                    (coord_969[as.logical(pix_to_keep),2]-Raw_mean_yield[pix,"latitude"])^2)==0)
-}#end for pix
-
-
-DF_meanY <- data.frame(lon=Raw_mean_yield[,"longitude"], lat = Raw_mean_yield[,"latitude"],
-                       meany = Raw_mean_yield[,"raw_mean_yield"]/1000)
-
-DF_meanY_EX <- data.frame(lon = Raw_mean_yield[as.logical(1-pix_to_keep_in_995),"longitude"],
-                          lat = Raw_mean_yield[as.logical(1-pix_to_keep_in_995),"latitude"])
+pixels_excluded <- as.logical(1-(1:total_nb_pix %in% final_pixels_coord$ref_in_995))
+DF_excluded_pix <- data.frame(lon = Raw_mean_yield[pixels_excluded,"longitudes"],
+                              lat = Raw_mean_yield[pixels_excluded,"latitudes"])
 
 ggplot(data = DF_meanY, aes(x=lon, y=lat)) +
   geom_polygon(data = world, aes(long, lat, group=group),
@@ -244,61 +224,61 @@ ggplot(data = DF_meanY, aes(x=lon, y=lat)) +
   labs(fill="Mean yield\n(t/ha)"  )+
   theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
         legend.title = element_text(size = 15), legend.text = element_text(size = 14))+
-  geom_point(data = DF_meanY_EX, aes(x = DF_meanY_EX$lon, y = DF_meanY_EX$lat),
+  geom_point(data = DF_excluded_pix, aes(x = DF_excluded_pix$lon, y = DF_excluded_pix$lat),
              color = "black", size = 0.89, pch=4) +
   X11(width = 20, height = 6)
 
 
 
-##### Map mean growing season length #####
-# load mean growing season, in the drive folder Data/Global Data
-load(paste0(path,"/mean_growingseasonlength_before_process.Rdata"))
-load(paste0(path,"/mean_growingseasonlength_after_rm_GStoolong.Rdata"))
-
-world <- map_data("world")
-
-#Choose before or after rm GS too long
-GSlength <- Mean_GSlength_before_rm_GStoolong
-GSlength <- Mean_GSlength_after_rm_GStoolong
-
-world <- map_data("world")
-
-DF_GSl <- data.frame(lon=GSlength[,"lon_kept"], lat = GSlength[,"lat_kept"],
-                     GSl = GSlength[,1])
-
-ggplot(data = DF_GSl, aes(x=DF_GSl$lon, y=DF_GSl$lat)) +
-  geom_polygon(data = world, aes(long, lat, group=group),
-               fill="white", color="black", size=0.3) +
-  geom_tile(aes(fill=DF_GSl$GSl)) +
-  scale_fill_gradient2(midpoint = max(DF_GSl$GSl, na.rm = T)/2,
-                       #limits=c(0,1),
-                       low = "#bfd3e6", mid = "#8c96c6", high = "#810f7c") +
-  theme(panel.ontop = F, panel.grid = element_blank(),
-        panel.border = element_rect(colour = "black", fill = NA),
-        axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
-  ylab("Lat (°N)") +
-  xlab("Lon (°E)") +
-  coord_fixed(xlim = c(-120, 135),
-              ylim = c(min(DF_GSl$lat)-1, max(DF_GSl$lat+1)),
-              ratio = 1.3)+
-  labs(fill="Mean growing\nseason length\n(days)"
-       #,title = paste("CSI, simple",model_name,"regression, "),
-       #subtitle = paste("Monthly meteo var + extreme indices, cutoff level=", round(segreg_th,3),", ",lambda_val, sep = "")
-  )+
-  theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
-        legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
-  X11(width = 20, height = 6)
+# ##### Map mean growing season length #####
+# # load mean growing season, in the drive folder Data/Global Data
+# load(paste0(path,"/mean_growingseasonlength_before_process.Rdata"))
+# load(paste0(path,"/mean_growingseasonlength_after_rm_GStoolong.Rdata"))
+# 
+# world <- map_data("world")
+# 
+# #Choose before or after rm GS too long
+# GSlength <- Mean_GSlength_before_rm_GStoolong
+# GSlength <- Mean_GSlength_after_rm_GStoolong
+# 
+# world <- map_data("world")
+# 
+# DF_GSl <- data.frame(lon=GSlength[,"lon_kept"], lat = GSlength[,"lat_kept"],
+#                      GSl = GSlength[,1])
+# 
+# ggplot(data = DF_GSl, aes(x=DF_GSl$lon, y=DF_GSl$lat)) +
+#   geom_polygon(data = world, aes(long, lat, group=group),
+#                fill="white", color="black", size=0.3) +
+#   geom_tile(aes(fill=DF_GSl$GSl)) +
+#   scale_fill_gradient2(midpoint = max(DF_GSl$GSl, na.rm = T)/2,
+#                        #limits=c(0,1),
+#                        low = "#bfd3e6", mid = "#8c96c6", high = "#810f7c") +
+#   theme(panel.ontop = F, panel.grid = element_blank(),
+#         panel.border = element_rect(colour = "black", fill = NA),
+#         axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
+#   ylab("Lat (°N)") +
+#   xlab("Lon (°E)") +
+#   coord_fixed(xlim = c(-120, 135),
+#               ylim = c(min(DF_GSl$lat)-1, max(DF_GSl$lat+1)),
+#               ratio = 1.3)+
+#   labs(fill="Mean growing\nseason length\n(days)"
+#        #,title = paste("CSI, simple",model_name,"regression, "),
+#        #subtitle = paste("Monthly meteo var + extreme indices, cutoff level=", round(segreg_th,3),", ",lambda_val, sep = "")
+#   )+
+#   theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
+#         legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
+#   X11(width = 20, height = 6)
 
 
 ##### Map number of month used in the analysis #####
-
-coord_subset <- cbind(Data_xtrm_standardized$longitudes[number_pix_to_keep_in_969],
-                      Data_xtrm_standardized$latitudes[number_pix_to_keep_in_969])
 world <- map_data("world")
 
+coord_subset <- cbind(final_pixels_coord$longitude, final_pixels_coord$latitude)
+
+final_pix_num <- length(final_pixels_coord$latitude)
 nb_month_GS <- integer(length = final_pix_num)
 for (pix in 1:final_pix_num) {
-  pixel <- number_pix_to_keep_in_969[pix]
+  pixel <- final_pixels_coord$ref_in_995[pix]
   nb_month_GS[pix] <- sum(substr(colnames(x1_train_list[[pixel]]), start = 1, stop = 3)=="pr_")
 }
 
@@ -340,11 +320,11 @@ ggplot(data = DF_GSmonth, aes(x=DF_GSmonth$lon, y=DF_GSmonth$lat)) +
 # x1_train_list_simple_lasso <- list()
 # work_pix_tmp <- numeric()
 # for (pixel in 1:final_pix_num) {
-#   pix_in_969 <- number_pix_to_keep_in_969[pixel]
-#   y1_train_list_simple_lasso[[pixel]] <- y1_train_list[[pix_in_969]]
-#   x1_train_list_simple_lasso[[pixel]] <- x1_train_list[[pix_in_969]]
-#   Model_chosen_889[[pixel]] <- Model_chosen[[pix_in_969]]
-#   if(is.character(Model_chosen[[pix_in_969]])){work_pix_tmp[pixel]<-0} else {work_pix_tmp[pixel]<-1}
+#   pix_in_995 <- final_pixels_coord$ref_in_995[pixel]
+#   y1_train_list_simple_lasso[[pixel]] <- y1_train_list[[pix_in_995]]
+#   x1_train_list_simple_lasso[[pixel]] <- x1_train_list[[pix_in_995]]
+#   Model_chosen_889[[pixel]] <- Model_chosen[[pix_in_995]]
+#   if(is.character(Model_chosen[[pix_in_995]])){work_pix_tmp[pixel]<-0} else {work_pix_tmp[pixel]<-1}
 # }#end for pixel
 # 
 # 
@@ -358,7 +338,8 @@ ggplot(data = DF_GSmonth, aes(x=DF_GSmonth$lon, y=DF_GSmonth$lat)) +
 # cutoff_simple_lasso <- adjust_cutoff(model_vector = Model_chosen_889,x1_train_list = x1_train_list_simple_lasso, y1_train_list = y1_train_list_simple_lasso,
 #                                      work_pix = work_pix, cost_fp = cost_fp_simple_lasso, cost_fn= cost_fn_simple_lasso)
 
-segreg_th <- 0.6505441
+
+segreg_th <- 0.6582418
 
 ##### Model performance assessment #####
 
@@ -373,7 +354,7 @@ nb_training_years <- rep(NA, final_pix_num)
 nb_testing_years <- rep(NA, final_pix_num)
 
 for (pixel in 1:final_pix_num) {
-  pix <- number_pix_to_keep_in_969[pixel]
+  pix <- final_pixels_coord$ref_in_995[pixel]
   coeff[[pixel]] <- coefficients(Model_chosen[[pix]])
   
   mypred <- predict(Model_chosen[[pix]], as.matrix(x1_test_list[[pix]]),type="response")
@@ -399,10 +380,12 @@ for (pixel in 1:final_pix_num) {
   nb_testing_years[pixel] <- length(testing_indices[[pix]])
   
 }#end pixel
+pixel_with_pb <- which(is.na(csi))
 
-plot(sort((1600 - (nb_training_years + nb_testing_years))[which(nb_training_years + nb_testing_years != 1600)]),
-     ylab="number of years with GS too long",
-     xlab="pixels with some GS too long\n(sorted by increasing nb)")
+
+# plot(sort((1600 - (nb_training_years + nb_testing_years))[which(nb_training_years + nb_testing_years != 1600)]),
+#      ylab="number of years with GS too long",
+#      xlab="pixels with some GS too long\n(sorted by increasing nb)")
 
 extreme_in_coeff <- function(coeff_list){ #function to check how many extreme indeices are kept as predictors
   extreme_indices <- c("dtr", "frs", "txx", "tnn", "rx5", "tx90p", "tn10p")
@@ -428,10 +411,7 @@ for (pixel in 1:final_pix_num) {
 
 
 
-mean_yield <- apply(Data_xtrm_non_standardized$yield,MARGIN = 1, FUN = mean, na.rm=T)
 var_yield <- apply(Data_xtrm_non_standardized$yield,MARGIN = 1, FUN = var, na.rm=T)
-
-
 
 
 ##### Plot results ######
@@ -448,22 +428,21 @@ var_yield <- apply(Data_xtrm_non_standardized$yield,MARGIN = 1, FUN = var, na.rm
 # 
 # lapply(1:length(nh_files),function(x){nc_close(nh_data[[x]])})
 
-coord_subset <- cbind(Data_xtrm_standardized$longitudes[number_pix_to_keep_in_969],
-                      Data_xtrm_standardized$latitudes[number_pix_to_keep_in_969])
+coord_subset <- cbind(final_pixels_coord$longitude, final_pixels_coord$latitude)
 
-# save final coordinates on Pauline's Laptop
-save(coord_subset, file = "C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/Final_889GP_coordinates.Rdata")
-saveRDS(coord_subset, file = "C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/Final_889GP_coordinates.rds")
-write.csv(coord_subset, file = "C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/Final_889GP_coordinates.csv")
+# # save final coordinates on Pauline's Laptop
+# save(coord_subset, file = "C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/Final_889GP_coordinates.Rdata")
+# saveRDS(coord_subset, file = "C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/Final_889GP_coordinates.rds")
+# write.csv(coord_subset, file = "C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/Final_889GP_coordinates.csv")
 
 world <- map_data("world")
 
 
 
 # plot CSI=(hits)/(hits + misses + false alarm) ####
-DF_sci <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], csi = csi)
+DF_csi <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], csi = csi)
 
-ggplot(data = DF_sci, aes(x=lon, y=lat)) +
+ggplot(data = DF_csi, aes(x=lon, y=lat)) +
   geom_polygon(data = world, aes(long, lat, group=group),
                fill="white", color="black", size=0.3) +
   geom_tile(aes(fill=csi)) +
@@ -486,15 +465,13 @@ ggplot(data = DF_sci, aes(x=lon, y=lat)) +
         legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
   X11(width = 20, height = 5)
 
-plot(mean_yield[number_pix_to_keep_in_969],csi)
-cor.test(mean_yield[number_pix_to_keep_in_969], csi)
-cor.test(mean_yield[number_pix_to_keep_in_969], csi, method = "kendall")
-plot(var_yield[number_pix_to_keep_in_969],csi)
-cor.test(var_yield[number_pix_to_keep_in_969], csi)
-plot(mean_yield[number_pix_to_keep_in_969],var_yield[number_pix_to_keep_in_969])
-cor.test(mean_yield[number_pix_to_keep_in_969], var_yield[number_pix_to_keep_in_969])
+cor.test(Raw_mean_yield[final_pixels_coord$ref_in_995,"mean_yield"], csi)
+cor.test(Raw_mean_yield[final_pixels_coord$ref_in_995,"mean_yield"], csi, method = "kendall")
+par(mar=c(4.1,4.1,1,1))
 
-plot(mean_yield[number_pix_to_keep_in_969]/1000, csi,col="black",pch=19, xlab="Mean yield [t/ha]", ylab="CSI", cex.lab=1.2, cex.axis=1.2,  cex.sub=1.2) 
+plot(Raw_mean_yield[final_pixels_coord$ref_in_995,"mean_yield"]/1000, csi,
+     col="black",pch=19, xlab="Mean yield [t/ha]", ylab="CSI", cex.lab=1.2, cex.axis=1.2,  cex.sub=1.2,
+     font.lab=2) 
 #plot(mean_yield[number_pix_to_keep_in_969], csi,col="black",pch=19, xlab="Mean yield [kg/ha]", ylab="CSI", cex.lab=1.2, cex.axis=1.2,  cex.sub=1.2) 
 
 
@@ -555,6 +532,8 @@ source("./Code/get_first_coeff_function.R")
 for (pix in 1:length(coeff)) {
   if((length(which(coeff[[pix]]!=0))-1)<1){
     nb_meteo[pix] <- 0
+    met_type[pix] <- 8
+    meteo_type[pix] <- "None"
   } else {
     coeff_kept <- get_firstcoeffs(coeff = coeff[[pix]],
                                   nb_of_coeff = (length(which(coeff[[pix]]!=0))-1))
@@ -566,39 +545,37 @@ for (pix in 1:length(coeff)) {
         
       }#end fi
     }#end for xtrm
-    
+    met_string <- (c("vpd","pr","tmax") %in% unique(coeff_kept[,1])) 
+    met_strings[[pix]] <- met_string
+    if (identical(met_string, c(T,F,F))) {
+      met_type[pix] <- 1
+      meteo_type[pix] <- "VPD"
+    } else if (identical(met_string, c(F,T,F))) {
+      met_type[pix] <- 2
+      meteo_type[pix] <- "Pr"
+    } else if (identical(met_string, c(F,F,T))) {
+      met_type[pix] <- 3
+      meteo_type[pix] <- "Tmax"
+    } else if (identical(met_string, c(T,T,F))) {
+      met_type[pix] <- 4
+      meteo_type[pix] <- "VPD & Pr"
+    } else if (identical(met_string, c(T,F,T))) {
+      met_type[pix] <- 5
+      meteo_type[pix] <- "VPD & Tmax"
+    } else if (identical(met_string, c(F,T,T))) {
+      met_type[pix] <- 6
+      meteo_type[pix] <- "Pr & Tmax"
+    } else if (identical(met_string, c(T,T,T))) {
+      met_type[pix] <- 7
+      meteo_type[pix] <- "All"
+    } else if (identical(met_string, c(F,F,F)) | is.null(met_string)) {
+      met_type[pix] <- 8
+      meteo_type[pix] <- "None"
+    }
+    if ("vpd" %in% unique(coeff_kept[,1])) {met_vpd[pix] <- 1} 
+    if ("pr" %in% unique(coeff_kept[,1])) {met_temp[pix] <- 2} 
+    if ("tmax" %in% unique(coeff_kept[,1])) {met_pr[pix] <- 3}
   }#end ifelse
-  met_string <- (c("vpd","pr","tmax") %in% unique(coeff_kept[,1])) 
-  met_strings[[pix]] <- met_string
-  if (identical(met_string, c(T,F,F))) {
-    met_type[pix] <- 1
-    meteo_type[pix] <- "VPD"
-  } else if (identical(met_string, c(F,T,F))) {
-    met_type[pix] <- 2
-    meteo_type[pix] <- "Pr"
-  } else if (identical(met_string, c(F,F,T))) {
-    met_type[pix] <- 3
-    meteo_type[pix] <- "Tmax"
-  } else if (identical(met_string, c(T,T,F))) {
-    met_type[pix] <- 4
-    meteo_type[pix] <- "VPD & Pr"
-  } else if (identical(met_string, c(T,F,T))) {
-    met_type[pix] <- 5
-    meteo_type[pix] <- "VPD & Tmax"
-  } else if (identical(met_string, c(F,T,T))) {
-    met_type[pix] <- 6
-    meteo_type[pix] <- "Pr & Tmax"
-  } else if (identical(met_string, c(T,T,T))) {
-    met_type[pix] <- 7
-    meteo_type[pix] <- "All"
-  } else if (identical(met_string, c(F,F,F)) | is.null(met_string)) {
-    met_type[pix] <- 8
-    meteo_type[pix] <- "None"
-  }
-  if ("vpd" %in% unique(coeff_kept[,1])) {met_vpd[pix] <- 1} 
-  if ("pr" %in% unique(coeff_kept[,1])) {met_temp[pix] <- 2} 
-  if ("tmax" %in% unique(coeff_kept[,1])) {met_pr[pix] <- 3}
-  
 }#end for pix
 
 
@@ -726,66 +703,22 @@ ggarrange(P1 + theme(legend.position = "none", axis.title.x = element_text(size 
 
 
 
-# Plot nb of different meteo variables ####
-
-nb_meteo <- numeric()
-source("./Code/get_first_coeff_function.R")
-
-for (pix in 1:length(coeff)) {
-  if((length(which(coeff[[pix]]!=0))-1)<1){
-    nb_meteo[pix] <- 0
-  } else {
-    coeff_kept <- get_firstcoeffs(coeff = coeff[[pix]],
-                                  nb_of_coeff = (length(which(coeff[[pix]]!=0))-1))
-    nb_meteo[pix] <- length(unique(coeff_kept[,1]))
-    for (extr in c("dtr", "frs", "txx", "tnn", "rx5", "tx90p", "tn10p")) {
-      if (extr %in% unique(get_firstcoeffs(coeff = coeff[[pix]],
-                                           nb_of_coeff = length(coeff_kept[,1]))[,1])){
-        nb_meteo[pix] <- nb_meteo[pix] - 1
-        
-        }#end fi
-      }#end for xtrm
-      
-  }#end ifelse
-}#end for pix
-
-DF_nbmeteo <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], nb_meteo = nb_meteo)
-DF_nbmeteo$nb_meteo <- as.factor(DF_nbmeteo$nb_meteo)
-
-ggplot(data = DF_nbmeteo, aes(x=lon, y=lat)) +
-  geom_polygon(data = world, aes(long, lat, group=group),
-               fill="white", color="black", size=0.3) +
-  geom_tile(aes(fill=nb_meteo)) +
-  scale_fill_manual(values = c("0"="#fbb4b9", "1"="#f768a1", "2"="#c51b8a", "3"="#7a0177")) +
-  theme(panel.ontop = F, panel.grid = element_blank(),
-        panel.border = element_rect(colour = "black", fill = NA),
-        axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
-  ylab("Lat (°N)") +
-  xlab("Lon (°E)") +
-  coord_fixed(xlim = c(-120, 135),
-              ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
-              ratio = 1.3)+
-  labs(fill="Nb of\nmeteo var."
-       #,title = paste("Number of variables kept, simple",model_name,"regression, "),
-       #subtitle = paste("Monthly meteo var + extreme indices, ",lambda_val, sep = "")
-       )+
-  theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
-        legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
-  X11(width = 20, height = 5)
-
-
 
 
 # Plot number of variables kept ####
-DF_numbcoeff <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], coeff_kep = nb_coeff_kept)
+levels_nb_var <- cut(nb_coeff_kept, breaks = c(0,5,10,15,20,25,30), right = F)
+levels_nb_var <- gsub(","," - ",levels_nb_var,fixed=TRUE)
+DF_numbcoeff <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], coeff_kep = levels_nb_var)
+DF_numbcoeff$levels_nb_var <- gsub("\\[|\\)","",levels_nb_var)
 
 ggplot(data = DF_numbcoeff, aes(x=lon, y=lat)) +
   geom_polygon(data = world, aes(long, lat, group=group),
                fill="white", color="black", size=0.3) +
-  geom_tile(aes(fill=nb_coeff_kept)) +
-  scale_fill_gradient2(midpoint = max(DF_numbcoeff$coeff_kep, na.rm = T)/2,
-                       #limits=c(0,1),
-                       low = "#e7e1ef", mid = "#c994c7", high = "#dd1c77") +
+  geom_tile(aes(fill=DF_numbcoeff$levels_nb_var)) +
+  scale_fill_manual(values=c("0 - 5"="#f1eef6", "5 - 10"="#d4b9da", "10 - 15"="#c994c7",
+                             "15 - 20"="#df65b0", "20 - 25"="#dd1c77", "25 - 30"="#980043"),
+                    breaks=c("0 - 5", "5 - 10", "10 - 15", "15 - 20", "20 - 25", "25 - 30"))+
+  # scale_fill_gradient(low = "#e7e1ef", high = "#dd1c77") +
   theme(panel.ontop = F, panel.grid = element_blank(),
         panel.border = element_rect(colour = "black", fill = NA),
         axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
