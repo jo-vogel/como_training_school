@@ -350,6 +350,8 @@ coeff  <-list()
 speci <- rep(NA, final_pix_num)
 sensi <- rep(NA, final_pix_num)
 csi <- rep(NA, final_pix_num)
+mypred <- vector("list", final_pix_num)
+fitted_bad_yield <- vector("list", final_pix_num)
 nb_training_years <- rep(NA, final_pix_num)
 nb_testing_years <- rep(NA, final_pix_num)
 
@@ -357,19 +359,19 @@ for (pixel in 1:final_pix_num) {
   pix <- final_pixels_coord$ref_in_995[pixel]
   coeff[[pixel]] <- coefficients(Model_chosen[[pix]])
   
-  mypred <- predict(Model_chosen[[pix]], as.matrix(x1_test_list[[pix]]),type="response")
+  mypred[[pixel]] <- predict(Model_chosen[[pix]], as.matrix(x1_test_list[[pix]]),type="response")
   
-  fitted_bad_yield <- ifelse(mypred > segreg_th,1,0)
+  fitted_bad_yield[[pixel]] <- ifelse(mypred[[pixel]] > segreg_th,1,0)
   
   speci[pixel] <- InformationValue::specificity(actuals = as.matrix(y1_test_list[[pix]]),
-                                                predictedScores = fitted_bad_yield,
+                                                predictedScores = fitted_bad_yield[[pixel]],
                                                 threshold = segreg_th)
   sensi[pixel] <- InformationValue::sensitivity(actuals = as.matrix(y1_test_list[[pix]]),
-                                                predictedScores = fitted_bad_yield,
+                                                predictedScores = fitted_bad_yield[[pixel]],
                                                 threshold = segreg_th)
   
   con_tab <- InformationValue::confusionMatrix(actuals = as.matrix(y1_test_list[[pix]]),
-                                               predictedScores = fitted_bad_yield,
+                                               predictedScores = fitted_bad_yield[[pixel]],
                                                threshold = segreg_th)
   csi[pixel] <- con_tab["0","0"]/(con_tab["0","0"] + con_tab["1","0"] + con_tab["0","1"])
   if(is.na(con_tab["0","0"])){
@@ -865,7 +867,7 @@ allvariables_adj <- gsub(x=allvariables_adj, pattern="vpd", replacement = "VPD")
 allvariables_adj <- gsub(x=allvariables_adj, pattern="tmax", replacement = "Tmax")
 allvariables_adj <- gsub(x=allvariables_adj, pattern="pr", replacement = "Pr")
 allvariables_adj <- gsub(x=allvariables_adj, pattern="APr", replacement = "Apr") # recorrect April
-# varia_names_extr <- c("dtr","frs","TXx","TNn","Rx5day","TX90p","TN10p")
+varia_names_extr <- c("dtr","frs","TXx","TNn","Rx5day","TX90p","TN10p")
 
 # par(mfrow=c(4,2))
 # for (varia in 1:10) {
@@ -885,14 +887,12 @@ for (varia in 1:length(allvariables)) {
     DF_var <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], var_in = varia_in_pix)
     DF_var$var_in <- as.factor(DF_var$var_in)
     
-    # plots[[varia]] <- 
-      ggplot(data = DF_var, aes(x=lon, y=lat)) +
+    ggplot(data = DF_var, aes(x=lon, y=lat)) +
       geom_polygon(data = world, aes(long, lat, group=group),
                    fill="white", color="black", size=0.3) +
       geom_tile(aes(fill=DF_var$var_in)) +
       scale_fill_manual(values = c("1"="#fc8d62", "0"="#8da0cb"),
-                        label= c("1"="Yes", "0"="No"),
-                        breaks=c("1","0")) +
+                        label= c("1"="Yes", "0"="No"), drop=F) +
       theme(panel.ontop = F, panel.grid = element_blank(),
             panel.border = element_rect(colour = "black", fill = NA),
             axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
@@ -901,13 +901,9 @@ for (varia in 1:length(allvariables)) {
       coord_fixed(xlim = c(-120, 135),
                   ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
                   ratio = 1.3)+
-      labs(fill=paste0(varia_name,"\nselected")
-           ,title = varia_name
-           #,title = paste("Number of variables kept, simple",model_name,"regression, "),
-           #subtitle = paste("Monthly meteo var + extreme indices, ",lambda_val, sep = "")
-      )+
+      labs(fill="",title = varia_name)+
       theme(plot.title = element_text(size = 20, hjust = 0.5), plot.subtitle = element_text(size = 15),
-            legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
+            legend.text = element_text(size = 14)) +
       X11(width = 20, height = 6)
       ggsave(filename=paste0("D:/user/vogelj/Group_project/Output/Plots/All_variables/",varia_name,".jpg"))
 }
@@ -946,3 +942,14 @@ ggplot(data = DF_meteo_cat, aes(x=lon, y=lat)) +
 
 
 source("./Code/regions_barplot.r") # create barplot figure with variable number of all grid points categorized by continent
+
+
+
+# Numbers mentioned in the manuscript text
+mean(csi,na.rm=T)
+max(csi[loc_eur_pixels_num],na.rm=T)
+max(csi[loc_no_am_pixels_num],na.rm=T)
+failed_pix <- sapply(1:final_pix_num, function(x) !any(fitted_bad_yield[[x]] == 0) )
+sum(failed_pix)
+summary(nb_coeff_kept)
+summary(nb_extr_kept)

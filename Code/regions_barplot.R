@@ -1,6 +1,6 @@
 # Author Johannes Vogel
 
-# Run Final_Plots.r
+message('Run Final_Plots.r')
 
 library(raster)
 library(rgdal)
