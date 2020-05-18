@@ -103,7 +103,7 @@ testing_indices <- vector("list",length=pix_num)
 
 
 
-##### Change parameters here ####
+# Parameters of the splitting
 seed=1994
 train_size <- 70
 
@@ -161,9 +161,13 @@ for (pixel in 1:pix_num) {
                                              y = yield_pix[-which_na_xtrm,],
                                              family = "binomial", alpha = no_model, nfolds = 10)
     } else {
-      model_cv_fitting[[pixel]] <- cv.glmnet(x = var_pix,
+      if(sum(yield_pix)>=nbyears_final_training_data[pixel]-8){
+        model_cv_fitting[[pixel]] <- "Training years have less than 8 bad years"
+      } else {
+        model_cv_fitting[[pixel]] <- cv.glmnet(x = var_pix,
                                              y = yield_pix,
                                              family = "binomial", alpha = no_model, nfolds = 10)
+      }#end if else too half years == 0 kg/ha
       
     }#end if exists na else
     
@@ -172,7 +176,7 @@ for (pixel in 1:pix_num) {
   print(paste(pixel, "out of", pix_num))
 }#end for pixel
 
-toc() #3.3h for Lasso
+toc() #3.4h
 
 save(model_cv_fitting, file = paste0("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/cv_month_xtrm_LASSO_threshbadyield005_seed",
                                      seed, "_train", train_size,"_995pixels.RData"))
@@ -234,7 +238,7 @@ if (model_name == "Lasso"){
                                             seed, "_train", train_size,"_995pixels.RData"))
 }
 toc()
-# 2min for Lasso
+# 3min for Lasso
 
 
 
