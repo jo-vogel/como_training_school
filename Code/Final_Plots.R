@@ -197,6 +197,7 @@ lambda_name <- lambda_NAMES[2]
 load(paste0(path,"/final_889pixels_coords.Rdata"))
 #Raw mean yield
 load(paste0(path,"/RawMeanYield_995GP.Rdata"))
+load(paste0(path,"/RawSdYield_995GP.Rdata"))
 
 world <- map_data("world")
 
@@ -491,14 +492,39 @@ plot(Raw_mean_yield[final_pixels_coord$ref_in_995,"mean_yield"]/1000, csi,
 
 
 
+MeanY_CSI<-data.frame(cbind(Raw_mean_yield[final_pixels_coord$ref_in_995,"mean_yield"]/1000,csi))
+colnames(MeanY_CSI)<-c("mean_yield","csi")
+
+SDY_CSI<-data.frame(cbind(Raw_sd_yield[final_pixels_coord$ref_in_995,"sd_yield"]/1000,csi))
+colnames(SDY_CSI)<-c("sd_yield","csi")
+
+p1<-ggplot(MeanY_CSI, aes(x=mean_yield, y=csi)) + geom_point()+
+  theme(axis.text = element_text(size = 16), axis.title = element_text(size = 17)) +
+  xlab("Mean yield [t/ha]") + ylab("CSI") + theme(panel.grid.major = element_blank(),
+                                                  plot.margin = margin(1.2, 1.2, 1.2, 1.2, "cm"),
+                                                  panel.grid.minor = element_blank(), 
+                                                  panel.background = element_blank(), axis.line = element_line(colour = "black"))
+
+p2<-ggplot(SDY_CSI, aes(x=sd_yield, y=csi)) + geom_point()+
+  theme(axis.text = element_text(size = 16), axis.title = element_text(size = 17)) +
+  xlab("Yield standard deviation") + ylab("CSI")+ theme(panel.grid.major = element_blank(),
+                                                        plot.margin = margin(1.2, 1.2, 1.2, 1.2, "cm"), panel.grid.minor = element_blank(), 
+                                                        panel.background = element_blank(), axis.line = element_line(colour = "black"))
 
 
+ggarrange(p1, p2, nrow = 1,ncol=2,labels = c("a)", "b)" ))
+ggsave("C:/Users/39349/Documents/DAMOCLES/Final Workspace LASSO/ScatterplotYield_889.pdf", units="in", dpi=400)
 
 
+#plot(mean_yield[number_pix_to_keep_in_969]/1000, csi,col="black",pch=19, xlab="Mean yield [t/ha]", ylab="CSI", cex.lab=1.5, cex.axis=1.5,  cex.sub=1.3,las=1, font.lab=2 ) 
+#plot(var_yield[number_pix_to_keep_in_969], csi,col="black",pch=19, xlab="Variance yield", ylab="CSI", cex.lab=1.2, cex.axis=1.2,  cex.sub=1.2,las=1) 
+#plot(sd_yield[number_pix_to_keep_in_969], csi,col="black",pch=19, xlab="Yield Standard Deviation", ylab="CSI", cex.lab=1.5, cex.axis=1.5,  cex.sub=1.3,las=1, font.lab=2) 
 
+cor.test(Raw_mean_yield[final_pixels_coord$ref_in_995,"mean_yield"], csi)
 
+cor.test(Raw_sd_yield[final_pixels_coord$ref_in_995,"sd_yield"], csi)
 
-
+#################################################################################################################################################
 # number of season kept
 
 
