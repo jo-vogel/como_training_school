@@ -104,10 +104,16 @@ rm(nh_variables)
 # Which pixels have with mean yield < 10th perc ####
 
 raw_mean_yield <- apply(yields, MARGIN = 1, FUN=mean, na.rm=T)
+raw_sd_yield <- apply(yields, MARGIN = 1, FUN=sd, na.rm=T)
 
 Raw_mean_yield <- cbind(raw_mean_yield, lon_kept, lat_kept)
+Raw_sd_yield <- cbind(raw_sd_yield, lon_kept, lat_kept)
 colnames(Raw_mean_yield) <- c("mean_yield","longitudes", "latitudes")
+colnames(Raw_sd_yield) <- c("sd_yield","longitudes", "latitudes")
+
 save(Raw_mean_yield, file = paste0(path_to_NH_files,"/RawMeanYield_995GP.Rdata"))
+save(Raw_sd_yield, file = paste0(path_to_NH_files,"/RawSdYield_995GP.Rdata"))
+
 
 perc10_yields <- quantile(raw_mean_yield, probs=0.1)
 
