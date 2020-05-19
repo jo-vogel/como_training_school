@@ -211,7 +211,24 @@ save(Data_xtrm_standardized_mean, file = paste0(path_to_NH_files,"/extremeindice
 
 
 # Look at problematic years for pixels we will actully keep ####
+pixels_with_na_in_xtrm <- cbind(number_na = number_NA_years_extremes[number_NA_years_extremes>0],
+                                longitude = lon_subset[number_NA_years_extremes>0],
+                                latitude = lat_subset[number_NA_years_extremes>0])
+
+save(pixels_with_na_in_xtrm, file = paste0(path_to_NH_files,"/gridpoints_with_NA_in_extremes.Rdata"))
+saveRDS(pixels_with_na_in_xtrm, file = paste0(path_to_NH_files,"/gridpoints_with_NA_in_extremes.rds"))
+write.csv(pixels_with_na_in_xtrm, file = paste0(path_to_NH_files,"/gridpoints_with_NA_in_extremes.csv"))
+
+read.csv(paste0(path_to_NH_files,"/gridpoints_with_NA_in_extremes.csv"))
+
 load(paste0(path_to_NH_files,"/final_889pixels_coords.Rdata"))
+
+both_criteria <- (1:995 %in% which(number_NA_years_extremes>0) & 1:995 %in% final_pixels_coord$ref_in_995)
+
+pixels_kept_with_na_in_xtrm <- data.frame(number_NA = number_NA_years_extremes[both_criteria],
+                                     longitude = lon_subset[both_criteria],
+                                     latitude = lat_subset[both_criteria])
+
 number_NA_years_extremes[final_pixels_coord$ref_in_995]
 sum(number_NA_years_extremes[final_pixels_coord$ref_in_995])
 sum(number_NA_years_extremes[final_pixels_coord$ref_in_995]>0)
