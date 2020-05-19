@@ -512,8 +512,8 @@ p2<-ggplot(SDY_CSI, aes(x=sd_yield, y=csi)) + geom_point()+
                                                         panel.background = element_blank(), axis.line = element_line(colour = "black"))
 
 
-ggarrange(p1, p2, nrow = 1,ncol=2,labels = c("a)", "b)" ))
-ggsave("C:/Users/39349/Documents/DAMOCLES/Final Workspace LASSO/ScatterplotYield_889.pdf", units="in", dpi=400)
+ggarrange(p1, p2, nrow = 1,ncol=2,labels = c("a)", "b)" ), font.label = list(size = 21))
+ggsave("C:/Users/39349/Documents/DAMOCLES/Final Workspace LASSO/ScatterplotYield_889_v2.pdf", units="in", dpi=400)
 
 
 #plot(mean_yield[number_pix_to_keep_in_969]/1000, csi,col="black",pch=19, xlab="Mean yield [t/ha]", ylab="CSI", cex.lab=1.5, cex.axis=1.5,  cex.sub=1.3,las=1, font.lab=2 ) 
