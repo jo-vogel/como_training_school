@@ -282,16 +282,26 @@ for (pix in 1:final_pix_num) {
   nb_month_GS[pix] <- sum(substr(colnames(x1_train_list[[pixel]]), start = 1, stop = 3)=="pr_")
 }
 
-DF_GSmonth <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2],
-                         GSl = nb_month_GS)
+levels_nb_month <- cut(nb_month_GS, breaks = c(5,8,11,14), right = F)
+levels_nb_month <- gsub(","," - ",levels_nb_month,fixed=TRUE)
+DF_GSmonth <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], levels_nb_month = levels_nb_month)
+DF_GSmonth$levels_nb_month <- gsub("\\[|\\)","",levels_nb_month)
+
+
+# DF_GSmonth <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2],
+#                          levels_nb_month = nb_month_GS)
+# DF_GSmonth$levels_nb_month <- as.integer(DF_GSmonth$levels_nb_month)
 
 ggplot(data = DF_GSmonth, aes(x=DF_GSmonth$lon, y=DF_GSmonth$lat)) +
   geom_polygon(data = world, aes(long, lat, group=group),
                fill="white", color="black", size=0.3) +
-  geom_tile(aes(fill=DF_GSmonth$GSl)) +
-  scale_fill_gradient2(midpoint = 12,
-                       #limits=c(0,1),
-                       low = "#edf8b1", mid = "#41b6c4", high = "#081d58") +
+  geom_tile(aes(fill=DF_GSmonth$levels_nb_month)) +
+  scale_fill_manual(values=c("5 - 8" = "#edf8b1", "8 - 11" = "#41b6c4", "11 - 14" = "#2c7fb8" ),
+                    breaks=c("5 - 8", "8 - 11", "11 - 14"),
+                    label=c("5 - 8"="5 - 7", "8 - 11"="8 - 10", "11 - 14"="11 - 13")) +
+  # scale_fill_gradient2(midpoint = 12,
+  #                      #limits=c(0,1),
+  #                      low = "#edf8b1", mid = "#41b6c4", high = "#081d58") +
   theme(panel.ontop = F, panel.grid = element_blank(),
         panel.border = element_rect(colour = "black", fill = NA),
         axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
@@ -731,7 +741,8 @@ ggplot(data = DF_numbcoeff, aes(x=lon, y=lat)) +
   geom_tile(aes(fill=DF_numbcoeff$levels_nb_var)) +
   scale_fill_manual(values=c("0 - 5"="#f1eef6", "5 - 10"="#d4b9da", "10 - 15"="#c994c7",
                              "15 - 20"="#df65b0", "20 - 25"="#dd1c77", "25 - 30"="#980043"),
-                    breaks=c("0 - 5", "5 - 10", "10 - 15", "15 - 20", "20 - 25", "25 - 30"))+
+                    breaks=c("0 - 5", "5 - 10", "10 - 15", "15 - 20", "20 - 25", "25 - 30"),
+                    label=c("0 - 4", "5 - 9", "10 - 14", "15 - 10", "20 - 24", "25 - 29"))+
   # scale_fill_gradient(low = "#e7e1ef", high = "#dd1c77") +
   theme(panel.ontop = F, panel.grid = element_blank(),
         panel.border = element_rect(colour = "black", fill = NA),
