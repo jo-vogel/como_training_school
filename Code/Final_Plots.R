@@ -51,7 +51,7 @@ path <- "C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/Da
 # Johannes
 path <- "D:/user/vogelj/Group_project/Data"
 # Cristina
-path <- "C:/Users/39349/Documents/DAMOCLES/Final Workspace LASSO/Final_Data"
+path <- "C:/Users/39349/Documents/DAMOCLES/Data_global"
 
 load(paste0(path,"/extremeindices_and_monthlymeteovar_rescaled_995pix.Rdata"))
 load(paste0(path,"/extremeindices_and_monthlymeteovar_995pix.Rdata"))
@@ -178,10 +178,10 @@ load(paste0("D:/user/vogelj/Group_project/Code/Workspaces/Lasso_lambda1se_month_
 
 #Cristina
 
-load(paste0("C:/Users/39349/Documents/DAMOCLES/Final Workspace LASSO/Lasso_glmnet_final_results/Lasso_lambda1se_month_xtrm_LASSO_threshbadyield005_seed",
+load(paste0("C:/Users/39349/Documents/DAMOCLES/Final Workspace LASSO/Lasso_lambda1se_month_xtrm_LASSO_threshbadyield005_seed",
             seed, "_train", train_size,"_995pixels.Rdata"))
-#load(paste0("C:/Users/39349/Documents/DAMOCLES/Final Workspace LASSO/Lasso_glmnet_final_results/Lasso_lambdamin_month_xtrm_LASSO_threshbadyield005_seed",
-#            seed, "_train", train_size,"_995pixels.Rdata"))
+load(paste0("C:/Users/39349/Documents/DAMOCLES/Final Workspace LASSO/Lasso_lambdamin_month_xtrm_LASSO_threshbadyield005_seed",
+            seed, "_train", train_size,"_995pixels.Rdata"))
 
 
 Model_chosen <- lasso_model_lambda1se
@@ -197,7 +197,6 @@ lambda_name <- lambda_NAMES[2]
 load(paste0(path,"/final_889pixels_coords.Rdata"))
 #Raw mean yield
 load(paste0(path,"/RawMeanYield_995GP.Rdata"))
-load(paste0(path,"/RawSdYield_995GP.Rdata"))
 
 world <- map_data("world")
 
@@ -426,6 +425,7 @@ for (pixel in 1:final_pix_num) {
 
 var_yield <- apply(Data_xtrm_non_standardized$yield,MARGIN = 1, FUN = var, na.rm=T)
 
+
 ##### Plot results ######
 # # load all coordinates of northern hemisphere
 # path_to_NH_files <- "C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/Data/Global" # Pauline
@@ -479,7 +479,6 @@ ggplot(data = DF_csi, aes(x=lon, y=lat)) +
 
 cor.test(Raw_mean_yield[final_pixels_coord$ref_in_995,"mean_yield"], csi)
 cor.test(Raw_mean_yield[final_pixels_coord$ref_in_995,"mean_yield"], csi, method = "kendall")
-
 par(mar=c(4.1,4.1,1,1))
 
 plot(Raw_mean_yield[final_pixels_coord$ref_in_995,"mean_yield"]/1000, csi,
@@ -488,43 +487,8 @@ plot(Raw_mean_yield[final_pixels_coord$ref_in_995,"mean_yield"]/1000, csi,
 #plot(mean_yield[number_pix_to_keep_in_969], csi,col="black",pch=19, xlab="Mean yield [kg/ha]", ylab="CSI", cex.lab=1.2, cex.axis=1.2,  cex.sub=1.2) 
 
 
-####################  ScatterPlot Mean Yield and Variance vis CSI ######################################
 
 
-
-MeanY_CSI<-data.frame(cbind(Raw_mean_yield[final_pixels_coord$ref_in_995,"mean_yield"]/1000,csi))
-colnames(MeanY_CSI)<-c("mean_yield","csi")
-
-SDY_CSI<-data.frame(cbind(Raw_sd_yield[final_pixels_coord$ref_in_995,"sd_yield"]/1000,csi))
-colnames(SDY_CSI)<-c("sd_yield","csi")
-
-p1<-ggplot(MeanY_CSI, aes(x=mean_yield, y=csi)) + geom_point()+
-  theme(axis.text = element_text(size = 16), axis.title = element_text(size = 17)) +
-  xlab("Mean yield [t/ha]") + ylab("CSI") + theme(panel.grid.major = element_blank(),
-                                                  plot.margin = margin(1.2, 1.2, 1.2, 1.2, "cm"),
-                                                  panel.grid.minor = element_blank(), 
-                                                  panel.background = element_blank(), axis.line = element_line(colour = "black"))
-
-p2<-ggplot(SDY_CSI, aes(x=sd_yield, y=csi)) + geom_point()+
-  theme(axis.text = element_text(size = 16), axis.title = element_text(size = 17)) +
-  xlab("Yield standard deviation") + ylab("CSI")+ theme(panel.grid.major = element_blank(),
-                                                        plot.margin = margin(1.2, 1.2, 1.2, 1.2, "cm"), panel.grid.minor = element_blank(), 
-                                                        panel.background = element_blank(), axis.line = element_line(colour = "black"))
-
-
-ggarrange(p1, p2, nrow = 1,ncol=2,labels = c("a)", "b)" ), font.label = list(size = 21))
-ggsave("C:/Users/39349/Documents/DAMOCLES/Final Workspace LASSO/ScatterplotYield_889_v2.pdf", units="in", dpi=400)
-
-
-#plot(mean_yield[number_pix_to_keep_in_969]/1000, csi,col="black",pch=19, xlab="Mean yield [t/ha]", ylab="CSI", cex.lab=1.5, cex.axis=1.5,  cex.sub=1.3,las=1, font.lab=2 ) 
-#plot(var_yield[number_pix_to_keep_in_969], csi,col="black",pch=19, xlab="Variance yield", ylab="CSI", cex.lab=1.2, cex.axis=1.2,  cex.sub=1.2,las=1) 
-#plot(sd_yield[number_pix_to_keep_in_969], csi,col="black",pch=19, xlab="Yield Standard Deviation", ylab="CSI", cex.lab=1.5, cex.axis=1.5,  cex.sub=1.3,las=1, font.lab=2) 
-
-cor.test(Raw_mean_yield[final_pixels_coord$ref_in_995,"mean_yield"], csi)
-
-cor.test(Raw_sd_yield[final_pixels_coord$ref_in_995,"sd_yield"], csi)
-
-#################################################################################################################################################
 # number of season kept
 
 
@@ -631,6 +595,36 @@ for (pix in 1:length(coeff)) {
 
 # 3 plots combined: number of extreme indices, combination of meteovar and nb seasons ####
 
+# Plot number of variables kept
+levels_nb_var <- cut(nb_coeff_kept, breaks = c(0,5,10,15,20,25,30), right = F)
+levels_nb_var <- gsub(","," - ",levels_nb_var,fixed=TRUE)
+DF_numbcoeff <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], coeff_kep = levels_nb_var)
+DF_numbcoeff$levels_nb_var <- gsub("\\[|\\)","",levels_nb_var)
+
+P1 <- ggplot(data = DF_numbcoeff, aes(x=lon, y=lat)) +
+  geom_polygon(data = world, aes(long, lat, group=group),
+               fill="white", color="black", size=0.3) +
+  geom_tile(aes(fill=DF_numbcoeff$levels_nb_var)) +
+  scale_fill_manual(values=c("0 - 5"="#f1eef6", "5 - 10"="#d4b9da", "10 - 15"="#c994c7",
+                             "15 - 20"="#df65b0", "20 - 25"="#dd1c77", "25 - 30"="#980043"),
+                    breaks=c("0 - 5", "5 - 10", "10 - 15", "15 - 20", "20 - 25", "25 - 30"),
+                    label=c("0 - 4", "5 - 9", "10 - 14", "15 - 10", "20 - 24", "25 - 29"))+
+  # scale_fill_gradient(low = "#e7e1ef", high = "#dd1c77") +
+  theme(panel.ontop = F, panel.grid = element_blank(),
+        panel.border = element_rect(colour = "black", fill = NA),
+        axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
+  ylab("Lat (°N)") +
+  xlab("Lon (°E)") +
+  coord_fixed(xlim = c(-120, 135),
+              ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
+              ratio = 1.3)+
+  labs(fill="Nb of var."
+       #,title = paste("Number of variables kept, simple",model_name,"regression, "),
+       #subtitle = paste("Monthly meteo var + extreme indices, ",lambda_val, sep = "")
+  )+
+  theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
+        legend.title = element_text(size = 15), legend.text = element_text(size = 14))
+
 
 # Plot number of extreme indices kept
 DF_numbextr <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], coeff_kep = nb_extr_kept)
@@ -641,7 +635,7 @@ DF_numbextr$coeff_kep <- as.factor(DF_numbextr$coeff_kep)
 mycolors <- rev(hcl.colors(n=8,palette="Viridis"))
 # mycolors <- rev(hcl.colors(n=8,palette="Plasma"))
 
-P1 <- ggplot(data = DF_numbextr, aes(x=lon, y=lat)) +
+P2 <- ggplot(data = DF_numbextr, aes(x=lon, y=lat)) +
   geom_polygon(data = world, aes(long, lat, group=group),
                fill="white", color="black", size=0.3) +
   geom_tile(aes(fill=coeff_kep)) +
@@ -671,7 +665,7 @@ DF_meteo_type <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], met_ty
 cols <- c("VPD" = "#7FC97F", "Pr" = "cadetblue2", "Tmax" = "#386CB0", "VPD & Pr" = "#824D99",
           "VPD & Tmax" = "#F0027F", "Pr & Tmax" = "darkred" , "All" = "#FDC086", "None" = "#FFFF99")
 
-P2 <- ggplot(data = DF_meteo_type, aes(x=lon, y=lat)) +
+P3 <- ggplot(data = DF_meteo_type, aes(x=lon, y=lat)) +
   geom_polygon(data = world, aes(long, lat, group=group),
                fill="white", color="black", size=0.3) +
   geom_tile(aes(fill=met_type)) +
@@ -698,7 +692,7 @@ DF_nbseason$nb_season <- as.factor(DF_nbseason$nb_season)
 
 
 #Plot nb of seasons
-P3 <- ggplot(data = DF_nbseason, aes(x=lon, y=lat)) +
+P4 <- ggplot(data = DF_nbseason, aes(x=lon, y=lat)) +
   geom_polygon(data = world, aes(long, lat, group=group),
                fill="white", color="black", size=0.3) +
   geom_tile(aes(fill=DF_nbseason$nb_season)) +
@@ -723,68 +717,49 @@ P3 <- ggplot(data = DF_nbseason, aes(x=lon, y=lat)) +
 
 L1 <- get_legend(P1+ theme(legend.title = element_text(size=11),
                            legend.text = element_text(size=10),
-                           legend.key.size = unit(0.7,"line")))
+                           legend.key.size = unit(0.6,"line")))
 L2 <- get_legend(P2+ theme(legend.title = element_text(size=11),
                            legend.text = element_text(size=10),
-                           legend.key.size = unit(0.7,"line")))
+                           legend.key.size = unit(0.6,"line")))
 L3 <- get_legend(P3+ theme(legend.title = element_text(size=11),
                            legend.text = element_text(size=10),
-                           legend.key.size = unit(0.7,"line")))
+                           legend.key.size = unit(0.6,"line")))
+L4 <- get_legend(P4+ theme(legend.title = element_text(size=11),
+                           legend.text = element_text(size=10),
+                           legend.key.size = unit(0.6,"line")))
 
-ggarrange(P1 + theme(legend.position = "none", axis.title.x = element_text(size = 10),
-                     axis.title.y = element_text(size = 10),
-                     axis.text.x = element_text(size = 10),
-                     axis.text.y = element_text(size = 10)),
+ggarrange(P1 + theme(legend.position = "none",
+                     axis.title.x=element_blank(),axis.title.y=element_blank(),
+                     axis.text.x = element_text(size = 8),
+                     axis.text.y = element_text(size = 8)),
           L1,
-          P2 + theme(legend.position = "none", axis.title.x = element_text(size = 10),
-                     axis.title.y = element_text(size = 10),
-                     axis.text.x = element_text(size = 10),
-                     axis.text.y = element_text(size = 10)),
+          P2 + theme(legend.position = "none",
+                     axis.title.x=element_blank(),axis.title.y=element_blank(),
+                     axis.text.x = element_text(size = 8),
+                     axis.text.y = element_text(size = 8)),
           L2,
-          P3 + theme(legend.position = "none", axis.title.x = element_text(size = 10),
-                     axis.title.y = element_text(size = 10),
-                     axis.text.x = element_text(size = 10),
-                     axis.text.y = element_text(size = 10)),
+          P3 + theme(legend.position = "none",
+                     axis.title.x=element_blank(),axis.title.y=element_blank(),
+                     axis.text.x = element_text(size = 8),
+                     axis.text.y = element_text(size = 8)),
           L3,
-          nrow = 3, ncol=2,labels = c("a)", "", "b)", "", "c)", "")
-          ,widths=c(8,1), heights=c(1,1,1)
+          P4 + theme(legend.position = "none",
+                     axis.title.x=element_blank(),axis.title.y=element_blank(),
+                     axis.text.x = element_text(size = 8),
+                     axis.text.y = element_text(size = 8)),
+          L4,
+          nrow = 4, ncol=2,labels = c("(a)", "", "(b)", "",
+                                      "(c)", "", "(d)", ""),
+          label.x = -0.015
+          ,widths=c(8,1.5), heights=c(1,1,1), font.label = list(size = 14, face = "plain", color ="black")
           )+
-  X11(width = 21, height = 15)
+  X11(width = 30, height = 25)
 
 
 
 
 
-# Plot number of variables kept ####
-levels_nb_var <- cut(nb_coeff_kept, breaks = c(0,5,10,15,20,25,30), right = F)
-levels_nb_var <- gsub(","," - ",levels_nb_var,fixed=TRUE)
-DF_numbcoeff <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], coeff_kep = levels_nb_var)
-DF_numbcoeff$levels_nb_var <- gsub("\\[|\\)","",levels_nb_var)
 
-ggplot(data = DF_numbcoeff, aes(x=lon, y=lat)) +
-  geom_polygon(data = world, aes(long, lat, group=group),
-               fill="white", color="black", size=0.3) +
-  geom_tile(aes(fill=DF_numbcoeff$levels_nb_var)) +
-  scale_fill_manual(values=c("0 - 5"="#f1eef6", "5 - 10"="#d4b9da", "10 - 15"="#c994c7",
-                             "15 - 20"="#df65b0", "20 - 25"="#dd1c77", "25 - 30"="#980043"),
-                    breaks=c("0 - 5", "5 - 10", "10 - 15", "15 - 20", "20 - 25", "25 - 30"),
-                    label=c("0 - 4", "5 - 9", "10 - 14", "15 - 10", "20 - 24", "25 - 29"))+
-  # scale_fill_gradient(low = "#e7e1ef", high = "#dd1c77") +
-  theme(panel.ontop = F, panel.grid = element_blank(),
-        panel.border = element_rect(colour = "black", fill = NA),
-        axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
-  ylab("Lat (°N)") +
-  xlab("Lon (°E)") +
-  coord_fixed(xlim = c(-120, 135),
-              ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
-              ratio = 1.3)+
-  labs(fill="Nb of var."
-       #,title = paste("Number of variables kept, simple",model_name,"regression, "),
-       #subtitle = paste("Monthly meteo var + extreme indices, ",lambda_val, sep = "")
-  )+
-  theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
-        legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
-  X11(width = 20, height = 5)
 
 # Histogram nb variables ####
 hist(nb_coeff_kept, main = paste0("Nb of variables kept, ",lambda_val), xlab = "number of variables", breaks=14)
