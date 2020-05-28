@@ -174,6 +174,7 @@ harvest_day <- sowing_date_corrected + growingseason_length_corrected
 max_harvest_day <- apply(X = harvest_day, MARGIN = 1, FUN = max, na.rm=T)
 
 max_harvest_date <- as.Date(max_harvest_day, origin="2019-01-01")
+# write.csv(max_harvest_date,file="./Code/Workspaces/max_harvest_date.csv")
 stopifnot(year(max_harvest_date)==2020)
 
 harvest_month <- numeric(length = nb_pixel_kept)
