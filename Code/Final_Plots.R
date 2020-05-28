@@ -895,18 +895,18 @@ varia_names_extr <- c("dtr","frs","TXx","TNn","Rx5day","TX90p","TN10p")
 
 # par(mfrow=c(4,2))
 # for (varia in 1:10) {
-# for (varia in 1:length(allvariables)) {
-for (varia in 1:7) {
+for (varia in 1:length(allvariables)) {
+# for (varia in 1:7) {
     
     # varia_name <- top10variables[varia]
     varia_name <- allvariables[varia]
     varia_in_pix <- numeric()
+    plots <- vector("list",length=(length(allvariables)))
     for (pix in 1:final_pix_num) {
       varia_in_pix[pix] <- (varia_name %in% row.names(coeff[[pix]])[which(coeff[[pix]]!=0)])
     }#end for pix
-    
-    varia_name <- varia_names_extr[varia] # only for ext. ind. naming
-    # varia_name <- allvariables_adj[varia]
+    # varia_name <- varia_names_extr[varia] # only for ext. ind. naming
+    varia_name <- allvariables_adj[varia]
     
     DF_var <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], var_in = varia_in_pix)
     DF_var$var_in <- as.factor(DF_var$var_in)
@@ -921,8 +921,8 @@ for (varia in 1:7) {
       theme(panel.ontop = F, panel.grid = element_blank(),
             panel.border = element_rect(colour = "black", fill = NA),
             axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
-      # ylab("Lat (°N)") +
-      # xlab("Lon (°E)") +
+      ylab("Lat (°N)") +
+      xlab("Lon (°E)") +
       coord_fixed(xlim = c(-120, 135),
                   ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
                   ratio = 1.3)+
@@ -934,108 +934,6 @@ for (varia in 1:7) {
 }
 
 
-# Plot of 4 most relevant extreme indicators ####
-varia_name <- vector("character",7)
-varia_in_pix <- lapply(1:7, function(x) numeric()) # list entries need to be created as numeric, otherwise it becomes logical at assignment of entries
-for (varia in 1:7) {
-  varia_name[varia] <- allvariables[varia]
-  for (pix in 1:final_pix_num) {
-    varia_in_pix[[varia]][pix] <- (varia_name[varia] %in% row.names(coeff[[pix]])[which(coeff[[pix]]!=0)])
-  }#end for pix
-  varia_name[varia] <- varia_names_extr[varia] # only for ext. ind. naming
-}
-
-DF_var <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], dtr = as.factor(varia_in_pix[[1]]), frs = as.factor(varia_in_pix[[2]]), TXx = as.factor(varia_in_pix[[3]]),
-                     TNn = as.factor(varia_in_pix[[4]]), Rx5day = as.factor(varia_in_pix[[5]]), TX90p = as.factor(varia_in_pix[[6]]), TN10p = as.factor(varia_in_pix[[7]]))
-
-Plot1 <- ggplot(data = DF_var, aes(x=lon, y=lat)) +
-  geom_polygon(data = world, aes(long, lat, group=group),
-               fill="white", color="black", size=0.3) +
-  geom_tile(aes(fill=DF_var$dtr)) +
-  scale_fill_manual(drop=F,values = c("1"="#fc8d62", "0"="#8da0cb"),
-                    label= c("1"="Yes", "0"="No"),
-                    breaks=c("1","0"), limits=c(0,1)) +
-  theme(panel.ontop = F, panel.grid = element_blank(),
-        panel.border = element_rect(colour = "black", fill = NA),
-        axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
-  ylab("")+
-  xlab("")+
-  coord_fixed(xlim = c(-120, 135),
-              ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
-              ratio = 1.3)+
-  labs(fill="",title = names(DF_var)[3])+
-  theme(plot.title = element_text(size = 20, hjust = 0.5), plot.subtitle = element_text(size = 15),
-        legend.text = element_text(size = 14)) +
-  X11(width = 20, height = 6)
-Plot2 <- ggplot(data = DF_var, aes(x=lon, y=lat)) +
-  geom_polygon(data = world, aes(long, lat, group=group),
-               fill="white", color="black", size=0.3) +
-  geom_tile(aes(fill=DF_var$frs)) +
-  scale_fill_manual(drop=F,values = c("1"="#fc8d62", "0"="#8da0cb"),
-                    label= c("1"="Yes", "0"="No"),
-                    breaks=c("1","0"), limits=c(0,1)) +
-  theme(panel.ontop = F, panel.grid = element_blank(),
-        panel.border = element_rect(colour = "black", fill = NA),
-        axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
-  ylab("")+
-  xlab("")+
-  coord_fixed(xlim = c(-120, 135),
-              ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
-              ratio = 1.3)+
-  labs(fill="",title = names(DF_var)[4])+
-  theme(plot.title = element_text(size = 20, hjust = 0.5), plot.subtitle = element_text(size = 15),
-        legend.text = element_text(size = 14)) +
-  X11(width = 20, height = 6)
-Plot3 <- ggplot(data = DF_var, aes(x=lon, y=lat)) +
-  geom_polygon(data = world, aes(long, lat, group=group),
-               fill="white", color="black", size=0.3) +
-  geom_tile(aes(fill=DF_var$TX90p)) +
-  scale_fill_manual(drop=F,values = c("1"="#fc8d62", "0"="#8da0cb"),
-                    label= c("1"="Yes", "0"="No"),
-                    breaks=c("1","0"), limits=c(0,1)) +
-  theme(panel.ontop = F, panel.grid = element_blank(),
-        panel.border = element_rect(colour = "black", fill = NA),
-        axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
-  ylab("")+
-  xlab("")+
-  coord_fixed(xlim = c(-120, 135),
-              ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
-              ratio = 1.3)+
-  labs(fill="",title = names(DF_var)[8])+
-  theme(plot.title = element_text(size = 20, hjust = 0.5), plot.subtitle = element_text(size = 15),
-        legend.text = element_text(size = 14)) +
-  X11(width = 20, height = 6)
-Plot4 <- ggplot(data = DF_var, aes(x=lon, y=lat)) +
-  geom_polygon(data = world, aes(long, lat, group=group),
-               fill="white", color="black", size=0.3) +
-  geom_tile(aes(fill=DF_var$Rx5day)) +
-  scale_fill_manual(drop=F,values = c("1"="#fc8d62", "0"="#8da0cb"),
-                    label= c("1"="Yes", "0"="No"),
-                    breaks=c("1","0"), limits=c(0,1)) +
-  theme(panel.ontop = F, panel.grid = element_blank(),
-        panel.border = element_rect(colour = "black", fill = NA),
-        axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
-  ylab("")+
-  xlab("")+
-  coord_fixed(xlim = c(-120, 135),
-              ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
-              ratio = 1.3)+
-  labs(fill="",title = names(DF_var)[7])+
-  theme(plot.title = element_text(size = 20, hjust = 0.5), plot.subtitle = element_text(size = 15),
-        legend.text = element_text(size = 14)) +
-  X11(width = 20, height = 6)
-
-ggarrange(Plot1, Plot2, Plot3, Plot4,
-          nrow = 4, ncol=1,labels = c("(a)", "(b)","(c)","(d)"),
-          align="hv",
-          label.x = 0.05,
-          label.y = 1,
-          # widths=c(4,4), heights=c(2,2),
-          font.label = list(size = 20, face = "plain", color ="black")
-)+
-# X11(width = 30, height = 9)
-X11(width = 8, height = 9)
-ggsave(filename=paste0("D:/user/vogelj/Group_project/Output/Plots/All_variables/extreme_indicators.pdf"))
 
 
 
