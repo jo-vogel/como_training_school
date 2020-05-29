@@ -129,6 +129,7 @@ min_sowing_date <- as.Date(min_sowing_day, origin="2019-01-01")
 #Let's make sure that all growing season start the same year, before extracting the month
 stopifnot(year(min_sowing_date)==2019)
 sowing_month <- month(min_sowing_date)
+# write.csv2(sowing_month,file="./Code/Workspaces/sowing_month.csv")
 
 max_growingseason_length <- apply(X = growingseason_length, MARGIN = 1, FUN = max)
 
@@ -174,7 +175,7 @@ harvest_day <- sowing_date_corrected + growingseason_length_corrected
 max_harvest_day <- apply(X = harvest_day, MARGIN = 1, FUN = max, na.rm=T)
 
 max_harvest_date <- as.Date(max_harvest_day, origin="2019-01-01")
-# write.csv(max_harvest_date,file="./Code/Workspaces/max_harvest_date.csv")
+# write.csv2(max_harvest_date,file="./Code/Workspaces/max_harvest_date.csv")
 stopifnot(year(max_harvest_date)==2020)
 
 harvest_month <- numeric(length = nb_pixel_kept)
