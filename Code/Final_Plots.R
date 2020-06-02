@@ -767,7 +767,8 @@ coeff_vpd_Jun_Y2 <- numeric()
 
 TEST_coeff_vpd_Jun_Y2 <- logical()
 
-coeff_test <- sapply(1:length(coeff), function(x) names(numLevels_list[[x]])[coeff[[x]][-1]!=0])
+# coeff_test <- sapply(1:length(coeff), function(x) names(numLevels_list[[x]])[coeff[[x]][-1]!=0])
+coeff_test <- sapply(1:length(coeff), function(x) names(numLevels_list[[final_pixels_coord$ref_in_995[x]]])[coeff[[x]][-1]!=0])
 
 for (pix in 1:length(coeff)) {
   coeff_dtr[pix] <- coeff[[pix]]["dtr",]
@@ -789,11 +790,13 @@ cbind((coeff_vpd_Jun_Y2!=0),TEST_coeff_vpd_Jun_Y2)
 
 #ex pix 472 doesn't give the same result
 coeff[[472]]
-names(numLevels_list[[472]])[coeff[[472]][-1]!=0]#code barplot: vpd_Jun_Y2 not kept but...
+# names(numLevels_list[[472]])[coeff[[472]][-1]!=0]#code barplot: vpd_Jun_Y2 not kept but...
+names(numLevels_list[[final_pixels_coord$ref_in_995[472]]])[coeff[[472]][-1]!=0]#code barplot: vpd_Jun_Y2 not kept but...
 coeff[[pix]]["vpd_Jun_Y2",]
 
 #Origine of the pb: shift in coeff... there are more months kept in  numLevels_list?! Problem in the definition of numLevels_list
-cbind(names(numLevels_list[[472]]), rownames(coeff[[472]])[-1]) #warnong because not same vector length
+# cbind(names(numLevels_list[[472]]), rownames(coeff[[472]])[-1]) #warnong because not same vector length
+cbind(names(numLevels_list[[final_pixels_coord$ref_in_995[472]]]), rownames(coeff[[472]])[-1]) #warnong because not same vector length
 Data_xtrm_standardized$tasmax[final_pixels_coord$ref_in_995[472],,1] #Aug_Y2" and "Sept_Y2" should not be included
 
 
