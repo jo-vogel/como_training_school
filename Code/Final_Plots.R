@@ -861,6 +861,7 @@ P2 <- ggplot(data = DF2_frs, aes(x=lon, y=lat)) +
 
 #frs
 DF3_vpdJun <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], sign_coeff = sign(coeff_vpd_Jun_Y2))
+DF3_vpdJun$sign_coeff[is.na(DF3_vpdJun$sign_coeff)] <- rep(0, sum(is.na(DF3_vpdJun$sign_coeff)))
 DF3_vpdJun$sign_coeff <- as.factor(DF3_vpdJun$sign_coeff)
 
 
@@ -870,8 +871,7 @@ P3 <- ggplot(data = DF3_vpdJun, aes(x=lon, y=lat)) +
                fill="white", color="black", size=0.3) +
   geom_tile(aes(fill=DF3_vpdJun$sign_coeff)) +
   scale_fill_manual(na.value="#d9d9d9", values = c("0"="#969696", "1"="#ef8a62", "-1"="#67a9cf"),
-                    labels=c("0"="not kept", "1"="positive", "-1"="negative"),
-                    breaks=c("-1", "1", "0")) +
+                    labels=c("0"="not kept", "1"="positive", "-1"="negative")) +
   theme(panel.ontop = F, panel.grid = element_blank(),
         panel.border = element_rect(colour = "black", fill = NA),
         axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
@@ -886,6 +886,7 @@ P3 <- ggplot(data = DF3_vpdJun, aes(x=lon, y=lat)) +
   )+
   theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
         legend.title = element_text(size = 15), legend.text = element_text(size = 14))
+# +  X11(width = 20, height = 5)
 
 
 L1 <- get_legend(P1+ theme(legend.title = element_text(size=12),
