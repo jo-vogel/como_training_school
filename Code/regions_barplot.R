@@ -117,7 +117,14 @@ coefs_all_cont <- merge(coefs_all_cont,coefs_seas_no_am_tab,all=T,by="Variables"
 coefs_all_cont <- merge(coefs_all_cont,coefs_seas_asia_tab,all=T,by="Variables")
 coefs_all_cont <- merge(coefs_all_cont,coefs_seas_vec_tab,all=T,by="Variables")
 coefs_all_cont <- coefs_all_cont[order(coefs_all_cont$Freq_All,decreasing=F),]
-coefs_all_cont_mat <- as.matrix(coefs_all_cont)
+
+colName <- colnames(coefs_all_cont)
+coefs_all_cont_889 <- cbind(coefs_all_cont[,1],coefs_all_cont[,2:6]/pixel*100) # calculate percentage of all pixels
+coefs_all_cont <- data.frame(coefs_all_cont[,1],coefs_all_cont[,2]/sum(!is.na(loc_afr_pixels[[1]]))*100,coefs_all_cont[,3]/sum(!is.na(loc_eur_pixels[[1]]))*100,
+                        coefs_all_cont[,4]/sum(!is.na(loc_no_am_pixels[[1]]))*100,coefs_all_cont[,5]/sum(!is.na(loc_asia_pixels[[1]]))*100, coefs_all_cont[,6]/pixel*100) # calculate percentage of all pixels according to the respective number of pixels at each continent
+colnames(coefs_all_cont) <- colName
+
+coefs_all_cont_mat <- as.matrix(coefs_all_cont_889)
 row.names(coefs_all_cont_mat) <- coefs_all_cont_mat[,1]
 coefs_all_cont_mat[which(is.na(coefs_all_cont_mat))] <- 0
 # coefs_all_cont_mat <- coefs_all_cont_mat[,-1]
@@ -174,29 +181,30 @@ line2user <- function(line, side) { # from https://stackoverflow.com/questions/1
 # sort them in the same way: sort by one column; they are already sorted in coefs_all_cont
 # coefs_all_cont2 <- coefs_all_cont[order(coefs_all_cont$Freq_All),]
 pdf(file="D:/user/vogelj/Group_project/Output/Plots/barplot_variables_lambda1se_separate_continents.pdf",
-    width=16,height=8)
+    # width=16,height=8)
+    width=16,height=12)
 # x11(width=16,height=8)
-par(mfrow=c(1,4),mar=c(c(5, 4, 1, 0.5)),oma=c(0,4,2,0))
+par(mfrow=c(1,4),mar=c(c(5, 4, 1, 0.5)),oma=c(0,7.5,2,0))
 # title("Number of grid points, where variable is included in the model")
 # text(x=0,y=0,"Number of grid points, where variable is included in the model")
 barplot(t(coefs_all_cont_mat),horiz=T,las=1,col=c("brown3","DarkOrange2","goldenrod3","burlywood1"),
-        xlab="",cex.names=1,font=1,
+        xlab="",cex.names=1.8,font=1,cex=1.7,
         legend.text=c("Africa","Europe","North America","Asia"),args.legend =list(x= "bottomright",cex=1.5,text.font=1),main="")
-mtext("All continents",side=3,font=2,line=-0.8, cex=1.4)
+mtext("All continents",side=3,font=2,line=-1.4, cex=1.4)
 mtext("(a)",side=3,font=1,line=0.6, adj=0.01,cex=1.6)
 barplot(coefs_all_cont$Freq_No_Am,horiz=T,las=1,col="LightCyan3",main="",
-        xlab="",cex.names=0.6,font=1)
-mtext("North America",side=3,font=2,line=-0.8, cex=1.4)
+        xlab="",cex.names=0.6,font=1,cex=1.7)
+mtext("North America",side=3,font=2,line=-1.4, cex=1.4)
 mtext("(b)",side=3,font=1,line=0.6, adj=0.01,cex=1.6)
 barplot(coefs_all_cont$Freq_Eur,horiz=T,las=1,col="LightCyan3",main="",
-        xlab="",cex.names=0.6,font=1)
-mtext("Europe",side=3,font=2,line=-0.8, cex=1.4)
+        xlab="",cex.names=0.6,font=1,cex=1.7)
+mtext("Europe",side=3,font=2,line=-1.4, cex=1.4)
 mtext("(c)",side=3,font=1,line=0.6, adj=0.01,cex=1.6)
 text(line2user(line=mean(par('mar')[c(2, 3)]), side=2), 
-     line2user(line=3.5, side=1), 'Number of grid points, for which the predictor is included in the regression model', xpd=NA, cex=2.2)
+     line2user(line=3.5, side=1), 'Percentage of grid points, for which the predictor is included in the regression model', xpd=NA, cex=2.2)
 barplot(coefs_all_cont$Freq_Asia,horiz=T,las=1,col="LightCyan3",main="",
-        xlab="",cex.names=0.6,font=1)
-mtext("Asia",side=3,font=2,line=-0.8, cex=1.4)
+        xlab="",cex.names=0.6,font=1,cex=1.7)
+mtext("Asia",side=3,font=2,line=-1.4, cex=1.4)
 mtext("(d)",side=3,font=1,line=0.6, adj=0.01,cex=1.6)
 dev.off()
 
