@@ -760,10 +760,14 @@ ggarrange(P1 + theme(legend.position = "none",
   X11(width = 30, height = 25)
 
 
-# Three most kept variables: dtr, frs and vpd_Jun_Y2 ####
+# Three most kept variables: coefficient sign for vpd_May_Y2, vpd_Jun_Y2 and pr_Apr_Y2 (compute also extreme indices) ####
 coeff_dtr <- numeric()
 coeff_frs <- numeric()
+coeff_tx90p <- numeric()
+coeff_rx5 <- numeric()
+coeff_vpd_May_Y2 <- numeric()
 coeff_vpd_Jun_Y2 <- numeric()
+coeff_pr_Apr_Y2 <- numeric()
 
 TEST_coeff_vpd_Jun_Y2 <- logical()
 
@@ -773,10 +777,22 @@ coeff_test <- sapply(1:length(coeff), function(x) names(numLevels_list[[final_pi
 for (pix in 1:length(coeff)) {
   coeff_dtr[pix] <- coeff[[pix]]["dtr",]
   coeff_frs[pix] <- coeff[[pix]]["frs",]
+  coeff_tx90p[pix] <- coeff[[pix]]["tx90p",]
+  coeff_rx5[pix] <- coeff[[pix]]["rx5",]
   if("vpd_Jun_Y2" %in% rownames(coeff[[pix]])){
   coeff_vpd_Jun_Y2[pix] <- coeff[[pix]]["vpd_Jun_Y2",]
   } else {
     coeff_vpd_Jun_Y2[pix] <- NA
+  }
+  if("vpd_May_Y2" %in% rownames(coeff[[pix]])){
+    coeff_vpd_May_Y2[pix] <- coeff[[pix]]["vpd_May_Y2",]
+  } else {
+    coeff_vpd_May_Y2[pix] <- NA
+  }
+  if("pr_Apr_Y2" %in% rownames(coeff[[pix]])){
+    coeff_pr_Apr_Y2[pix] <- coeff[[pix]]["pr_Apr_Y2",]
+  } else {
+    coeff_pr_Apr_Y2[pix] <- NA
   }
   
   TEST_coeff_vpd_Jun_Y2[pix] <- "vpd_Jun_Y2" %in% coeff_test[[pix]]
@@ -803,18 +819,19 @@ Data_xtrm_standardized$tasmax[final_pixels_coord$ref_in_995[472],,1] #Aug_Y2" an
 
 #plot anyway, to be changed:
 
-#dtr
-DF1_dtr <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], sign_coeff = sign(coeff_dtr))
-DF1_dtr$sign_coeff <- as.factor(DF1_dtr$sign_coeff)
+#vpd_May_Y2
+DF1_vpd_may_Y2 <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], sign_coeff = sign(coeff_vpd_May_Y2))
+DF1_vpd_may_Y2$sign_coeff[is.na(DF1_vpd_may_Y2$sign_coeff)] <- rep(0, sum(is.na(DF1_vpd_may_Y2$sign_coeff)))
+DF1_vpd_may_Y2$sign_coeff <- as.factor(DF1_vpd_may_Y2$sign_coeff)
 
 
 #Plot sign of coeff
-P1 <- ggplot(data = DF1_dtr, aes(x=lon, y=lat)) +
+P1 <- ggplot(data = DF1_vpd_may_Y2, aes(x=lon, y=lat)) +
   geom_polygon(data = world, aes(long, lat, group=group),
                fill="white", color="black", size=0.3) +
-  geom_tile(aes(fill=DF1_dtr$sign_coeff)) +
+  geom_tile(aes(fill=DF1_vpd_may_Y2$sign_coeff)) +
   scale_fill_manual(values = c("0"="gray", "1"="#ef8a62", "-1"="#67a9cf"),
-                    labels=c("0"="not kept", "1"="positive", "-1"="negative"),
+                    labels=c("0"="not selected", "1"="positive", "-1"="negative"),
                     breaks=c("-1", "1", "0")) +
   theme(panel.ontop = F, panel.grid = element_blank(),
         panel.border = element_rect(colour = "black", fill = NA),
@@ -824,57 +841,30 @@ P1 <- ggplot(data = DF1_dtr, aes(x=lon, y=lat)) +
   coord_fixed(xlim = c(-120, 135),
               ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
               ratio = 1.3)+
-  labs(fill="Sign of\ndtr coeff."
+  labs(fill="Sign of\nVPD_May_Y2 coeff."
        #,title = paste("Number of different seasons, simple",model_name,"regression"),
        #subtitle = paste("monthly meteo var + extreme indices, ",lambda_val, sep = "")
   )+
   theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
         legend.title = element_text(size = 15), legend.text = element_text(size = 14))
+# +
+  # X11(width = 20, height = 5)
 
 
-#frs
-DF2_frs <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], sign_coeff = sign(coeff_frs))
-DF2_frs$sign_coeff <- as.factor(DF2_frs$sign_coeff)
+#vpdJun
+DF2_vpdJun <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], sign_coeff = sign(coeff_vpd_Jun_Y2))
+DF2_vpdJun$sign_coeff[is.na(DF2_vpdJun$sign_coeff)] <- rep(0, sum(is.na(DF2_vpdJun$sign_coeff)))
+DF2_vpdJun$sign_coeff <- as.factor(DF2_vpdJun$sign_coeff)
 
 
 #Plot sign of coeff
-P2 <- ggplot(data = DF2_frs, aes(x=lon, y=lat)) +
+P2 <- ggplot(data = DF2_vpdJun, aes(x=lon, y=lat)) +
   geom_polygon(data = world, aes(long, lat, group=group),
                fill="white", color="black", size=0.3) +
-  geom_tile(aes(fill=DF2_frs$sign_coeff)) +
+  geom_tile(aes(fill=DF2_vpdJun$sign_coeff)) +
   scale_fill_manual(values = c("0"="gray", "1"="#ef8a62", "-1"="#67a9cf"),
-                    labels=c("0"="not kept", "1"="positive", "-1"="negative"),
+                    labels=c("0"="not selected", "1"="positive", "-1"="negative"),
                     breaks=c("-1", "1", "0")) +
-  theme(panel.ontop = F, panel.grid = element_blank(),
-        panel.border = element_rect(colour = "black", fill = NA),
-        axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
-  ylab("Lat (°N)") +
-  xlab("Lon (°E)") +
-  coord_fixed(xlim = c(-120, 135),
-              ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
-              ratio = 1.3)+
-  labs(fill="Sign of\nfrs coeff."
-       #,title = paste("Number of different seasons, simple",model_name,"regression"),
-       #subtitle = paste("monthly meteo var + extreme indices, ",lambda_val, sep = "")
-  )+
-  theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
-        legend.title = element_text(size = 15), legend.text = element_text(size = 14))
-
-
-
-#frs
-DF3_vpdJun <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], sign_coeff = sign(coeff_vpd_Jun_Y2))
-DF3_vpdJun$sign_coeff[is.na(DF3_vpdJun$sign_coeff)] <- rep(0, sum(is.na(DF3_vpdJun$sign_coeff)))
-DF3_vpdJun$sign_coeff <- as.factor(DF3_vpdJun$sign_coeff)
-
-
-#Plot sign of coeff
-P3 <- ggplot(data = DF3_vpdJun, aes(x=lon, y=lat)) +
-  geom_polygon(data = world, aes(long, lat, group=group),
-               fill="white", color="black", size=0.3) +
-  geom_tile(aes(fill=DF3_vpdJun$sign_coeff)) +
-  scale_fill_manual(na.value="#d9d9d9", values = c("0"="#969696", "1"="#ef8a62", "-1"="#67a9cf"),
-                    labels=c("0"="not kept", "1"="positive", "-1"="negative")) +
   theme(panel.ontop = F, panel.grid = element_blank(),
         panel.border = element_rect(colour = "black", fill = NA),
         axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
@@ -889,7 +879,43 @@ P3 <- ggplot(data = DF3_vpdJun, aes(x=lon, y=lat)) +
   )+
   theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
         legend.title = element_text(size = 15), legend.text = element_text(size = 14))
-# +  X11(width = 20, height = 5)
+# +
+  # X11(width = 20, height = 5)
+
+#pr_Apr_Y2
+DF3_prApr <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], sign_coeff = sign(coeff_pr_Apr_Y2))
+DF3_prApr$sign_coeff[is.na(DF3_prApr$sign_coeff)] <- rep(0, sum(is.na(DF3_prApr$sign_coeff)))
+DF3_prApr$sign_coeff <- as.factor(DF3_prApr$sign_coeff)
+
+
+#Plot sign of coeff
+P3 <- ggplot(data = DF3_prApr, aes(x=lon, y=lat)) +
+  geom_polygon(data = world, aes(long, lat, group=group),
+               fill="white", color="black", size=0.3) +
+  geom_tile(aes(fill=DF3_prApr$sign_coeff)) +
+  scale_fill_manual(values = c("0"="gray", "1"="#ef8a62", "-1"="#67a9cf"),
+                    labels=c("0"="not selected", "1"="positive", "-1"="negative"),
+                    breaks=c("-1", "1", "0")) +
+  theme(panel.ontop = F, panel.grid = element_blank(),
+        panel.border = element_rect(colour = "black", fill = NA),
+        axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
+  ylab("Lat (°N)") +
+  xlab("Lon (°E)") +
+  coord_fixed(xlim = c(-120, 135),
+              ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
+              ratio = 1.3)+
+  labs(fill="Sign of\nPr_Apr_Y2 coeff."
+       #,title = paste("Number of different seasons, simple",model_name,"regression"),
+       #subtitle = paste("monthly meteo var + extreme indices, ",lambda_val, sep = "")
+  )+
+  theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
+        legend.title = element_text(size = 15), legend.text = element_text(size = 14))
+# +
+  # X11(width = 20, height = 5)
+
+
+
+
 
 
 L1 <- get_legend(P1+ theme(legend.title = element_text(size=12),
@@ -923,6 +949,330 @@ ggarrange(P1 + theme(legend.position = "none",
           ,widths=c(8,1.5), heights=c(1,1,1), font.label = list(size = 14, face = "plain", color ="black")
 )+
   X11(width = 25, height = 18)
+
+
+
+
+
+
+# Plot coefficient sign for dtr, frs, rx5, tx90p ####
+
+#dtr
+DF1_dtr <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], sign_coeff = sign(coeff_dtr))
+DF1_dtr$sign_coeff <- as.factor(DF1_dtr$sign_coeff)
+
+
+#Plot sign of coeff
+P1 <- ggplot(data = DF1_dtr, aes(x=lon, y=lat)) +
+  geom_polygon(data = world, aes(long, lat, group=group),
+               fill="white", color="black", size=0.3) +
+  geom_tile(aes(fill=DF1_dtr$sign_coeff)) +
+  scale_fill_manual(values = c("0"="gray", "1"="#ef8a62", "-1"="#67a9cf"),
+                    labels=c("0"="not selected", "1"="positive", "-1"="negative"),
+                    breaks=c("-1", "1", "0")) +
+  theme(panel.ontop = F, panel.grid = element_blank(),
+        panel.border = element_rect(colour = "black", fill = NA),
+        axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
+  ylab("Lat (°N)") +
+  xlab("Lon (°E)") +
+  coord_fixed(xlim = c(-120, 135),
+              ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
+              ratio = 1.3)+
+  labs(fill="Sign of\ndtr coeff."
+       #,title = paste("Number of different seasons, simple",model_name,"regression"),
+       #subtitle = paste("monthly meteo var + extreme indices, ",lambda_val, sep = "")
+  )+
+  theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
+        legend.title = element_text(size = 15), legend.text = element_text(size = 14))
+
+
+#frs
+DF2_frs <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], sign_coeff = sign(coeff_frs))
+DF2_frs$sign_coeff <- as.factor(DF2_frs$sign_coeff)
+
+
+#Plot sign of coeff
+P2 <- ggplot(data = DF2_frs, aes(x=lon, y=lat)) +
+  geom_polygon(data = world, aes(long, lat, group=group),
+               fill="white", color="black", size=0.3) +
+  geom_tile(aes(fill=DF2_frs$sign_coeff)) +
+  scale_fill_manual(values = c("0"="gray", "1"="#ef8a62", "-1"="#67a9cf"),
+                    labels=c("0"="not selected", "1"="positive", "-1"="negative"),
+                    breaks=c("-1", "1", "0")) +
+  theme(panel.ontop = F, panel.grid = element_blank(),
+        panel.border = element_rect(colour = "black", fill = NA),
+        axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
+  ylab("Lat (°N)") +
+  xlab("Lon (°E)") +
+  coord_fixed(xlim = c(-120, 135),
+              ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
+              ratio = 1.3)+
+  labs(fill="Sign of\nfrs coeff."
+       #,title = paste("Number of different seasons, simple",model_name,"regression"),
+       #subtitle = paste("monthly meteo var + extreme indices, ",lambda_val, sep = "")
+  )+
+  theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
+        legend.title = element_text(size = 15), legend.text = element_text(size = 14))
+
+#rx5
+DF3_rx5 <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], sign_coeff = sign(coeff_rx5))
+DF3_rx5$sign_coeff <- as.factor(DF3_rx5$sign_coeff)
+
+
+#Plot sign of coeff
+P3 <- ggplot(data = DF3_rx5, aes(x=lon, y=lat)) +
+  geom_polygon(data = world, aes(long, lat, group=group),
+               fill="white", color="black", size=0.3) +
+  geom_tile(aes(fill=DF3_rx5$sign_coeff)) +
+  scale_fill_manual(values = c("0"="gray", "1"="#ef8a62", "-1"="#67a9cf"),
+                    labels=c("0"="not selected", "1"="positive", "-1"="negative"),
+                    breaks=c("-1", "1", "0")) +
+  theme(panel.ontop = F, panel.grid = element_blank(),
+        panel.border = element_rect(colour = "black", fill = NA),
+        axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
+  ylab("Lat (°N)") +
+  xlab("Lon (°E)") +
+  coord_fixed(xlim = c(-120, 135),
+              ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
+              ratio = 1.3)+
+  labs(fill="Sign of\nRx5day coeff."
+       #,title = paste("Number of different seasons, simple",model_name,"regression"),
+       #subtitle = paste("monthly meteo var + extreme indices, ",lambda_val, sep = "")
+  )+
+  theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
+        legend.title = element_text(size = 15), legend.text = element_text(size = 14))
+
+
+
+#tx90p
+DF4_tx90p <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], sign_coeff = sign(coeff_tx90p))
+DF4_tx90p$sign_coeff <- as.factor(DF4_tx90p$sign_coeff)
+
+
+#Plot sign of coeff
+P4 <- ggplot(data = DF4_tx90p, aes(x=lon, y=lat)) +
+  geom_polygon(data = world, aes(long, lat, group=group),
+               fill="white", color="black", size=0.3) +
+  geom_tile(aes(fill=DF4_tx90p$sign_coeff)) +
+  scale_fill_manual(values = c("0"="gray", "1"="#ef8a62", "-1"="#67a9cf"),
+                    labels=c("0"="not selected", "1"="positive", "-1"="negative"),
+                    breaks=c("-1", "1", "0")) +
+  theme(panel.ontop = F, panel.grid = element_blank(),
+        panel.border = element_rect(colour = "black", fill = NA),
+        axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
+  ylab("Lat (°N)") +
+  xlab("Lon (°E)") +
+  coord_fixed(xlim = c(-120, 135),
+              ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
+              ratio = 1.3)+
+  labs(fill="Sign of\nTX90p coeff."
+       #,title = paste("Number of different seasons, simple",model_name,"regression"),
+       #subtitle = paste("monthly meteo var + extreme indices, ",lambda_val, sep = "")
+  )+
+  theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
+        legend.title = element_text(size = 15), legend.text = element_text(size = 14))
+
+
+L1 <- get_legend(P1+ theme(legend.title = element_text(size=12),
+                           legend.text = element_text(size=12),
+                           legend.key.size = unit(0.6,"line")))
+L2 <- get_legend(P2+ theme(legend.title = element_text(size=12),
+                           legend.text = element_text(size=12),
+                           legend.key.size = unit(0.6,"line")))
+L3 <- get_legend(P3+ theme(legend.title = element_text(size=12),
+                           legend.text = element_text(size=12),
+                           legend.key.size = unit(0.6,"line")))
+L4 <- get_legend(P4+ theme(legend.title = element_text(size=12),
+                           legend.text = element_text(size=12),
+                           legend.key.size = unit(0.6,"line")))
+
+
+ggarrange(P1 + theme(legend.position = "none",
+                     axis.title.x=element_blank(),axis.title.y=element_blank(),
+                     axis.text.x = element_text(size = 8),
+                     axis.text.y = element_text(size = 8)),
+          L1,
+          P2 + theme(legend.position = "none",
+                     axis.title.x=element_blank(),axis.title.y=element_blank(),
+                     axis.text.x = element_text(size = 8),
+                     axis.text.y = element_text(size = 8)),
+          L2,
+          P3 + theme(legend.position = "none",
+                     axis.title.x=element_blank(),axis.title.y=element_blank(),
+                     axis.text.x = element_text(size = 8),
+                     axis.text.y = element_text(size = 8)),
+          L3,
+          P4 + theme(legend.position = "none",
+                     axis.title.x=element_blank(),axis.title.y=element_blank(),
+                     axis.text.x = element_text(size = 8),
+                     axis.text.y = element_text(size = 8)),
+          L4,
+          nrow = 4, ncol=2,labels = c("(a)", "", "(b)", "",
+                                      "(c)", "", "(d)", ""),
+          label.x = -0.015
+          ,widths=c(8,1.5), heights=c(1,1,1), font.label = list(size = 14, face = "plain", color ="black")
+)+
+  X11(width = 30, height = 25)
+
+
+# Plot coefficient selected? for dtr, frs, rx5, tx90p ####
+
+#dtr
+DF1_dtr <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], selected_coeff = (coeff_dtr!=0))
+DF1_dtr$selected_coeff <- as.factor(DF1_dtr$selected_coeff)
+
+
+#Plot sign of coeff
+P1 <- ggplot(data = DF1_dtr, aes(x=lon, y=lat)) +
+  geom_polygon(data = world, aes(long, lat, group=group),
+               fill="white", color="black", size=0.3) +
+  geom_tile(aes(fill=DF1_dtr$selected_coeff)) +
+  scale_fill_manual(values = c("FALSE"="gray", "TRUE"="#984ea3"),
+                    labels=c("FALSE"="No", "TRUE"="Yes"),
+                    breaks=c("TRUE", "FALSE")) +
+  theme(panel.ontop = F, panel.grid = element_blank(),
+        panel.border = element_rect(colour = "black", fill = NA),
+        axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
+  ylab("Lat (°N)") +
+  xlab("Lon (°E)") +
+  coord_fixed(xlim = c(-120, 135),
+              ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
+              ratio = 1.3)+
+  labs(fill="Selection of\ndtr coeff."
+       #,title = paste("Number of different seasons, simple",model_name,"regression"),
+       #subtitle = paste("monthly meteo var + extreme indices, ",lambda_val, sep = "")
+  )+
+  theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
+        legend.title = element_text(size = 15), legend.text = element_text(size = 14))
+
+
+#frs
+DF2_frs <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], selected_coeff = (coeff_frs!=0))
+DF2_frs$selected_coeff <- as.factor(DF2_frs$selected_coeff)
+
+
+#Plot sign of coeff
+P2 <- ggplot(data = DF2_frs, aes(x=lon, y=lat)) +
+  geom_polygon(data = world, aes(long, lat, group=group),
+               fill="white", color="black", size=0.3) +
+  geom_tile(aes(fill=DF2_frs$selected_coeff)) +
+  scale_fill_manual(values = c("FALSE"="gray", "TRUE"="#984ea3"),
+                    labels=c("FALSE"="No", "TRUE"="Yes"),
+                    breaks=c("TRUE", "FALSE")) +
+  theme(panel.ontop = F, panel.grid = element_blank(),
+        panel.border = element_rect(colour = "black", fill = NA),
+        axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
+  ylab("Lat (°N)") +
+  xlab("Lon (°E)") +
+  coord_fixed(xlim = c(-120, 135),
+              ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
+              ratio = 1.3)+
+  labs(fill="Selection of\nfrs coeff."
+       #,title = paste("Number of different seasons, simple",model_name,"regression"),
+       #subtitle = paste("monthly meteo var + extreme indices, ",lambda_val, sep = "")
+  )+
+  theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
+        legend.title = element_text(size = 15), legend.text = element_text(size = 14))
+
+#rx5
+DF3_rx5 <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], selected_coeff = (coeff_rx5!=0))
+DF3_rx5$selected_coeff <- as.factor(DF3_rx5$selected_coeff)
+
+
+#Plot sign of coeff
+P3 <- ggplot(data = DF3_rx5, aes(x=lon, y=lat)) +
+  geom_polygon(data = world, aes(long, lat, group=group),
+               fill="white", color="black", size=0.3) +
+  geom_tile(aes(fill=DF3_rx5$selected_coeff)) +
+  scale_fill_manual(values = c("FALSE"="gray", "TRUE"="#984ea3"),
+                    labels=c("FALSE"="No", "TRUE"="Yes"),
+                    breaks=c("TRUE", "FALSE")) +
+  theme(panel.ontop = F, panel.grid = element_blank(),
+        panel.border = element_rect(colour = "black", fill = NA),
+        axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
+  ylab("Lat (°N)") +
+  xlab("Lon (°E)") +
+  coord_fixed(xlim = c(-120, 135),
+              ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
+              ratio = 1.3)+
+  labs(fill="Selection of\nRx5day coeff."
+       #,title = paste("Number of different seasons, simple",model_name,"regression"),
+       #subtitle = paste("monthly meteo var + extreme indices, ",lambda_val, sep = "")
+  )+
+  theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
+        legend.title = element_text(size = 15), legend.text = element_text(size = 14))
+
+
+
+#tx90p
+DF4_tx90p <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], selected_coeff = (coeff_tx90p!=0))
+DF4_tx90p$selected_coeff <- as.factor(DF4_tx90p$selected_coeff)
+
+
+#Plot sign of coeff
+P4 <- ggplot(data = DF4_tx90p, aes(x=lon, y=lat)) +
+  geom_polygon(data = world, aes(long, lat, group=group),
+               fill="white", color="black", size=0.3) +
+  geom_tile(aes(fill=DF4_tx90p$selected_coeff)) +
+  scale_fill_manual(values = c("FALSE"="gray", "TRUE"="#984ea3"),
+                    labels=c("FALSE"="No", "TRUE"="Yes"),
+                    breaks=c("TRUE", "FALSE")) +
+  theme(panel.ontop = F, panel.grid = element_blank(),
+        panel.border = element_rect(colour = "black", fill = NA),
+        axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
+  ylab("Lat (°N)") +
+  xlab("Lon (°E)") +
+  coord_fixed(xlim = c(-120, 135),
+              ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
+              ratio = 1.3)+
+  labs(fill="Selection of\nTX90p coeff."
+       #,title = paste("Number of different seasons, simple",model_name,"regression"),
+       #subtitle = paste("monthly meteo var + extreme indices, ",lambda_val, sep = "")
+  )+
+  theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
+        legend.title = element_text(size = 15), legend.text = element_text(size = 14))
+
+
+L1 <- get_legend(P1+ theme(legend.title = element_text(size=12),
+                           legend.text = element_text(size=12),
+                           legend.key.size = unit(0.6,"line")))
+L2 <- get_legend(P2+ theme(legend.title = element_text(size=12),
+                           legend.text = element_text(size=12),
+                           legend.key.size = unit(0.6,"line")))
+L3 <- get_legend(P3+ theme(legend.title = element_text(size=12),
+                           legend.text = element_text(size=12),
+                           legend.key.size = unit(0.6,"line")))
+L4 <- get_legend(P4+ theme(legend.title = element_text(size=12),
+                           legend.text = element_text(size=12),
+                           legend.key.size = unit(0.6,"line")))
+
+
+ggarrange(P1 + theme(legend.position = "none",
+                     axis.title.x=element_blank(),axis.title.y=element_blank(),
+                     axis.text.x = element_text(size = 8),
+                     axis.text.y = element_text(size = 8)),
+          L1,
+          P2 + theme(legend.position = "none",
+                     axis.title.x=element_blank(),axis.title.y=element_blank(),
+                     axis.text.x = element_text(size = 8),
+                     axis.text.y = element_text(size = 8)),
+          L2,
+          P3 + theme(legend.position = "none",
+                     axis.title.x=element_blank(),axis.title.y=element_blank(),
+                     axis.text.x = element_text(size = 8),
+                     axis.text.y = element_text(size = 8)),
+          L3,
+          P4 + theme(legend.position = "none",
+                     axis.title.x=element_blank(),axis.title.y=element_blank(),
+                     axis.text.x = element_text(size = 8),
+                     axis.text.y = element_text(size = 8)),
+          L4,
+          nrow = 4, ncol=2,labels = c("(a)", "", "(b)", "",
+                                      "(c)", "", "(d)", ""),
+          label.x = -0.015
+          ,widths=c(8,1.5), heights=c(1,1,1), font.label = list(size = 14, face = "plain", color ="black")
+)+
+  X11(width = 30, height = 25)
 
 
 
