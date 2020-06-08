@@ -217,7 +217,9 @@ ggplot(data = DF_meanY, aes(x=lon, y=lat)) +
                        low = "#f7fcb9", mid = "#addd8e", high = "#31a354") +
   theme(panel.ontop = F, panel.grid = element_blank(),
         panel.border = element_rect(colour = "black", fill = NA),
-        axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
+        axis.text = element_text(size = 12), axis.title = element_text(size = 12),
+        axis.text.x = element_text(size = 12),
+        axis.text.y = element_text(size = 12))+
   ylab("Lat (°N)") +
   xlab("Lon (°E)") +
   coord_fixed(xlim = c(-115, 130),
@@ -228,7 +230,7 @@ ggplot(data = DF_meanY, aes(x=lon, y=lat)) +
         legend.title = element_text(size = 15), legend.text = element_text(size = 14))+
   geom_point(data = DF_excluded_pix, aes(x = DF_excluded_pix$lon, y = DF_excluded_pix$lat),
              color = "black", size = 0.89, pch=4) +
-  X11(width = 20, height = 6)
+  X11(width = 20, height = 5.7)
 
 
 
@@ -317,8 +319,11 @@ ggplot(data = DF_GSmonth, aes(x=DF_GSmonth$lon, y=DF_GSmonth$lat)) +
        #subtitle = paste("Monthly meteo var + extreme indices, cutoff level=", round(segreg_th,3),", ",lambda_val, sep = "")
   )+
   theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
-        legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
-  X11(width = 20, height = 5)
+        legend.title = element_text(size = 15), legend.text = element_text(size = 14),
+        axis.title.x=element_blank(),axis.title.y=element_blank(),
+        axis.text.x = element_text(size = 12),
+        axis.text.y = element_text(size = 12)) +
+  X11(width = 20, height = 4.8)
 
 
 ##### Adjust cutoff level #####
@@ -480,8 +485,11 @@ ggplot(data = DF_csi, aes(x=lon, y=lat)) +
        #subtitle = paste("Monthly meteo var + extreme indices, cutoff level=", round(segreg_th,3),", ",lambda_val, sep = "")
        )+
   theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
-        legend.title = element_text(size = 15), legend.text = element_text(size = 14)) +
-  X11(width = 20, height = 5)
+        legend.title = element_text(size = 15), legend.text = element_text(size = 14),
+        axis.title.x=element_blank(),axis.title.y=element_blank(),
+        axis.text.x = element_text(size = 12),
+        axis.text.y = element_text(size = 12)) +
+  X11(width = 20, height = 4.9)
 
 cor.test(Raw_mean_yield[final_pixels_coord$ref_in_995,"mean_yield"], csi)
 cor.test(Raw_mean_yield[final_pixels_coord$ref_in_995,"mean_yield"], csi, method = "kendall")
