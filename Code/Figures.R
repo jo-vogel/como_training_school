@@ -1,0 +1,1011 @@
+# Creation of the Figures 1, 5, 6, 7, 8, A3, A4 and the supplementary gifs of the article
+# Authors: Pauline Rivore, Johannes Vogel, Cristina Deidda
+
+# Structure of the code
+# a) Load the model
+
+
+
+
+##### Initialisation, librairies, data ####
+###########################################
+
+library(ncdf4);library(glmnet);library(InformationValue);library(ROCR);library(ggpubr);library(abind)
+library(stringr);library(tictoc);library(ggplot2);library(viridis);library(raster);library(rgdal)
+
+
+
+##### Load standardized Data #####
+path <- message("insert working directory here")
+seed=1994
+train_size <- 70
+
+
+# in the drive folder Data/Global_Data/Final_Data
+# Pauline
+# path <- "C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/Data/Global"
+# # Johannes
+# path <- "D:/user/vogelj/Group_project/Data"
+# # Cristina
+# path <- "C:/Users/39349/Documents/DAMOCLES/Final Workspace LASSO/Final_Data"
+
+
+# Load the preprocessed standardized climate variables and crop yield for all 995 grid points in the northern hemisphere
+load(paste0(path,"/extremeindices_and_monthlymeteovar_rescaled_995pix.Rdata")) 
+# load(paste0(path,"/extremeindices_and_monthlymeteovar_995pix.Rdata"))
+
+##### Load the statistical model calculated using Lasso_glmnet_monthly_extreme_indices.R #####
+load(paste0(path,"/Lasso_lambda1se_month_xtrm_LASSO_threshbadyield005_seed",seed, "_train", train_size,"_995pixels.Rdata"))
+
+# On the Drive you can find my data in:
+# Models/LASSO-Ridge regression/Lasso_glmnet_final_results/Lasso_lambda1se_month_xtrm_LASSO_threshbadyield005_seed1994_train70_995pixels.RData
+# Pauline
+# load(file = paste0("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/Lasso_lambda1se_month_xtrm_LASSO_threshbadyield005_seed",
+#                    seed, "_train", train_size,"_995pixels.Rdata"))
+# # Johannes
+# load(paste0("D:/user/vogelj/Group_project/Code/Workspaces/Lasso_lambda1se_month_xtrm_LASSO_threshbadyield005_seed",
+#             seed, "_train", train_size,"_995pixels.Rdata"))
+# #Cristina
+# load(paste0("C:/Users/39349/Documents/DAMOCLES/Final Workspace LASSO/Lasso_glmnet_final_results/Lasso_lambda1se_month_xtrm_LASSO_threshbadyield005_seed",
+#             seed, "_train", train_size,"_995pixels.Rdata"))
+
+#Pixels kept
+load(paste0(path,"/final_889pixels_coords.Rdata"))
+#Raw mean yield
+load(paste0(path,"/RawMeanYield_995GP.Rdata"))
+load(paste0(path,"/RawSdYield_995GP.Rdata"))
+source("./Code/get_first_coeff_function.R")
+
+# Create matrix with all coordinates required for Fig. 8
+path_to_NH_files <- "D:/user/vogelj/Data/Group project Como"
+nh_files <- list.files(path=path_to_NH_files,pattern="*NH.nc") # all files from northern hemisphere
+nh_data <- lapply(1:length(nh_files),function(x){nc_open(paste0(path_to_NH_files,"/",nh_files[x]))})
+lat_all <- ncvar_get(nh_data[[1]],"lat")
+lon_all <- ncvar_get(nh_data[[1]],"lon")
+lati_all <- rep(lat_all,each=length(lon_all))
+long_all <- rep(lon_all,length(lat_all)) # coordinates rearranged
+coord_all <- cbind(long_all,lati_all)
+lapply(1:length(nh_files),function(x){nc_close(nh_data[[x]])}) 
+
+
+
+##### Process data #####
+total_nb_pix <- length(Data_xtrm_standardized$longitudes)
+# An additional dimension is added to be able to combine the 2-dimensional variables (grid points and years) with the 3-dimensional variables (grid points, months and years)
+yield_3dim <- array(Data_xtrm_standardized$yield,dim=c(total_nb_pix,1,1600))
+dtr_3dim <- array(Data_xtrm_standardized$dtr,dim=c(total_nb_pix,1,1600))
+frs_3dim <- array(Data_xtrm_standardized$frs,dim=c(total_nb_pix,1,1600))
+txx_3dim <- array(Data_xtrm_standardized$txx,dim=c(total_nb_pix,1,1600))
+tnn_3dim <- array(Data_xtrm_standardized$tnn,dim=c(total_nb_pix,1,1600))
+rx5_3dim <- array(Data_xtrm_standardized$rx5,dim=c(total_nb_pix,1,1600))
+tx90p_3dim <- array(Data_xtrm_standardized$tx90p,dim=c(total_nb_pix,1,1600))
+tn10p_3dim <- array(Data_xtrm_standardized$tn10p,dim=c(total_nb_pix,1,1600))
+
+# Combine all variables in one dataset: crop yield, climate extreme indicators, monthly mean meteorological variables
+Model_data <- abind(yield_3dim,dtr_3dim,frs_3dim,txx_3dim,tnn_3dim,rx5_3dim,tx90p_3dim,tn10p_3dim
+                    ,Data_xtrm_standardized$tasmax,Data_xtrm_standardized$vpd,Data_xtrm_standardized$pr,along=2)
+colnames(Model_data) <- c("Yield", "dtr", "frs", "txx", "tnn", "rx5", "tx90p", "tn10p",
+                          "tmax_Aug_Y1","tmax_Sep_Y1","tmax_Oct_Y1","tmax_Nov_Y1","tmax_Dec_Y1","tmax_Jan_Y2",
+                          "tmax_Feb_Y2","tmax_Mar_Y2","tmax_Apr_Y2","tmax_May_Y2","tmax_Jun_Y2","tmax_Jul_Y2",
+                          "tmax_Aug_Y2","tmax_Sep_Y2","tmax_Oct_Y2","tmax_Nov_Y2","tmax_Dec_Y2",
+                          "vpd_Aug_Y1","vpd_Sep_Y1","vpd_Oct_Y1","vpd_Nov_Y1","vpd_Dec_Y1","vpd_Jan_Y2",
+                          "vpd_Feb_Y2","vpd_Mar_Y2","vpd_Apr_Y2","vpd_May_Y2","vpd_Jun_Y2","vpd_Jul_Y2",
+                          "vpd_Aug_Y2","vpd_Sep_Y2","vpd_Oct_Y2","vpd_Nov_Y2","vpd_Dec_Y2",
+                          "pr_Aug_Y1","pr_Sep_Y1","pr_Oct_Y1","pr_Nov_Y1","pr_Dec_Y1","pr_Jan_Y2",
+                          "pr_Feb_Y2","pr_Mar_Y2","pr_Apr_Y2","pr_May_Y2","pr_Jun_Y2","pr_Jul_Y2",
+                          "pr_Aug_Y2","pr_Sep_Y2","pr_Oct_Y2","pr_Nov_Y2","pr_Dec_Y2")
+
+
+Yield <- Data_xtrm_standardized$yield
+threshold <- 0.05 # threshold for bad yields
+low_yield <- apply(Yield, MARGIN = 1, FUN=quantile, probs=threshold, na.rm=T)
+cy <- t(sapply(1:total_nb_pix,function(x){ifelse(Yield[x,]<low_yield[x],0,1)})) # assign crop yield to the two class bad and normal yield years
+cy_reshaped <- array(data=cy,dim=c(dim(cy)[1],1,1600))
+Model_data[,1,] <- cy_reshaped # Replace continuous crop yield with binary categories (bad and normal yield)
+
+
+# Exclude NA variable columns (columns are NA if the respective months are outside of the maximum growing season of the corresponding grid point)
+na_col <- matrix(data=NA,nrow=total_nb_pix,ncol=dim(Model_data)[2])
+for (j in 1:total_nb_pix){
+  for (i in 1:dim(Model_data)[2]){
+    na_col[j,i] <- all(is.na(Model_data[j,i,])) # TRUE if entire column is NA
+  }
+}
+non_na_col <- !na_col # columns without NAs
+non_na_col[,1] <- FALSE # exclude yield (it is no predictor and should therefore be ignored)
+
+# Exclude years with NAs (years are NA if the growing season exceeds 365 days)
+na_time <- vector("list",length=total_nb_pix) # for each grid point, the positions of NAs over time
+for (j in 1:total_nb_pix){
+  na_time[[j]] <- which(is.na(Model_data[j,1,])) # locations of years with NA values
+}
+
+years_with_na <- vector("logical",length=total_nb_pix)
+for (i in 1:total_nb_pix){
+  years_with_na[i] <- ifelse(length(na_time[[i]]) == 0,F,T)
+}
+
+##### Split data into training and testing data set #####
+vec <- 1:1600
+
+training_indices <- vector("list",length=total_nb_pix)
+testing_indices <- vector("list",length=total_nb_pix)
+
+
+
+set.seed(seed)
+for (x in 1:total_nb_pix) {
+  if (years_with_na[x]) {
+    training_indices[[x]] <- sort(sample(x=vec[-na_time[[x]]], size = floor((1600-length(na_time[[x]]))*(train_size/100)))) # Assign percentage of years according to train_size after neglecting years with NAs
+    testing_indices[[x]] <- vec[-c(na_time[[x]], training_indices[[x]])] # All other years without NAs are assigned to the testing indices
+  } else { # Simplified assignment in case there is no need to account for years with NAs
+    training_indices[[x]] <- sort(sample(1:1600, size = floor(1600*(train_size/100))))
+    testing_indices[[x]] <- (1:1600)[-training_indices[[x]]]    
+  }
+}
+
+
+Training_Data <- lapply(1:total_nb_pix,function(x){Model_data[x,,training_indices[[x]]]})
+Testing_Data <- lapply(1:total_nb_pix,function(x){Model_data[x,,testing_indices[[x]]]})
+
+
+# Split in training and testing predictors and predictands
+pix_in <- 1:total_nb_pix
+x1_train_list <- lapply(seq_along(pix_in), function(x){ as.data.frame(t(Training_Data[[x]][non_na_col[x,],]))}) # predictors
+y1_train_list <- lapply(seq_along(pix_in), function(x){ Training_Data[[x]][1,]}) # predictand
+x1_test_list <- lapply(seq_along(pix_in), function(x){ as.data.frame(t(Testing_Data[[x]][non_na_col[x,],]))}) # predictors
+y1_test_list <- lapply(seq_along(pix_in), function(x){Testing_Data[[x]][1,]}) # predictand
+
+
+var_num <- apply(non_na_col,1,sum) # Number of predictor variables for each grid point
+numLevels_list <- sapply(1:total_nb_pix, function(x){ rep(1,times=var_num[x])})
+for (i in 1:total_nb_pix){
+  names(numLevels_list[[i]]) <-  colnames(x1_test_list[[i]])
+}
+
+
+
+world <- map_data("world")
+coord_subset <- cbind(final_pixels_coord$longitude, final_pixels_coord$latitude)
+final_pix_num <- length(final_pixels_coord$latitude)
+Model_chosen <- lasso_model_lambda1se
+segreg_th <- 0.6582418
+
+# Figure 1 ####
+###############
+
+DF_meanY <- data.frame(lon=Raw_mean_yield[,"longitudes"], lat = Raw_mean_yield[,"latitudes"],
+                       meany = Raw_mean_yield[,"mean_yield"]/1000) # data frame containing mean annual yield (transferred from kg to tonnes) and associated coordinates
+pixels_excluded <- as.logical(1-(1:total_nb_pix %in% final_pixels_coord$ref_in_995)) # Excluded pixels according to section 2.2 of the article
+DF_excluded_pix <- data.frame(lon = Raw_mean_yield[pixels_excluded,"longitudes"],
+                              lat = Raw_mean_yield[pixels_excluded,"latitudes"])
+
+ggplot(data = DF_meanY, aes(x=lon, y=lat)) +
+  geom_polygon(data = world, aes(long, lat, group=group),
+               fill="white", color="black", size=0.3)+  geom_tile(aes(fill=DF_meanY$meany)) +
+  scale_fill_gradient2(midpoint = max(DF_meanY$meany, na.rm = T)/2,
+                       limits=c(0,max(DF_meanY$meany)),
+                       low = "#f7fcb9", mid = "#addd8e", high = "#31a354") +
+  theme(panel.ontop = F, panel.grid = element_blank(),
+        panel.border = element_rect(colour = "black", fill = NA),
+        axis.text = element_text(size = 12), axis.title = element_text(size = 12),
+        axis.text.x = element_text(size = 12),
+        axis.text.y = element_text(size = 12))+
+  ylab("Lat (°N)") +
+  xlab("Lon (°E)") +
+  coord_fixed(xlim = c(-115, 130),
+              ylim = c(min(DF_meanY$lat), max(DF_meanY$lat)),
+              ratio = 1.3)+
+  labs(fill="Mean yield\n(t/ha)"  )+
+  theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
+        legend.title = element_text(size = 15), legend.text = element_text(size = 14))+
+  geom_point(data = DF_excluded_pix, aes(x = DF_excluded_pix$lon, y = DF_excluded_pix$lat),
+             color = "black", size = 0.89, pch=4) +
+  X11(width = 20, height = 5.7)
+
+
+
+# Figure 5 ####
+###############
+
+
+coeff  <-list()
+# speci <- rep(NA, final_pix_num)
+# sensi <- rep(NA, final_pix_num)
+csi <- rep(NA, final_pix_num)
+mypred <- vector("list", final_pix_num)
+fitted_bad_yield <- vector("list", final_pix_num)
+# nb_training_years <- rep(NA, final_pix_num)
+# nb_testing_years <- rep(NA, final_pix_num)
+
+for (pixel in 1:final_pix_num) {
+  pix <- final_pixels_coord$ref_in_995[pixel]
+  coeff[[pixel]] <- coefficients(Model_chosen[[pix]])
+  
+  mypred[[pixel]] <- predict(Model_chosen[[pix]], as.matrix(x1_test_list[[pix]]),type="response")
+  
+  fitted_bad_yield[[pixel]] <- ifelse(mypred[[pixel]] > segreg_th,1,0)
+  
+  # speci[pixel] <- InformationValue::specificity(actuals = as.matrix(y1_test_list[[pix]]),
+  #                                               predictedScores = fitted_bad_yield[[pixel]],
+  #                                               threshold = segreg_th)
+  # sensi[pixel] <- InformationValue::sensitivity(actuals = as.matrix(y1_test_list[[pix]]),
+  #                                               predictedScores = fitted_bad_yield[[pixel]],
+  #                                               threshold = segreg_th)
+  
+  con_tab <- InformationValue::confusionMatrix(actuals = as.matrix(y1_test_list[[pix]]),
+                                               predictedScores = fitted_bad_yield[[pixel]],
+                                               threshold = segreg_th)
+  csi[pixel] <- con_tab["0","0"]/(con_tab["0","0"] + con_tab["1","0"] + con_tab["0","1"])
+  if(is.na(con_tab["0","0"])){
+    csi[pixel] <- 0
+  }
+  
+  # nb_training_years[pixel] <- length(training_indices[[pix]])
+  # nb_testing_years[pixel] <- length(testing_indices[[pix]])
+  
+}#end pixel
+
+
+DF_csi <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], csi = csi)
+
+ggplot(data = DF_csi, aes(x=lon, y=lat)) +
+  geom_polygon(data = world, aes(long, lat, group=group),
+               fill="white", color="black", size=0.3) +
+  geom_tile(aes(fill=csi)) +
+  scale_fill_gradient2(midpoint = max(csi, na.rm = T)/2,
+                       #limits=c(0,1),
+                       low = "black", mid = "red3", high = "yellow") +
+  theme(panel.ontop = F, panel.grid = element_blank(),
+        panel.border = element_rect(colour = "black", fill = NA),
+        axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
+  ylab("Lat (°N)") +
+  xlab("Lon (°E)") +
+  coord_fixed(xlim = c(-120, 135),
+              ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
+              ratio = 1.3)+
+  labs(fill="CSI"
+  )+
+  theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
+        legend.title = element_text(size = 15), legend.text = element_text(size = 14),
+        axis.title.x=element_blank(),axis.title.y=element_blank(),
+        axis.text.x = element_text(size = 12),
+        axis.text.y = element_text(size = 12)) +
+  X11(width = 20, height = 4.9)
+
+
+
+# Figure 6 ####
+###############
+
+MeanY_CSI<-data.frame(cbind(Raw_mean_yield[final_pixels_coord$ref_in_995,"mean_yield"]/1000,csi))
+colnames(MeanY_CSI)<-c("mean_yield","csi")
+
+SDY_CSI<-data.frame(cbind(Raw_sd_yield[final_pixels_coord$ref_in_995,"sd_yield"]/1000,csi))
+colnames(SDY_CSI)<-c("sd_yield","csi")
+
+p1<-ggplot(MeanY_CSI, aes(x=mean_yield, y=csi)) + geom_point()+
+  theme(axis.text = element_text(size = 16), axis.title = element_text(size = 17)) +
+  xlab("Mean yield [t/ha]") + ylab("CSI") + theme(panel.grid.major = element_blank(),
+                                                  plot.margin = margin(1.2, 1.2, 1.2, 1.2, "cm"),
+                                                  panel.grid.minor = element_blank(), 
+                                                  panel.background = element_blank(), axis.line = element_line(colour = "black"))
+
+p2<-ggplot(SDY_CSI, aes(x=sd_yield, y=csi)) + geom_point()+
+  theme(axis.text = element_text(size = 16), axis.title = element_text(size = 17)) +
+  xlab("Yield standard deviation [t/ha]") + ylab("CSI")+ theme(panel.grid.major = element_blank(),
+                                                               plot.margin = margin(1.2, 1.2, 1.2, 1.2, "cm"), panel.grid.minor = element_blank(), 
+                                                               panel.background = element_blank(), axis.line = element_line(colour = "black"))
+
+
+ggarrange(p1, p2, nrow = 1,ncol=2,labels = c("(a)", "(b)" ), font.label = list(size = 21, face="plain"))
+# ggsave("C:/Users/39349/Documents/DAMOCLES/Final Workspace LASSO/ScatterplotYield_889_v2.pdf", units="in", dpi=400)
+
+
+# Figure 7 ####
+###############
+
+
+# 4 plots combined: number of var kept, number of extreme indices, combination of meteovar and nb seasons
+
+
+# Plot number of selected variables and climatic extreme indicators (Fig 7a and b) ####
+extreme_in_coeff <- function(coeff_list){ #function to check how many extreme indeices are kept as predictors
+  extreme_indices <- c("dtr", "frs", "txx", "tnn", "rx5", "tx90p", "tn10p")
+  if(max(abs(coeff_list[extreme_indices,]))==0){
+    return(0)
+  } else {
+    return(length(which(abs(coeff_list[extreme_indices,])>0)))
+  }
+}#end func extreme_in_coeff
+
+
+number_coeff_kept <- function(coeff_list){#give number of coeff !=0
+  return(length(which(abs(coeff_list[-1,])>0)))
+}
+
+nb_extr_kept <- numeric()
+nb_coeff_kept <- numeric()
+
+for (pixel in 1:final_pix_num) {
+  nb_extr_kept[pixel] <- extreme_in_coeff(coeff[[pixel]])
+  nb_coeff_kept[pixel] <- number_coeff_kept(coeff[[pixel]])
+}#end pixel
+
+levels_nb_var <- cut(nb_coeff_kept, breaks = c(0,5,10,15,20,25,30), right = F)
+levels_nb_var <- gsub(","," - ",levels_nb_var,fixed=TRUE)
+
+
+# Combination of met. variables (Fig. 7c) ####
+
+# nb_meteo <- numeric(length=length(coeff))
+met_type <- numeric(length=length(coeff))
+meteo_type <- as.character(met_type) 
+met_strings <- vector("list",length=length(coeff))
+met_vpd <- numeric(length=length(coeff))
+met_pr <- numeric(length=length(coeff))
+met_temp <- numeric(length=length(coeff))
+
+for (pix in 1:length(coeff)) {
+  if((length(which(coeff[[pix]]!=0))-1)<1){
+    # nb_meteo[pix] <- 0
+    met_type[pix] <- 8
+    meteo_type[pix] <- "None"
+  } else {
+    coeff_kept <- get_firstcoeffs(coeff = coeff[[pix]],
+                                  nb_of_coeff = (length(which(coeff[[pix]]!=0))-1))
+    # nb_meteo[pix] <- length(unique(coeff_kept[,1]))
+    for (extr in c("dtr", "frs", "txx", "tnn", "rx5", "tx90p", "tn10p")) {
+      # if (extr %in% unique(get_firstcoeffs(coeff = coeff[[pix]],
+      #                                      nb_of_coeff = length(coeff_kept[,1]))[,1])){
+      #   nb_meteo[pix] <- nb_meteo[pix] - 1
+      #   
+      # }#end fi
+    }#end for xtrm
+    met_string <- (c("vpd","pr","tmax") %in% unique(coeff_kept[,1])) 
+    met_strings[[pix]] <- met_string
+    if (identical(met_string, c(T,F,F))) {
+      met_type[pix] <- 1
+      meteo_type[pix] <- "VPD"
+    } else if (identical(met_string, c(F,T,F))) {
+      met_type[pix] <- 2
+      meteo_type[pix] <- "Pr"
+    } else if (identical(met_string, c(F,F,T))) {
+      met_type[pix] <- 3
+      meteo_type[pix] <- "Tmax"
+    } else if (identical(met_string, c(T,T,F))) {
+      met_type[pix] <- 4
+      meteo_type[pix] <- "VPD & Pr"
+    } else if (identical(met_string, c(T,F,T))) {
+      met_type[pix] <- 5
+      meteo_type[pix] <- "VPD & Tmax"
+    } else if (identical(met_string, c(F,T,T))) {
+      met_type[pix] <- 6
+      meteo_type[pix] <- "Pr & Tmax"
+    } else if (identical(met_string, c(T,T,T))) {
+      met_type[pix] <- 7
+      meteo_type[pix] <- "All"
+    } else if (identical(met_string, c(F,F,F)) | is.null(met_string)) {
+      met_type[pix] <- 8
+      meteo_type[pix] <- "None"
+    }
+    if ("vpd" %in% unique(coeff_kept[,1])) {met_vpd[pix] <- 1} 
+    if ("pr" %in% unique(coeff_kept[,1])) {met_temp[pix] <- 2} 
+    if ("tmax" %in% unique(coeff_kept[,1])) {met_pr[pix] <- 3}
+  }#end ifelse
+}#end for pix
+
+
+message("rename")
+# Count the number of selected seasons for each grid point (Fig. 7d) ####
+count_seas_and_var <- function(coefff){
+  if (length(which((coefff)!=0))-1>0) {
+    coeff_kept <- get_firstcoeffs(coefff, nb_of_coeff = length(which((coefff)!=0))-1)
+    nb_of_seas <- 0
+    
+    if(sum(!is.na(coeff_kept[,2])) & (sum(substr(coeff_kept[,2], start = 1, stop = 3) %in% c("Feb", "Dec", "Jan")))){
+      nb_of_seas <- nb_of_seas + 1
+    }
+    
+    if(sum(!is.na(coeff_kept[,2])) & sum(substr(coeff_kept[,2], start = 1, stop = 3) %in% c("May", "Mar", "Apr"))){
+      nb_of_seas <- nb_of_seas + 1
+    }
+    
+    if(sum(!is.na(coeff_kept[,2])) & sum(substr(coeff_kept[,2], start = 1, stop = 3) %in% c("Jun", "Jul", "Aug"))){
+      nb_of_seas <- nb_of_seas + 1
+    }
+    
+    if(sum(!is.na(coeff_kept[,2])) & sum(substr(coeff_kept[,2], start = 1, stop = 3) %in% c("Sep", "Nov", "Oct"))){
+      nb_of_seas <- nb_of_seas + 1
+    }
+    
+    if (nb_of_seas>0){
+      return(nb_of_seas)
+    } else {
+      return("No met. var")
+    }
+    
+  } else {
+    return("No met. var")
+  }#end if else
+  
+}
+
+nb_of_seas <- numeric()
+for (pix in 1:final_pix_num) {
+  nb_of_seas[pix] <- count_seas_and_var(coeff[[pix]])
+}
+
+
+
+
+DF_numbcoeff <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], coeff_kep = levels_nb_var)
+DF_numbcoeff$levels_nb_var <- gsub("\\[|\\)","",levels_nb_var)
+
+P1 <- ggplot(data = DF_numbcoeff, aes(x=lon, y=lat)) +
+  geom_polygon(data = world, aes(long, lat, group=group),
+               fill="white", color="black", size=0.3) +
+  geom_tile(aes(fill=DF_numbcoeff$levels_nb_var)) +
+  scale_fill_manual(values=c("0 - 5"="#f1eef6", "5 - 10"="#d4b9da", "10 - 15"="#c994c7",
+                             "15 - 20"="#df65b0", "20 - 25"="#dd1c77", "25 - 30"="#980043"),
+                    breaks=c("0 - 5", "5 - 10", "10 - 15", "15 - 20", "20 - 25", "25 - 30"),
+                    label=c("0 - 4", "5 - 9", "10 - 14", "15 - 10", "20 - 24", "25 - 29"))+
+  theme(panel.ontop = F, panel.grid = element_blank(),
+        panel.border = element_rect(colour = "black", fill = NA),
+        axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
+  ylab("Lat (°N)") +
+  xlab("Lon (°E)") +
+  coord_fixed(xlim = c(-120, 135),
+              ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
+              ratio = 1.3)+
+  labs(fill="Nb of var."
+  )+
+  theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
+        legend.title = element_text(size = 15), legend.text = element_text(size = 14))
+
+
+# Plot number of extreme indices kept
+DF_numbextr <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], coeff_kep = nb_extr_kept)
+DF_numbextr$coeff_kep <- as.factor(DF_numbextr$coeff_kep)
+
+mycolors <- rev(hcl.colors(n=8,palette="Viridis"))
+
+P2 <- ggplot(data = DF_numbextr, aes(x=lon, y=lat)) +
+  geom_polygon(data = world, aes(long, lat, group=group),
+               fill="white", color="black", size=0.3) +
+  geom_tile(aes(fill=coeff_kep)) +
+  scale_fill_manual(values = mycolors, ) +
+  theme(panel.ontop = F, panel.grid = element_blank(),
+        panel.border = element_rect(colour = "black", fill = NA),
+        axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
+  ylab("Lat (°N)") +
+  xlab("Lon (°E)") +
+  coord_fixed(xlim = c(-120, 135),
+              ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
+              ratio = 1.3)+
+  labs(fill="Nb extr.\n ind."
+  )+
+  theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
+        legend.title = element_text(size = 15), legend.text = element_text(size = 14))
+#   + X11(width = 20, height = 5)
+
+
+# Combinations of meteorological variables
+DF_meteo_type <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], met_type = meteo_type)
+
+
+cols <- c("VPD" = "#7FC97F", "Pr" = "cadetblue2", "Tmax" = "#386CB0", "VPD & Pr" = "#824D99",
+          "VPD & Tmax" = "#F0027F", "Pr & Tmax" = "darkred" , "All" = "#FDC086", "None" = "#FFFF99")
+
+P3 <- ggplot(data = DF_meteo_type, aes(x=lon, y=lat)) +
+  geom_polygon(data = world, aes(long, lat, group=group),
+               fill="white", color="black", size=0.3) +
+  geom_tile(aes(fill=met_type)) +
+  scale_fill_manual(values = cols,breaks=c("VPD","Pr","Tmax","VPD & Pr","VPD & Tmax","Pr & Tmax", "All","None")) +
+  theme(panel.ontop = F, panel.grid = element_blank(),
+        panel.border = element_rect(colour = "black", fill = NA),
+        axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
+  ylab("Lat (°N)") +
+  xlab("Lon (°E)") +
+  coord_fixed(xlim = c(-120, 135),
+              ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
+              ratio = 1.3)+
+  labs(fill="Combination\nof met.\nvariables"
+  )+
+  theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
+        legend.title = element_text(size = 15), legend.text = element_text(size = 14))
+# +X11(width = 20, height = 5)
+
+
+DF_nbseason <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], nb_season = nb_of_seas)
+DF_nbseason$nb_season <- as.factor(DF_nbseason$nb_season)
+
+
+#Plot nb of seasons
+P4 <- ggplot(data = DF_nbseason, aes(x=lon, y=lat)) +
+  geom_polygon(data = world, aes(long, lat, group=group),
+               fill="white", color="black", size=0.3) +
+  geom_tile(aes(fill=DF_nbseason$nb_season)) +
+  scale_fill_manual(values = c("0"=viridis(6)[1], "1"=viridis(6)[3], "2"=viridis(6)[4],
+                               "3"=viridis(6)[5], "4"=viridis(6)[6], "No met. var"="pink")) +
+  theme(panel.ontop = F, panel.grid = element_blank(),
+        panel.border = element_rect(colour = "black", fill = NA),
+        axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
+  ylab("Lat (°N)") +
+  xlab("Lon (°E)") +
+  coord_fixed(xlim = c(-120, 135),
+              ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
+              ratio = 1.3)+
+  labs(fill="Nb of seas."
+  )+
+  theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
+        legend.title = element_text(size = 15), legend.text = element_text(size = 14))
+# + X11(width = 20, height = 5)
+
+
+L1 <- get_legend(P1+ theme(legend.title = element_text(size=11),
+                           legend.text = element_text(size=10),
+                           legend.key.size = unit(0.6,"line")))
+L2 <- get_legend(P2+ theme(legend.title = element_text(size=11),
+                           legend.text = element_text(size=10),
+                           legend.key.size = unit(0.6,"line")))
+L3 <- get_legend(P3+ theme(legend.title = element_text(size=11),
+                           legend.text = element_text(size=10),
+                           legend.key.size = unit(0.6,"line")))
+L4 <- get_legend(P4+ theme(legend.title = element_text(size=11),
+                           legend.text = element_text(size=10),
+                           legend.key.size = unit(0.6,"line")))
+
+ggarrange(P1 + theme(legend.position = "none",
+                     axis.title.x=element_blank(),axis.title.y=element_blank(),
+                     axis.text.x = element_text(size = 8),
+                     axis.text.y = element_text(size = 8)),
+          L1,
+          P2 + theme(legend.position = "none",
+                     axis.title.x=element_blank(),axis.title.y=element_blank(),
+                     axis.text.x = element_text(size = 8),
+                     axis.text.y = element_text(size = 8)),
+          L2,
+          P3 + theme(legend.position = "none",
+                     axis.title.x=element_blank(),axis.title.y=element_blank(),
+                     axis.text.x = element_text(size = 8),
+                     axis.text.y = element_text(size = 8)),
+          L3,
+          P4 + theme(legend.position = "none",
+                     axis.title.x=element_blank(),axis.title.y=element_blank(),
+                     axis.text.x = element_text(size = 8),
+                     axis.text.y = element_text(size = 8)),
+          L4,
+          nrow = 4, ncol=2,labels = c("(a)", "", "(b)", "",
+                                      "(c)", "", "(d)", ""),
+          label.x = -0.015
+          ,widths=c(8,1.5), heights=c(1,1,1), font.label = list(size = 14, face = "plain", color ="black")
+)+
+  X11(width = 30, height = 25)
+
+
+
+# Figure 8 ####
+###############
+
+
+
+# Connect variables to spatial locations
+coord_subset_temp <- cbind(coord_subset,paste(coord_subset[,1],coord_subset[,2]))
+coord_all_temp <- cbind(coord_all,paste(coord_all[,1],coord_all[,2]))
+loc_pix <- which(coord_all_temp[,3] %in% coord_subset_temp [,3]) # locations of our pixels in the whole coordinate set
+
+# Create continent polygons
+border <- readOGR('D:/user/vogelj/Data/ne_50m_admin_0_countries/ne_50m_admin_0_countries.shp')	
+continents <- readOGR("D:/user/vogelj/Data/continent_shapefile/continent.shp") # from https://www.arcgis.com/home/item.html?id=5cf4f223c4a642eb9aa7ae1216a04372
+africa <- subset(continents,subset=continents@data[["CONTINENT"]]=="Africa")
+europe <- subset(continents,subset=continents@data[["CONTINENT"]]=="Europe")
+no_am <- subset(continents,subset=continents@data[["CONTINENT"]]=="North America")
+asia <- subset(continents,subset=continents@data[["CONTINENT"]]=="Asia")
+
+# connect final pixels to their coordinates
+# work_pix <- 1:final_pix_num
+coord_assigned <- cbind(coord_all,rep(NA,320*76))
+for (i in seq_along(1:final_pix_num)){
+  coord_assigned[loc_pix[i],3] <- i
+}
+
+# Extract pixels by continent
+loc_mat <- matrix(as.numeric(coord_assigned[,3]),nrow=320,ncol=76)
+loc_ras <- raster(t(loc_mat[,76:1]), xmn=min(lon_all), xmx=max(lon_all), ymn=min(lat_all), ymx=max(lat_all), crs=CRS(projection(border)))
+loc_afr_pixels <- extract(loc_ras,africa)
+loc_eur_pixels <- extract(loc_ras,europe)
+loc_no_am_pixels <- extract(loc_ras,no_am)
+loc_asia_pixels <- extract(loc_ras,asia)
+
+sum(!is.na(loc_eur_pixels[[1]])) #  233 pixels
+sum(!is.na(loc_no_am_pixels[[1]])) #  419 pixels
+sum(!is.na(loc_afr_pixels[[1]])) # 22 pixels
+sum(!is.na(loc_asia_pixels[[1]])) # 210 pixels
+# 22+233+419+210=884; 889-884: 5 pixel are missing
+
+loc_afr_pixels_num <- loc_afr_pixels[[1]][!is.na(loc_afr_pixels[[1]])] 
+loc_eur_pixels_num <- loc_eur_pixels[[1]][!is.na(loc_eur_pixels[[1]])]
+loc_no_am_pixels_num <- loc_no_am_pixels[[1]][!is.na(loc_no_am_pixels[[1]])]
+loc_asia_pixels_num <- loc_asia_pixels[[1]][!is.na(loc_asia_pixels[[1]])]
+
+# add missing points: see extra file Missing_points.r
+message("do we need to show extra file?")
+# for 889 pixels
+loc_eur_pixels_num <- c(loc_eur_pixels_num,450)
+loc_no_am_pixels_num <- c(loc_no_am_pixels_num,391)
+loc_asia_pixels_num <- c(loc_asia_pixels_num,3, 294, 563)
+
+# Get data into right format for the plot (there should be a simpler approach than this)
+coefs_seas <- sapply(1:length(coeff), function(x) names(numLevels_list[[final_pixels_coord$ref_in_995[x]]])[coeff[[x]][-1]!=0])
+coefs_seas_vec <- unlist(coefs_seas)
+coefs_seas_afr <- sapply(loc_afr_pixels_num, function(x) names(numLevels_list[[final_pixels_coord$ref_in_995[x]]])[coeff[[x]][-1]!=0])
+coefs_seas_afr_vec <- unlist(coefs_seas_afr )
+coefs_seas_eur <- sapply(loc_eur_pixels_num, function(x) names(numLevels_list[[final_pixels_coord$ref_in_995[x]]])[coeff[[x]][-1]!=0])
+coefs_seas_eur_vec <- unlist(coefs_seas_eur )
+coefs_seas_no_am <- sapply(loc_no_am_pixels_num, function(x) names(numLevels_list[[final_pixels_coord$ref_in_995[x]]])[coeff[[x]][-1]!=0])
+coefs_seas_no_am_vec <- unlist(coefs_seas_no_am )
+coefs_seas_asia <- sapply(loc_asia_pixels_num, function(x) names(numLevels_list[[final_pixels_coord$ref_in_995[x]]])[coeff[[x]][-1]!=0])
+coefs_seas_asia_vec <- unlist(coefs_seas_asia )
+
+coefs_seas_afr_tab <- as.data.frame(table(coefs_seas_afr_vec))
+coefs_seas_eur_tab <-  as.data.frame(table(coefs_seas_eur_vec))
+coefs_seas_no_am_tab <- as.data.frame(table(coefs_seas_no_am_vec))
+coefs_seas_asia_tab <- as.data.frame(table(coefs_seas_asia_vec))
+coefs_seas_vec_tab <- as.data.frame(table(coefs_seas_vec))
+
+# correct variable names
+list_coefs <- list(coefs_seas_afr_tab,coefs_seas_eur_tab,coefs_seas_no_am_tab,coefs_seas_asia_tab,coefs_seas_vec_tab)
+for (i in 1:length(list_coefs)){
+  list_coefs[[i]][,1] <- gsub(x=list_coefs[[i]][,1], pattern="vpd", replacement = "VPD")
+  list_coefs[[i]][,1] <- gsub(x=list_coefs[[i]][,1], pattern="pr", replacement = "Pr")
+  list_coefs[[i]][,1] <- gsub(x=list_coefs[[i]][,1], pattern="APr", replacement = "Apr") # recorrect April
+  list_coefs[[i]][,1] <- gsub(x=list_coefs[[i]][,1], pattern="tmax", replacement = "Tmax")
+  list_coefs[[i]][,1] <- gsub(x=list_coefs[[i]][,1], pattern="txx", replacement = "TXx")
+  list_coefs[[i]][,1] <- gsub(x=list_coefs[[i]][,1], pattern="tnn", replacement = "TNn")
+  list_coefs[[i]][,1] <- gsub(x=list_coefs[[i]][,1], pattern="rx5", replacement = "Rx5day")
+  list_coefs[[i]][,1] <- gsub(x=list_coefs[[i]][,1], pattern="tx90p", replacement = "TX90p")
+  list_coefs[[i]][,1] <- gsub(x=list_coefs[[i]][,1], pattern="tn10p", replacement = "TN10p")
+}
+coefs_seas_afr_tab <- list_coefs[[1]];coefs_seas_eur_tab <- list_coefs[[2]];coefs_seas_no_am_tab <- list_coefs[[3]];coefs_seas_asia_tab <- list_coefs[[4]];coefs_seas_vec_tab <- list_coefs[[5]]
+
+colnames(coefs_seas_afr_tab) <- c("Variables","Freq_Afr")
+colnames(coefs_seas_eur_tab) <- c("Variables","Freq_Eur")
+colnames(coefs_seas_no_am_tab) <- c("Variables","Freq_No_Am")
+colnames(coefs_seas_asia_tab) <- c("Variables","Freq_Asia")
+colnames(coefs_seas_vec_tab) <- c("Variables","Freq_All")
+
+
+coefs_all_cont <- merge(coefs_seas_afr_tab,coefs_seas_eur_tab,all=T,by="Variables")
+coefs_all_cont <- merge(coefs_all_cont,coefs_seas_no_am_tab,all=T,by="Variables")
+coefs_all_cont <- merge(coefs_all_cont,coefs_seas_asia_tab,all=T,by="Variables")
+coefs_all_cont <- merge(coefs_all_cont,coefs_seas_vec_tab,all=T,by="Variables")
+coefs_all_cont <- coefs_all_cont[order(coefs_all_cont$Freq_All,decreasing=F),]
+
+colName <- colnames(coefs_all_cont)
+coefs_all_cont_889 <- cbind(coefs_all_cont[,1],coefs_all_cont[,2:6]/pixel*100) # calculate percentage of all pixels
+coefs_all_cont <- data.frame(coefs_all_cont[,1],coefs_all_cont[,2]/sum(!is.na(loc_afr_pixels[[1]]))*100,coefs_all_cont[,3]/sum(!is.na(loc_eur_pixels[[1]]))*100,
+                             coefs_all_cont[,4]/sum(!is.na(loc_no_am_pixels[[1]]))*100,coefs_all_cont[,5]/sum(!is.na(loc_asia_pixels[[1]]))*100, coefs_all_cont[,6]/pixel*100) # calculate percentage of all pixels according to the respective number of pixels at each continent
+colnames(coefs_all_cont) <- colName
+
+coefs_all_cont_mat <- as.matrix(coefs_all_cont_889)
+row.names(coefs_all_cont_mat) <- coefs_all_cont_mat[,1]
+coefs_all_cont_mat[which(is.na(coefs_all_cont_mat))] <- 0
+# coefs_all_cont_mat <- coefs_all_cont_mat[,-1]
+coefs_all_cont_mat <- coefs_all_cont_mat[,-c(1,6)]
+
+
+# 4 Plots in one line (all, N.America, Europe, Asia)
+
+line2user <- function(line, side) { # from https://stackoverflow.com/questions/14660372/common-main-title-of-a-figure-panel-compiled-with-parmfrow
+  lh <- par('cin')[2] * par('cex') * par('lheight')
+  x_off <- diff(grconvertX(0:1, 'inches', 'user'))
+  y_off <- diff(grconvertY(0:1, 'inches', 'user'))
+  switch(side,
+         `1` = par('usr')[3] - line * y_off * lh,
+         `2` = par('usr')[1] - line * x_off * lh,
+         `3` = par('usr')[4] + line * y_off * lh,
+         `4` = par('usr')[2] + line * x_off * lh,
+         stop("side must be 1, 2, 3, or 4", call.=FALSE))
+}
+
+
+# sort them in the same way: sort by one column; they are already sorted in coefs_all_cont
+# coefs_all_cont2 <- coefs_all_cont[order(coefs_all_cont$Freq_All),]
+
+x11(width=16,height=12)
+par(mfrow=c(1,4),mar=c(c(5, 4, 1, 0.5)),oma=c(0,7.5,2,0))
+# title("Number of grid points, where variable is included in the model")
+# text(x=0,y=0,"Number of grid points, where variable is included in the model")
+barplot(t(coefs_all_cont_mat),horiz=T,las=1,col=c("brown3","DarkOrange2","goldenrod3","burlywood1"),
+        xlab="",cex.names=1.8,font=1,cex=1.7,
+        legend.text=c("Africa","Europe","North America","Asia"),args.legend =list(x= "bottomright",cex=1.5,text.font=1),main="")
+mtext("All continents",side=3,font=2,line=-1.4, cex=1.4)
+mtext("(a)",side=3,font=1,line=0.6, adj=0.01,cex=1.6)
+barplot(coefs_all_cont$Freq_No_Am,horiz=T,las=1,col="LightCyan3",main="",
+        xlab="",cex.names=0.6,font=1,cex=1.7)
+mtext("North America",side=3,font=2,line=-1.4, cex=1.4)
+mtext("(b)",side=3,font=1,line=0.6, adj=0.01,cex=1.6)
+barplot(coefs_all_cont$Freq_Eur,horiz=T,las=1,col="LightCyan3",main="",
+        xlab="",cex.names=0.6,font=1,cex=1.7)
+mtext("Europe",side=3,font=2,line=-1.4, cex=1.4)
+mtext("(c)",side=3,font=1,line=0.6, adj=0.01,cex=1.6)
+text(line2user(line=mean(par('mar')[c(2, 3)]), side=2), 
+     line2user(line=3.5, side=1), 'Percentage of grid points, for which the predictor is included in the regression model', xpd=NA, cex=2.2)
+barplot(coefs_all_cont$Freq_Asia,horiz=T,las=1,col="LightCyan3",main="",
+        xlab="",cex.names=0.6,font=1,cex=1.7)
+mtext("Asia",side=3,font=2,line=-1.4, cex=1.4)
+mtext("(d)",side=3,font=1,line=0.6, adj=0.01,cex=1.6)
+
+
+
+
+# Figure A3 ####
+################
+##### Map number of month used in the analysis 
+
+
+nb_month_GS <- integer(length = final_pix_num)
+for (pix in 1:final_pix_num) {
+  pixel <- final_pixels_coord$ref_in_995[pix]
+  nb_month_GS[pix] <- sum(substr(colnames(x1_train_list[[pixel]]), start = 1, stop = 3)=="pr_")
+}
+
+levels_nb_month <- cut(nb_month_GS, breaks = c(5,8,11,14), right = F)
+levels_nb_month <- gsub(","," - ",levels_nb_month,fixed=TRUE)
+DF_GSmonth <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], levels_nb_month = levels_nb_month)
+DF_GSmonth$levels_nb_month <- gsub("\\[|\\)","",levels_nb_month)
+
+
+ggplot(data = DF_GSmonth, aes(x=DF_GSmonth$lon, y=DF_GSmonth$lat)) +
+  geom_polygon(data = world, aes(long, lat, group=group),
+               fill="white", color="black", size=0.3) +
+  geom_tile(aes(fill=DF_GSmonth$levels_nb_month)) +
+  scale_fill_manual(values=c("5 - 8" = "#edf8b1", "8 - 11" = "#41b6c4", "11 - 14" = "#2c7fb8" ),
+                    breaks=c("5 - 8", "8 - 11", "11 - 14"),
+                    label=c("5 - 8"="5 - 7", "8 - 11"="8 - 10", "11 - 14"="11 - 13")) +
+  theme(panel.ontop = F, panel.grid = element_blank(),
+        panel.border = element_rect(colour = "black", fill = NA),
+        axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
+  ylab("Lat (°N)") +
+  xlab("Lon (°E)") +
+  coord_fixed(xlim = c(-120, 135),
+              ylim = c(min(DF_GSmonth$lat)-1, max(DF_GSmonth$lat+1)),
+              ratio = 1.3)+
+  labs(fill="Growing season\nlength (months)"
+  )+
+  theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
+        legend.title = element_text(size = 15), legend.text = element_text(size = 14),
+        axis.title.x=element_blank(),axis.title.y=element_blank(),
+        axis.text.x = element_text(size = 12),
+        axis.text.y = element_text(size = 12)) +
+  X11(width = 20, height = 4.8)
+
+
+
+
+
+# Figure A4 ####
+################
+
+# Three most kept variables: coefficient sign for vpd_May_Y2, vpd_Jun_Y2 and pr_Apr_Y2 (compute also extreme indices)
+coeff_dtr <- numeric()
+coeff_frs <- numeric()
+coeff_tx90p <- numeric()
+coeff_rx5 <- numeric()
+
+for (pix in 1:length(coeff)) {
+  coeff_dtr[pix] <- coeff[[pix]]["dtr",]
+  coeff_frs[pix] <- coeff[[pix]]["frs",]
+  coeff_tx90p[pix] <- coeff[[pix]]["tx90p",]
+  coeff_rx5[pix] <- coeff[[pix]]["rx5",]
+}#end for pix
+
+
+
+# Plot coefficient selected? for dtr, frs, rx5, tx90p 
+
+#dtr
+DF1_dtr <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], selected_coeff = (coeff_dtr!=0))
+DF1_dtr$selected_coeff <- as.factor(DF1_dtr$selected_coeff)
+
+
+#Plot coeff
+P1 <- ggplot(data = DF1_dtr, aes(x=lon, y=lat)) +
+  geom_polygon(data = world, aes(long, lat, group=group),
+               fill="white", color="black", size=0.3) +
+  geom_tile(aes(fill=DF1_dtr$selected_coeff)) +
+  scale_fill_manual(values = c("FALSE"="gray", "TRUE"="#984ea3"),
+                    labels=c("FALSE"="No", "TRUE"="Yes"),
+                    breaks=c("TRUE", "FALSE")) +
+  theme(panel.ontop = F, panel.grid = element_blank(),
+        panel.border = element_rect(colour = "black", fill = NA),
+        axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
+  ylab("Lat (°N)") +
+  xlab("Lon (°E)") +
+  coord_fixed(xlim = c(-120, 135),
+              ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
+              ratio = 1.3)+
+  labs(fill="Selection of\ndtr coeff."
+  )+
+  theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
+        legend.title = element_text(size = 15), legend.text = element_text(size = 14))
+
+
+#frs
+DF2_frs <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], selected_coeff = (coeff_frs!=0))
+DF2_frs$selected_coeff <- as.factor(DF2_frs$selected_coeff)
+
+
+#Plot sign of coeff
+P2 <- ggplot(data = DF2_frs, aes(x=lon, y=lat)) +
+  geom_polygon(data = world, aes(long, lat, group=group),
+               fill="white", color="black", size=0.3) +
+  geom_tile(aes(fill=DF2_frs$selected_coeff)) +
+  scale_fill_manual(values = c("FALSE"="gray", "TRUE"="#984ea3"),
+                    labels=c("FALSE"="No", "TRUE"="Yes"),
+                    breaks=c("TRUE", "FALSE")) +
+  theme(panel.ontop = F, panel.grid = element_blank(),
+        panel.border = element_rect(colour = "black", fill = NA),
+        axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
+  ylab("Lat (°N)") +
+  xlab("Lon (°E)") +
+  coord_fixed(xlim = c(-120, 135),
+              ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
+              ratio = 1.3)+
+  labs(fill="Selection of\nfrs coeff."
+  )+
+  theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
+        legend.title = element_text(size = 15), legend.text = element_text(size = 14))
+
+#rx5
+DF3_rx5 <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], selected_coeff = (coeff_rx5!=0))
+DF3_rx5$selected_coeff <- as.factor(DF3_rx5$selected_coeff)
+
+
+#Plot sign of coeff
+P3 <- ggplot(data = DF3_rx5, aes(x=lon, y=lat)) +
+  geom_polygon(data = world, aes(long, lat, group=group),
+               fill="white", color="black", size=0.3) +
+  geom_tile(aes(fill=DF3_rx5$selected_coeff)) +
+  scale_fill_manual(values = c("FALSE"="gray", "TRUE"="#984ea3"),
+                    labels=c("FALSE"="No", "TRUE"="Yes"),
+                    breaks=c("TRUE", "FALSE")) +
+  theme(panel.ontop = F, panel.grid = element_blank(),
+        panel.border = element_rect(colour = "black", fill = NA),
+        axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
+  ylab("Lat (°N)") +
+  xlab("Lon (°E)") +
+  coord_fixed(xlim = c(-120, 135),
+              ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
+              ratio = 1.3)+
+  labs(fill="Selection of\nRx5day coeff."
+  )+
+  theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
+        legend.title = element_text(size = 15), legend.text = element_text(size = 14))
+
+
+
+#tx90p
+DF4_tx90p <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], selected_coeff = (coeff_tx90p!=0))
+DF4_tx90p$selected_coeff <- as.factor(DF4_tx90p$selected_coeff)
+
+
+#Plot sign of coeff
+P4 <- ggplot(data = DF4_tx90p, aes(x=lon, y=lat)) +
+  geom_polygon(data = world, aes(long, lat, group=group),
+               fill="white", color="black", size=0.3) +
+  geom_tile(aes(fill=DF4_tx90p$selected_coeff)) +
+  scale_fill_manual(values = c("FALSE"="gray", "TRUE"="#984ea3"),
+                    labels=c("FALSE"="No", "TRUE"="Yes"),
+                    breaks=c("TRUE", "FALSE")) +
+  theme(panel.ontop = F, panel.grid = element_blank(),
+        panel.border = element_rect(colour = "black", fill = NA),
+        axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
+  ylab("Lat (°N)") +
+  xlab("Lon (°E)") +
+  coord_fixed(xlim = c(-120, 135),
+              ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
+              ratio = 1.3)+
+  labs(fill="Selection of\nTX90p coeff."
+  )+
+  theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
+        legend.title = element_text(size = 15), legend.text = element_text(size = 14))
+
+
+L1 <- get_legend(P1+ theme(legend.title = element_text(size=12),
+                           legend.text = element_text(size=12),
+                           legend.key.size = unit(0.6,"line")))
+L2 <- get_legend(P2+ theme(legend.title = element_text(size=12),
+                           legend.text = element_text(size=12),
+                           legend.key.size = unit(0.6,"line")))
+L3 <- get_legend(P3+ theme(legend.title = element_text(size=12),
+                           legend.text = element_text(size=12),
+                           legend.key.size = unit(0.6,"line")))
+L4 <- get_legend(P4+ theme(legend.title = element_text(size=12),
+                           legend.text = element_text(size=12),
+                           legend.key.size = unit(0.6,"line")))
+
+
+ggarrange(P1 + theme(legend.position = "none",
+                     axis.title.x=element_blank(),axis.title.y=element_blank(),
+                     axis.text.x = element_text(size = 8),
+                     axis.text.y = element_text(size = 8)),
+          L1,
+          P2 + theme(legend.position = "none",
+                     axis.title.x=element_blank(),axis.title.y=element_blank(),
+                     axis.text.x = element_text(size = 8),
+                     axis.text.y = element_text(size = 8)),
+          L2,
+          P3 + theme(legend.position = "none",
+                     axis.title.x=element_blank(),axis.title.y=element_blank(),
+                     axis.text.x = element_text(size = 8),
+                     axis.text.y = element_text(size = 8)),
+          L3,
+          P4 + theme(legend.position = "none",
+                     axis.title.x=element_blank(),axis.title.y=element_blank(),
+                     axis.text.x = element_text(size = 8),
+                     axis.text.y = element_text(size = 8)),
+          L4,
+          nrow = 4, ncol=2,labels = c("(a)", "", "(b)", "",
+                                      "(c)", "", "(d)", ""),
+          label.x = -0.015
+          ,widths=c(8,1.5), heights=c(1,1,1), font.label = list(size = 14, face = "plain", color ="black")
+)+
+  X11(width = 30, height = 25)
+
+
+
+
+
+
+
+
+# GIFs ####
+###########
+
+##### Plot of 1 variable (in the 10 most present variables) #####
+allvariables <- colnames(Model_data)[-1]
+allvariables_adj <- allvariables
+allvariables_adj <- gsub(x=allvariables_adj, pattern="vpd", replacement = "VPD")
+allvariables_adj <- gsub(x=allvariables_adj, pattern="tmax", replacement = "Tmax")
+allvariables_adj <- gsub(x=allvariables_adj, pattern="pr", replacement = "Pr")
+allvariables_adj <- gsub(x=allvariables_adj, pattern="APr", replacement = "Apr") # recorrect April
+varia_names_extr <- c("dtr","frs","TXx","TNn","Rx5day","TX90p","TN10p")
+
+for (varia in 1:length(allvariables)) {
+  varia_name <- allvariables[varia]
+  varia_in_pix <- numeric()
+  plots <- vector("list",length=(length(allvariables)))
+  for (pix in 1:final_pix_num) {
+    varia_in_pix[pix] <- (varia_name %in% row.names(coeff[[pix]])[which(coeff[[pix]]!=0)])
+  }
+  varia_name <- allvariables_adj[varia]
+  
+  DF_var <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], var_in = varia_in_pix)
+  DF_var$var_in <- as.factor(DF_var$var_in)
+  
+  ggplot(data = DF_var, aes(x=lon, y=lat)) +
+    geom_polygon(data = world, aes(long, lat, group=group),
+                 fill="white", color="black", size=0.3) +
+    geom_tile(aes(fill=DF_var$var_in)) +
+    scale_fill_manual(drop=F,values = c("1"="#984ea3", "0"="gray"),
+                      label= c("1"="Yes", "0"="No"),
+                      breaks=c("1","0"), limits=c(0,1)) +
+    theme(panel.ontop = F, panel.grid = element_blank(),
+          panel.border = element_rect(colour = "black", fill = NA),
+          axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
+    ylab("Lat (°N)") +
+    xlab("Lon (°E)") +
+    coord_fixed(xlim = c(-120, 135),
+                ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
+                ratio = 1.3)+
+    # labs(fill="",title = varia_name)+
+    labs(fill="Selection",title = varia_name)+
+    theme(plot.title = element_text(size = 20, hjust = 0.5), plot.subtitle = element_text(size = 15),
+          legend.text = element_text(size = 14)) +
+    X11(width = 20, height = 6)
+  ggsave(filename=paste0("D:/user/vogelj/Group_project/Output/Plots/All_variables/",varia_name,".jpg"))
+}
+
+
