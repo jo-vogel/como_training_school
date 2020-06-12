@@ -67,14 +67,12 @@ continents <- readOGR(paste0(path_data,"continent.shp")) # from https://www.arcg
 # The statistical model is calculated using  Lasso_regression.R
 load(paste0(path_model,"/Lasso_lambda1se_month_xtrm_LASSO_threshbadyield005_seed",seed, "_train", train_size,"_995pix.Rdata"))
 
-source("./Code/get_first_coeff_function.R")
-message("describe what this function does")
+source("./Code/useful_functions.R")
 
 source("./Code/Data_processing.R")
 
 ##### Adjust cutoff level #####
 
-source("./Code/Simple_Lasso_Ridge_ElasticNet/cutoff_adj_glmnet_lambda1se.R")
 y1_train_list_simple_lasso <- y1_train_list
 x1_train_list_simple_lasso <- x1_train_list
 Model_chosen_889 <- list()
@@ -94,7 +92,7 @@ work_pix <- which(work_pix_tmp==1)
 
 # return the mean value, over all pixels, of the adjusted cutoff named segregation threshold
 segreg_th <- adjust_cutoff(model_vector = Model_chosen_889,x1_train_list = x1_train_list_simple_lasso, y1_train_list = y1_train_list_simple_lasso,
-                                    work_pix = work_pix, cost_fp = cost_fp_simple_lasso, cost_fn= cost_fn_simple_lasso)
+                           work_pix = work_pix, cost_fp = cost_fp_simple_lasso, cost_fn= cost_fn_simple_lasso)
 
 
 # General figure variables 
@@ -218,18 +216,7 @@ ggarrange(p1, p2, nrow = 1,ncol=2,labels = c("(a)", "(b)" ), font.label = list(s
 
 message("run Fig. 5 for this section first")
 # Plot number of selected variables and climatic extreme indicators (Fig 7a and b) ####
-extreme_in_coeff <- function(coeff_list){ #function to check how many extreme indeices are selected as predictors
-  extreme_indices <- c("dtr", "frs", "txx", "tnn", "rx5", "tx90p", "tn10p")
-  if(max(abs(coeff_list[extreme_indices,]))==0){
-    return(0)
-  } else {
-    return(length(which(abs(coeff_list[extreme_indices,])>0)))
-  }
-}#end func extreme_in_coeff
 
-number_coeff_kept <- function(coeff_list){ # give number of coeff !=0
-  return(length(which(abs(coeff_list[-1,])>0)))
-}
 
 nb_extr_kept <- numeric()
 nb_coeff_kept <- numeric()
@@ -291,41 +278,11 @@ for (pix in 1:length(coeff)) {
 }#end for pix
 
 
-message("rename")
 # Count the number of selected seasons for each grid point (Fig. 7d) ####
-count_seas_and_var <- function(coefff){
-  if (length(which((coefff)!=0))-1>0) {
-    coeff_kept <- get_firstcoeffs(coefff, nb_of_coeff = length(which((coefff)!=0))-1)
-    nb_of_seas <- 0
-    # Winter
-    if(sum(!is.na(coeff_kept[,2])) & (sum(substr(coeff_kept[,2], start = 1, stop = 3) %in% c("Feb", "Dec", "Jan")))){
-      nb_of_seas <- nb_of_seas + 1
-    }
-    # Spring
-    if(sum(!is.na(coeff_kept[,2])) & sum(substr(coeff_kept[,2], start = 1, stop = 3) %in% c("May", "Mar", "Apr"))){
-      nb_of_seas <- nb_of_seas + 1
-    }
-    # Summer
-    if(sum(!is.na(coeff_kept[,2])) & sum(substr(coeff_kept[,2], start = 1, stop = 3) %in% c("Jun", "Jul", "Aug"))){
-      nb_of_seas <- nb_of_seas + 1
-    }
-    # Autumn
-    if(sum(!is.na(coeff_kept[,2])) & sum(substr(coeff_kept[,2], start = 1, stop = 3) %in% c("Sep", "Nov", "Oct"))){
-      nb_of_seas <- nb_of_seas + 1
-    }
-    if (nb_of_seas>0){
-      return(nb_of_seas)
-    } else {
-      return("No met. var")
-    }
-  } else {
-    return("No met. var")
-  }#end if else
-}
 
 nb_of_seas <- numeric()
 for (pix in 1:final_pix_num) {
-  nb_of_seas[pix] <- count_seas_and_var(coeff[[pix]])
+  nb_of_seas[pix] <- count_seasons(coeff[[pix]])
 }
 
 # Fig. 7a: Total number of selected variables
