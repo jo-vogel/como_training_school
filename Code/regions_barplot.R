@@ -14,6 +14,8 @@ lon_all <- ncvar_get(nh_data[[1]],"lon")
 lati_all <- rep(lat_all,each=length(lon_all))
 long_all <- rep(lon_all,length(lat_all)) # coordinates rearranged
 coord_all <- cbind(long_all,lati_all)
+write.csv2(coord_all,file="./Code/Workspaces/coord_all.csv")
+lapply(1:length(nh_files),function(x){nc_close(nh_data[[x]])})
 
 # Connect variables to spatial locations
 coord_subset_temp <- cbind(coord_subset,paste(coord_subset[,1],coord_subset[,2]))

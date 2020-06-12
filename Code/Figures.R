@@ -1,26 +1,20 @@
 # Creation of the Figures 1, 5, 6, 7, 8, A3, A4 and the supplementary gifs of the article
 # Authors: Pauline Rivore, Johannes Vogel, Cristina Deidda
 
-# Structure of the code
-# a) Load the model
+#' Structure of the code
+#' a) Load data
+#' b) Process data
+#' c) Create Fig. 1
+#' d) Create Fig. 5
+#' e) Create Fig. 6
+#' f) Create Fig. 7
+#' g) Create Fig. 8
+#' h) Create Fig. A3
+#' i) Create Fig. A4
+#' j) Create GIFs
 
 
-
-
-##### Initialisation, librairies, data ####
-###########################################
-
-library(ncdf4);library(glmnet);library(InformationValue);library(ROCR);library(ggpubr);library(abind)
-library(stringr);library(tictoc);library(ggplot2);library(viridis);library(raster);library(rgdal)
-
-
-
-##### Load standardized Data #####
-path <- message("insert working directory here")
-seed=1994
-train_size <- 70
-
-
+message("Delete at the end")
 # in the drive folder Data/Global_Data/Final_Data
 # Pauline
 # path <- "C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/Data/Global"
@@ -28,14 +22,6 @@ train_size <- 70
 # path <- "D:/user/vogelj/Group_project/Data"
 # # Cristina
 # path <- "C:/Users/39349/Documents/DAMOCLES/Final Workspace LASSO/Final_Data"
-
-
-# Load the preprocessed standardized climate variables and crop yield for all 995 grid points in the northern hemisphere
-load(paste0(path,"/extremeindices_and_monthlymeteovar_rescaled_995pix.Rdata")) 
-# load(paste0(path,"/extremeindices_and_monthlymeteovar_995pix.Rdata"))
-
-##### Load the statistical model calculated using Lasso_glmnet_monthly_extreme_indices.R #####
-load(paste0(path,"/Lasso_lambda1se_month_xtrm_LASSO_threshbadyield005_seed",seed, "_train", train_size,"_995pixels.Rdata"))
 
 # On the Drive you can find my data in:
 # Models/LASSO-Ridge regression/Lasso_glmnet_final_results/Lasso_lambda1se_month_xtrm_LASSO_threshbadyield005_seed1994_train70_995pixels.RData
@@ -49,28 +35,51 @@ load(paste0(path,"/Lasso_lambda1se_month_xtrm_LASSO_threshbadyield005_seed",seed
 # load(paste0("C:/Users/39349/Documents/DAMOCLES/Final Workspace LASSO/Lasso_glmnet_final_results/Lasso_lambda1se_month_xtrm_LASSO_threshbadyield005_seed",
 #             seed, "_train", train_size,"_995pixels.Rdata"))
 
-#Pixels kept
+# path_to_NH_files <- "D:/user/vogelj/Data/Group project Como"
+# nh_files <- list.files(path=path_to_NH_files,pattern="*NH.nc") # all files from northern hemisphere
+# nh_data <- lapply(1:length(nh_files),function(x){nc_open(paste0(path_to_NH_files,"/",nh_files[x]))})
+# continents <- readOGR("D:/user/vogelj/Data/continent_shapefile/continent.shp") # from https://www.arcgis.com/home/item.html?id=5cf4f223c4a642eb9aa7ae1216a04372
+
+
+##### Load data ####
+####################
+
+library(ncdf4);library(glmnet);library(InformationValue);library(ROCR);library(ggpubr);library(abind)
+library(stringr);library(tictoc);library(ggplot2);library(viridis);library(raster);library(rgdal)
+
+path <- message("insert working directory here")
+seed=1994 # random seed
+train_size <- 70 # Percentage of data assigned to the training data set
+
+# The folllowing datasets are computed from “Data_processing_wo_extreme_indices.R”
+message("Do we state where they come from since we don't show the processing file?")
+# Load the preprocessed standardized climate variables and crop yield for all 995 grid points in the northern hemisphere
+load(paste0(path,"/extremeindices_and_monthlymeteovar_rescaled_995pix.Rdata")) 
+# Final selection of grid points
 load(paste0(path,"/final_889pixels_coords.Rdata"))
-#Raw mean yield
+# Mean yield and yield standard deviation for all 995 grid points
 load(paste0(path,"/RawMeanYield_995GP.Rdata"))
 load(paste0(path,"/RawSdYield_995GP.Rdata"))
+
 source("./Code/get_first_coeff_function.R")
+message("describe what this function does")
 
-# Create matrix with all coordinates required for Fig. 8
-path_to_NH_files <- "D:/user/vogelj/Data/Group project Como"
-nh_files <- list.files(path=path_to_NH_files,pattern="*NH.nc") # all files from northern hemisphere
-nh_data <- lapply(1:length(nh_files),function(x){nc_open(paste0(path_to_NH_files,"/",nh_files[x]))})
-lat_all <- ncvar_get(nh_data[[1]],"lat")
-lon_all <- ncvar_get(nh_data[[1]],"lon")
-lati_all <- rep(lat_all,each=length(lon_all))
-long_all <- rep(lon_all,length(lat_all)) # coordinates rearranged
-coord_all <- cbind(long_all,lati_all)
-lapply(1:length(nh_files),function(x){nc_close(nh_data[[x]])}) 
+message("Which one is the current file for lasso calculation?")
+# The folllowing datasets are computed from “Lasso_glmnet_global_xtrm_995pixels.R”
+# Load the statistical model calculated using Lasso_glmnet_monthly_extreme_indices.R
+load(paste0(path,"/Lasso_lambda1se_month_xtrm_LASSO_threshbadyield005_seed",seed, "_train", train_size,"_995pixels.Rdata"))
+
+message("here we don't show the sources")
+# Load matrix with all coordinates required for Fig. 8
+coord_all <- read.csv2("./Code/Workspaces/coord_all.csv")
+# Shapefile of borders of the continents
+continents <- readOGR("continent.shp") # from https://www.arcgis.com/home/item.html?id=5cf4f223c4a642eb9aa7ae1216a04372
 
 
+##### Process data ####
+#######################
 
-##### Process data #####
-total_nb_pix <- length(Data_xtrm_standardized$longitudes)
+total_nb_pix <- length(Data_xtrm_standardized$longitudes) # Number of all wheat growing pixels in the northern hemisphere
 # An additional dimension is added to be able to combine the 2-dimensional variables (grid points and years) with the 3-dimensional variables (grid points, months and years)
 yield_3dim <- array(Data_xtrm_standardized$yield,dim=c(total_nb_pix,1,1600))
 dtr_3dim <- array(Data_xtrm_standardized$dtr,dim=c(total_nb_pix,1,1600))
@@ -127,12 +136,8 @@ for (i in 1:total_nb_pix){
 
 ##### Split data into training and testing data set #####
 vec <- 1:1600
-
 training_indices <- vector("list",length=total_nb_pix)
 testing_indices <- vector("list",length=total_nb_pix)
-
-
-
 set.seed(seed)
 for (x in 1:total_nb_pix) {
   if (years_with_na[x]) {
@@ -144,10 +149,8 @@ for (x in 1:total_nb_pix) {
   }
 }
 
-
 Training_Data <- lapply(1:total_nb_pix,function(x){Model_data[x,,training_indices[[x]]]})
 Testing_Data <- lapply(1:total_nb_pix,function(x){Model_data[x,,testing_indices[[x]]]})
-
 
 # Split in training and testing predictors and predictands
 pix_in <- 1:total_nb_pix
@@ -157,26 +160,22 @@ x1_test_list <- lapply(seq_along(pix_in), function(x){ as.data.frame(t(Testing_D
 y1_test_list <- lapply(seq_along(pix_in), function(x){Testing_Data[[x]][1,]}) # predictand
 
 
-var_num <- apply(non_na_col,1,sum) # Number of predictor variables for each grid point
-numLevels_list <- sapply(1:total_nb_pix, function(x){ rep(1,times=var_num[x])})
-for (i in 1:total_nb_pix){
-  names(numLevels_list[[i]]) <-  colnames(x1_test_list[[i]])
-}
-
-
-
+# General figure variables 
 world <- map_data("world")
 coord_subset <- cbind(final_pixels_coord$longitude, final_pixels_coord$latitude)
-final_pix_num <- length(final_pixels_coord$latitude)
-Model_chosen <- lasso_model_lambda1se
+final_pix_num <- length(final_pixels_coord$latitude) # see section 2.2 of the article
+Model_chosen <- lasso_model_lambda1se # Lasso regression using lambda 1 standard error
 segreg_th <- 0.6582418
+message("This threshold needs to be explained.")
 
-# Figure 1 ####
-###############
+
+
+# Figure 1: Mean annual yield ####
+##################################
 
 DF_meanY <- data.frame(lon=Raw_mean_yield[,"longitudes"], lat = Raw_mean_yield[,"latitudes"],
                        meany = Raw_mean_yield[,"mean_yield"]/1000) # data frame containing mean annual yield (transferred from kg to tonnes) and associated coordinates
-pixels_excluded <- as.logical(1-(1:total_nb_pix %in% final_pixels_coord$ref_in_995)) # Excluded pixels according to section 2.2 of the article
+pixels_excluded <- as.logical(1-(1:total_nb_pix %in% final_pixels_coord$ref_in_995)) # Excluded grid points according to section 2.2 of the article
 DF_excluded_pix <- data.frame(lon = Raw_mean_yield[pixels_excluded,"longitudes"],
                               lat = Raw_mean_yield[pixels_excluded,"latitudes"])
 
@@ -205,47 +204,26 @@ ggplot(data = DF_meanY, aes(x=lon, y=lat)) +
 
 
 
-# Figure 5 ####
-###############
+# Figure 5: Critical success index (CSI) ####
+#############################################
 
-
-coeff  <-list()
-# speci <- rep(NA, final_pix_num)
-# sensi <- rep(NA, final_pix_num)
-csi <- rep(NA, final_pix_num)
-mypred <- vector("list", final_pix_num)
-fitted_bad_yield <- vector("list", final_pix_num)
-# nb_training_years <- rep(NA, final_pix_num)
-# nb_testing_years <- rep(NA, final_pix_num)
+coeff  <-list() # List of all predictors of a given pixel
+csi <- rep(NA, final_pix_num) # Critical success index
+mypred <- vector("list", final_pix_num) # predicted crop yield
+fitted_bad_yield <- vector("list", final_pix_num) # assign predicted crop yield to either bad or normal year crop yield
 
 for (pixel in 1:final_pix_num) {
   pix <- final_pixels_coord$ref_in_995[pixel]
   coeff[[pixel]] <- coefficients(Model_chosen[[pix]])
-  
   mypred[[pixel]] <- predict(Model_chosen[[pix]], as.matrix(x1_test_list[[pix]]),type="response")
-  
   fitted_bad_yield[[pixel]] <- ifelse(mypred[[pixel]] > segreg_th,1,0)
-  
-  # speci[pixel] <- InformationValue::specificity(actuals = as.matrix(y1_test_list[[pix]]),
-  #                                               predictedScores = fitted_bad_yield[[pixel]],
-  #                                               threshold = segreg_th)
-  # sensi[pixel] <- InformationValue::sensitivity(actuals = as.matrix(y1_test_list[[pix]]),
-  #                                               predictedScores = fitted_bad_yield[[pixel]],
-  #                                               threshold = segreg_th)
-  
   con_tab <- InformationValue::confusionMatrix(actuals = as.matrix(y1_test_list[[pix]]),
-                                               predictedScores = fitted_bad_yield[[pixel]],
-                                               threshold = segreg_th)
+                      predictedScores = fitted_bad_yield[[pixel]], threshold = segreg_th)
   csi[pixel] <- con_tab["0","0"]/(con_tab["0","0"] + con_tab["1","0"] + con_tab["0","1"])
   if(is.na(con_tab["0","0"])){
     csi[pixel] <- 0
   }
-  
-  # nb_training_years[pixel] <- length(training_indices[[pix]])
-  # nb_testing_years[pixel] <- length(testing_indices[[pix]])
-  
-}#end pixel
-
+}#end grid point
 
 DF_csi <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], csi = csi)
 
@@ -254,7 +232,6 @@ ggplot(data = DF_csi, aes(x=lon, y=lat)) +
                fill="white", color="black", size=0.3) +
   geom_tile(aes(fill=csi)) +
   scale_fill_gradient2(midpoint = max(csi, na.rm = T)/2,
-                       #limits=c(0,1),
                        low = "black", mid = "red3", high = "yellow") +
   theme(panel.ontop = F, panel.grid = element_blank(),
         panel.border = element_rect(colour = "black", fill = NA),
@@ -275,14 +252,14 @@ ggplot(data = DF_csi, aes(x=lon, y=lat)) +
 
 
 
-# Figure 6 ####
-###############
+# Figure 6: Correlation between Critical Success Index (CSI) and annual crop yield mean and variability ####
+############################################################################################################
 
 MeanY_CSI<-data.frame(cbind(Raw_mean_yield[final_pixels_coord$ref_in_995,"mean_yield"]/1000,csi))
-colnames(MeanY_CSI)<-c("mean_yield","csi")
+colnames(MeanY_CSI)<-c("mean_yield","csi") # data frame containing mean annual yield (transferred from kg to tonnes) and csi
 
 SDY_CSI<-data.frame(cbind(Raw_sd_yield[final_pixels_coord$ref_in_995,"sd_yield"]/1000,csi))
-colnames(SDY_CSI)<-c("sd_yield","csi")
+colnames(SDY_CSI)<-c("sd_yield","csi") # data frame containing mean yield standard deviation (transferred from kg to tonnes) and csi
 
 p1<-ggplot(MeanY_CSI, aes(x=mean_yield, y=csi)) + geom_point()+
   theme(axis.text = element_text(size = 16), axis.title = element_text(size = 17)) +
@@ -297,20 +274,15 @@ p2<-ggplot(SDY_CSI, aes(x=sd_yield, y=csi)) + geom_point()+
                                                                plot.margin = margin(1.2, 1.2, 1.2, 1.2, "cm"), panel.grid.minor = element_blank(), 
                                                                panel.background = element_blank(), axis.line = element_line(colour = "black"))
 
-
 ggarrange(p1, p2, nrow = 1,ncol=2,labels = c("(a)", "(b)" ), font.label = list(size = 21, face="plain"))
-# ggsave("C:/Users/39349/Documents/DAMOCLES/Final Workspace LASSO/ScatterplotYield_889_v2.pdf", units="in", dpi=400)
 
 
-# Figure 7 ####
-###############
 
-
-# 4 plots combined: number of var kept, number of extreme indices, combination of meteovar and nb seasons
-
+# Figure 7: Maps illustrating the selected predictors by the Lasso logistical regression ####
+#############################################################################################
 
 # Plot number of selected variables and climatic extreme indicators (Fig 7a and b) ####
-extreme_in_coeff <- function(coeff_list){ #function to check how many extreme indeices are kept as predictors
+extreme_in_coeff <- function(coeff_list){ #function to check how many extreme indeices are selected as predictors
   extreme_indices <- c("dtr", "frs", "txx", "tnn", "rx5", "tx90p", "tn10p")
   if(max(abs(coeff_list[extreme_indices,]))==0){
     return(0)
@@ -319,49 +291,36 @@ extreme_in_coeff <- function(coeff_list){ #function to check how many extreme in
   }
 }#end func extreme_in_coeff
 
-
-number_coeff_kept <- function(coeff_list){#give number of coeff !=0
+number_coeff_kept <- function(coeff_list){ # give number of coeff !=0
   return(length(which(abs(coeff_list[-1,])>0)))
 }
 
 nb_extr_kept <- numeric()
 nb_coeff_kept <- numeric()
-
 for (pixel in 1:final_pix_num) {
   nb_extr_kept[pixel] <- extreme_in_coeff(coeff[[pixel]])
   nb_coeff_kept[pixel] <- number_coeff_kept(coeff[[pixel]])
-}#end pixel
+}#end grid point
 
 levels_nb_var <- cut(nb_coeff_kept, breaks = c(0,5,10,15,20,25,30), right = F)
 levels_nb_var <- gsub(","," - ",levels_nb_var,fixed=TRUE)
 
 
 # Combination of met. variables (Fig. 7c) ####
-
-# nb_meteo <- numeric(length=length(coeff))
-met_type <- numeric(length=length(coeff))
-meteo_type <- as.character(met_type) 
-met_strings <- vector("list",length=length(coeff))
-met_vpd <- numeric(length=length(coeff))
-met_pr <- numeric(length=length(coeff))
-met_temp <- numeric(length=length(coeff))
+meteo_type <- as.character(met_type) # Names of all possible combinations of the 3 monthly mean predictors VPD, Tmax and Pr
+met_type <- numeric(length=length(coeff)) # Associated numbers of all possible combinations of the 3 monthly mean predictors VPD, Tmax and Pr
+met_strings <- vector("list",length=length(coeff)) # Character string of predictor names
+met_vpd <- numeric(length=length(coeff)) # Assign all cases of VPD selection as predictor
+met_pr <- numeric(length=length(coeff)) # Assign all cases of Pr selection as predictor
+met_temp <- numeric(length=length(coeff)) # Assign all cases of Tmax selection as predictor
 
 for (pix in 1:length(coeff)) {
   if((length(which(coeff[[pix]]!=0))-1)<1){
-    # nb_meteo[pix] <- 0
     met_type[pix] <- 8
     meteo_type[pix] <- "None"
   } else {
     coeff_kept <- get_firstcoeffs(coeff = coeff[[pix]],
                                   nb_of_coeff = (length(which(coeff[[pix]]!=0))-1))
-    # nb_meteo[pix] <- length(unique(coeff_kept[,1]))
-    for (extr in c("dtr", "frs", "txx", "tnn", "rx5", "tx90p", "tn10p")) {
-      # if (extr %in% unique(get_firstcoeffs(coeff = coeff[[pix]],
-      #                                      nb_of_coeff = length(coeff_kept[,1]))[,1])){
-      #   nb_meteo[pix] <- nb_meteo[pix] - 1
-      #   
-      # }#end fi
-    }#end for xtrm
     met_string <- (c("vpd","pr","tmax") %in% unique(coeff_kept[,1])) 
     met_strings[[pix]] <- met_string
     if (identical(met_string, c(T,F,F))) {
@@ -402,33 +361,30 @@ count_seas_and_var <- function(coefff){
   if (length(which((coefff)!=0))-1>0) {
     coeff_kept <- get_firstcoeffs(coefff, nb_of_coeff = length(which((coefff)!=0))-1)
     nb_of_seas <- 0
-    
+    # Winter
     if(sum(!is.na(coeff_kept[,2])) & (sum(substr(coeff_kept[,2], start = 1, stop = 3) %in% c("Feb", "Dec", "Jan")))){
       nb_of_seas <- nb_of_seas + 1
     }
-    
+    # Spring
     if(sum(!is.na(coeff_kept[,2])) & sum(substr(coeff_kept[,2], start = 1, stop = 3) %in% c("May", "Mar", "Apr"))){
       nb_of_seas <- nb_of_seas + 1
     }
-    
+    # Summer
     if(sum(!is.na(coeff_kept[,2])) & sum(substr(coeff_kept[,2], start = 1, stop = 3) %in% c("Jun", "Jul", "Aug"))){
       nb_of_seas <- nb_of_seas + 1
     }
-    
+    # Autumn
     if(sum(!is.na(coeff_kept[,2])) & sum(substr(coeff_kept[,2], start = 1, stop = 3) %in% c("Sep", "Nov", "Oct"))){
       nb_of_seas <- nb_of_seas + 1
     }
-    
     if (nb_of_seas>0){
       return(nb_of_seas)
     } else {
       return("No met. var")
     }
-    
   } else {
     return("No met. var")
   }#end if else
-  
 }
 
 nb_of_seas <- numeric()
@@ -436,9 +392,7 @@ for (pix in 1:final_pix_num) {
   nb_of_seas[pix] <- count_seas_and_var(coeff[[pix]])
 }
 
-
-
-
+# Fig. 7a: Total number of selected variables
 DF_numbcoeff <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], coeff_kep = levels_nb_var)
 DF_numbcoeff$levels_nb_var <- gsub("\\[|\\)","",levels_nb_var)
 
@@ -464,7 +418,7 @@ P1 <- ggplot(data = DF_numbcoeff, aes(x=lon, y=lat)) +
         legend.title = element_text(size = 15), legend.text = element_text(size = 14))
 
 
-# Plot number of extreme indices kept
+# Fig. 7b: Plot number of selected extreme indices
 DF_numbextr <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], coeff_kep = nb_extr_kept)
 DF_numbextr$coeff_kep <- as.factor(DF_numbextr$coeff_kep)
 
@@ -487,12 +441,10 @@ P2 <- ggplot(data = DF_numbextr, aes(x=lon, y=lat)) +
   )+
   theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
         legend.title = element_text(size = 15), legend.text = element_text(size = 14))
-#   + X11(width = 20, height = 5)
 
 
-# Combinations of meteorological variables
+# Fig. 7c: Combinations of meteorological variables
 DF_meteo_type <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], met_type = meteo_type)
-
 
 cols <- c("VPD" = "#7FC97F", "Pr" = "cadetblue2", "Tmax" = "#386CB0", "VPD & Pr" = "#824D99",
           "VPD & Tmax" = "#F0027F", "Pr & Tmax" = "darkred" , "All" = "#FDC086", "None" = "#FFFF99")
@@ -514,14 +466,13 @@ P3 <- ggplot(data = DF_meteo_type, aes(x=lon, y=lat)) +
   )+
   theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
         legend.title = element_text(size = 15), legend.text = element_text(size = 14))
-# +X11(width = 20, height = 5)
 
 
 DF_nbseason <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], nb_season = nb_of_seas)
 DF_nbseason$nb_season <- as.factor(DF_nbseason$nb_season)
 
 
-#Plot nb of seasons
+# Fig. 7d: Plot number of selected seasons
 P4 <- ggplot(data = DF_nbseason, aes(x=lon, y=lat)) +
   geom_polygon(data = world, aes(long, lat, group=group),
                fill="white", color="black", size=0.3) +
@@ -540,9 +491,8 @@ P4 <- ggplot(data = DF_nbseason, aes(x=lon, y=lat)) +
   )+
   theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
         legend.title = element_text(size = 15), legend.text = element_text(size = 14))
-# + X11(width = 20, height = 5)
 
-
+# Combine 4 subplots to one plot
 L1 <- get_legend(P1+ theme(legend.title = element_text(size=11),
                            legend.text = element_text(size=10),
                            legend.key.size = unit(0.6,"line")))
@@ -585,58 +535,56 @@ ggarrange(P1 + theme(legend.position = "none",
 
 
 
-# Figure 8 ####
-###############
+# Figure 8: Percentage of grid points, where predictor is selected ####
+#######################################################################
 
-
-
-# Connect variables to spatial locations
+# Find indices of the coordinates
 coord_subset_temp <- cbind(coord_subset,paste(coord_subset[,1],coord_subset[,2]))
 coord_all_temp <- cbind(coord_all,paste(coord_all[,1],coord_all[,2]))
-loc_pix <- which(coord_all_temp[,3] %in% coord_subset_temp [,3]) # locations of our pixels in the whole coordinate set
+loc_pix <- which(coord_all_temp[,3] %in% coord_subset_temp [,3]) # locations of our grid points in the whole coordinate set
 
 # Create continent polygons
-border <- readOGR('D:/user/vogelj/Data/ne_50m_admin_0_countries/ne_50m_admin_0_countries.shp')	
-continents <- readOGR("D:/user/vogelj/Data/continent_shapefile/continent.shp") # from https://www.arcgis.com/home/item.html?id=5cf4f223c4a642eb9aa7ae1216a04372
 africa <- subset(continents,subset=continents@data[["CONTINENT"]]=="Africa")
 europe <- subset(continents,subset=continents@data[["CONTINENT"]]=="Europe")
 no_am <- subset(continents,subset=continents@data[["CONTINENT"]]=="North America")
 asia <- subset(continents,subset=continents@data[["CONTINENT"]]=="Asia")
 
-# connect final pixels to their coordinates
-# work_pix <- 1:final_pix_num
+# Connect final grid points to their coordinates
 coord_assigned <- cbind(coord_all,rep(NA,320*76))
 for (i in seq_along(1:final_pix_num)){
   coord_assigned[loc_pix[i],3] <- i
 }
 
-# Extract pixels by continent
+# Extract grid points by continent
 loc_mat <- matrix(as.numeric(coord_assigned[,3]),nrow=320,ncol=76)
-loc_ras <- raster(t(loc_mat[,76:1]), xmn=min(lon_all), xmx=max(lon_all), ymn=min(lat_all), ymx=max(lat_all), crs=CRS(projection(border)))
+loc_ras <- raster(t(loc_mat[,76:1]), xmn=min(lon_all), xmx=max(lon_all), ymn=min(lat_all), ymx=max(lat_all), crs=CRS(projection(continents)))
 loc_afr_pixels <- extract(loc_ras,africa)
 loc_eur_pixels <- extract(loc_ras,europe)
 loc_no_am_pixels <- extract(loc_ras,no_am)
 loc_asia_pixels <- extract(loc_ras,asia)
-
-sum(!is.na(loc_eur_pixels[[1]])) #  233 pixels
-sum(!is.na(loc_no_am_pixels[[1]])) #  419 pixels
-sum(!is.na(loc_afr_pixels[[1]])) # 22 pixels
-sum(!is.na(loc_asia_pixels[[1]])) # 210 pixels
-# 22+233+419+210=884; 889-884: 5 pixel are missing
 
 loc_afr_pixels_num <- loc_afr_pixels[[1]][!is.na(loc_afr_pixels[[1]])] 
 loc_eur_pixels_num <- loc_eur_pixels[[1]][!is.na(loc_eur_pixels[[1]])]
 loc_no_am_pixels_num <- loc_no_am_pixels[[1]][!is.na(loc_no_am_pixels[[1]])]
 loc_asia_pixels_num <- loc_asia_pixels[[1]][!is.na(loc_asia_pixels[[1]])]
 
-# add missing points: see extra file Missing_points.r
-message("do we need to show extra file?")
-# for 889 pixels
+sum(!is.na(loc_eur_pixels[[1]])) #  233 grid points in Europe
+sum(!is.na(loc_no_am_pixels[[1]])) #  419 grid points in North America
+sum(!is.na(loc_afr_pixels[[1]])) # 22 grid points in Africa
+sum(!is.na(loc_asia_pixels[[1]])) # 210 grid points in Asia
+# 22+233+419+210=884; 889-884: 5 grid point are missing
+# Add missing points
 loc_eur_pixels_num <- c(loc_eur_pixels_num,450)
 loc_no_am_pixels_num <- c(loc_no_am_pixels_num,391)
 loc_asia_pixels_num <- c(loc_asia_pixels_num,3, 294, 563)
 
-# Get data into right format for the plot (there should be a simpler approach than this)
+# Get data into right format for the plot
+var_num <- apply(non_na_col,1,sum) # Number of predictor variables for each grid point
+numLevels_list <- sapply(1:total_nb_pix, function(x){ rep(1,times=var_num[x])})
+for (i in 1:total_nb_pix){
+  names(numLevels_list[[i]]) <-  colnames(x1_test_list[[i]])
+}
+
 coefs_seas <- sapply(1:length(coeff), function(x) names(numLevels_list[[final_pixels_coord$ref_in_995[x]]])[coeff[[x]][-1]!=0])
 coefs_seas_vec <- unlist(coefs_seas)
 coefs_seas_afr <- sapply(loc_afr_pixels_num, function(x) names(numLevels_list[[final_pixels_coord$ref_in_995[x]]])[coeff[[x]][-1]!=0])
@@ -668,14 +616,13 @@ for (i in 1:length(list_coefs)){
   list_coefs[[i]][,1] <- gsub(x=list_coefs[[i]][,1], pattern="tn10p", replacement = "TN10p")
 }
 coefs_seas_afr_tab <- list_coefs[[1]];coefs_seas_eur_tab <- list_coefs[[2]];coefs_seas_no_am_tab <- list_coefs[[3]];coefs_seas_asia_tab <- list_coefs[[4]];coefs_seas_vec_tab <- list_coefs[[5]]
-
 colnames(coefs_seas_afr_tab) <- c("Variables","Freq_Afr")
 colnames(coefs_seas_eur_tab) <- c("Variables","Freq_Eur")
 colnames(coefs_seas_no_am_tab) <- c("Variables","Freq_No_Am")
 colnames(coefs_seas_asia_tab) <- c("Variables","Freq_Asia")
 colnames(coefs_seas_vec_tab) <- c("Variables","Freq_All")
 
-
+# Merge to one file
 coefs_all_cont <- merge(coefs_seas_afr_tab,coefs_seas_eur_tab,all=T,by="Variables")
 coefs_all_cont <- merge(coefs_all_cont,coefs_seas_no_am_tab,all=T,by="Variables")
 coefs_all_cont <- merge(coefs_all_cont,coefs_seas_asia_tab,all=T,by="Variables")
@@ -683,20 +630,17 @@ coefs_all_cont <- merge(coefs_all_cont,coefs_seas_vec_tab,all=T,by="Variables")
 coefs_all_cont <- coefs_all_cont[order(coefs_all_cont$Freq_All,decreasing=F),]
 
 colName <- colnames(coefs_all_cont)
-coefs_all_cont_889 <- cbind(coefs_all_cont[,1],coefs_all_cont[,2:6]/pixel*100) # calculate percentage of all pixels
+coefs_all_cont_889 <- cbind(coefs_all_cont[,1],coefs_all_cont[,2:6]/pixel*100) # calculate percentage of all grid points
 coefs_all_cont <- data.frame(coefs_all_cont[,1],coefs_all_cont[,2]/sum(!is.na(loc_afr_pixels[[1]]))*100,coefs_all_cont[,3]/sum(!is.na(loc_eur_pixels[[1]]))*100,
-                             coefs_all_cont[,4]/sum(!is.na(loc_no_am_pixels[[1]]))*100,coefs_all_cont[,5]/sum(!is.na(loc_asia_pixels[[1]]))*100, coefs_all_cont[,6]/pixel*100) # calculate percentage of all pixels according to the respective number of pixels at each continent
+                             coefs_all_cont[,4]/sum(!is.na(loc_no_am_pixels[[1]]))*100,coefs_all_cont[,5]/sum(!is.na(loc_asia_pixels[[1]]))*100, coefs_all_cont[,6]/pixel*100) # calculate percentage of all grid points according to the respective number of grid points at each continent
 colnames(coefs_all_cont) <- colName
 
 coefs_all_cont_mat <- as.matrix(coefs_all_cont_889)
 row.names(coefs_all_cont_mat) <- coefs_all_cont_mat[,1]
 coefs_all_cont_mat[which(is.na(coefs_all_cont_mat))] <- 0
-# coefs_all_cont_mat <- coefs_all_cont_mat[,-1]
 coefs_all_cont_mat <- coefs_all_cont_mat[,-c(1,6)]
 
-
 # 4 Plots in one line (all, N.America, Europe, Asia)
-
 line2user <- function(line, side) { # from https://stackoverflow.com/questions/14660372/common-main-title-of-a-figure-panel-compiled-with-parmfrow
   lh <- par('cin')[2] * par('cex') * par('lheight')
   x_off <- diff(grconvertX(0:1, 'inches', 'user'))
@@ -709,14 +653,8 @@ line2user <- function(line, side) { # from https://stackoverflow.com/questions/1
          stop("side must be 1, 2, 3, or 4", call.=FALSE))
 }
 
-
-# sort them in the same way: sort by one column; they are already sorted in coefs_all_cont
-# coefs_all_cont2 <- coefs_all_cont[order(coefs_all_cont$Freq_All),]
-
 x11(width=16,height=12)
 par(mfrow=c(1,4),mar=c(c(5, 4, 1, 0.5)),oma=c(0,7.5,2,0))
-# title("Number of grid points, where variable is included in the model")
-# text(x=0,y=0,"Number of grid points, where variable is included in the model")
 barplot(t(coefs_all_cont_mat),horiz=T,las=1,col=c("brown3","DarkOrange2","goldenrod3","burlywood1"),
         xlab="",cex.names=1.8,font=1,cex=1.7,
         legend.text=c("Africa","Europe","North America","Asia"),args.legend =list(x= "bottomright",cex=1.5,text.font=1),main="")
@@ -739,13 +677,10 @@ mtext("(d)",side=3,font=1,line=0.6, adj=0.01,cex=1.6)
 
 
 
+# Figure A3: Number of months in the growing season ####
+########################################################
 
-# Figure A3 ####
-################
-##### Map number of month used in the analysis 
-
-
-nb_month_GS <- integer(length = final_pix_num)
+nb_month_GS <- integer(length = final_pix_num) # Number of months in the growing season
 for (pix in 1:final_pix_num) {
   pixel <- final_pixels_coord$ref_in_995[pix]
   nb_month_GS[pix] <- sum(substr(colnames(x1_train_list[[pixel]]), start = 1, stop = 3)=="pr_")
@@ -755,7 +690,6 @@ levels_nb_month <- cut(nb_month_GS, breaks = c(5,8,11,14), right = F)
 levels_nb_month <- gsub(","," - ",levels_nb_month,fixed=TRUE)
 DF_GSmonth <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], levels_nb_month = levels_nb_month)
 DF_GSmonth$levels_nb_month <- gsub("\\[|\\)","",levels_nb_month)
-
 
 ggplot(data = DF_GSmonth, aes(x=DF_GSmonth$lon, y=DF_GSmonth$lat)) +
   geom_polygon(data = world, aes(long, lat, group=group),
@@ -783,12 +717,10 @@ ggplot(data = DF_GSmonth, aes(x=DF_GSmonth$lon, y=DF_GSmonth$lat)) +
 
 
 
+# Figure A4: Selected climate extreme indicators ####
+#####################################################
 
-
-# Figure A4 ####
-################
-
-# Three most kept variables: coefficient sign for vpd_May_Y2, vpd_Jun_Y2 and pr_Apr_Y2 (compute also extreme indices)
+# 4 climate extreme indicators dtr, frs, TX90p and Rx5day
 coeff_dtr <- numeric()
 coeff_frs <- numeric()
 coeff_tx90p <- numeric()
@@ -802,15 +734,11 @@ for (pix in 1:length(coeff)) {
 }#end for pix
 
 
-
-# Plot coefficient selected? for dtr, frs, rx5, tx90p 
-
-#dtr
+# Plot grid points where coefficient dtr, frs, TX90p and Rx5day are selected
+# dtr
 DF1_dtr <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], selected_coeff = (coeff_dtr!=0))
 DF1_dtr$selected_coeff <- as.factor(DF1_dtr$selected_coeff)
 
-
-#Plot coeff
 P1 <- ggplot(data = DF1_dtr, aes(x=lon, y=lat)) +
   geom_polygon(data = world, aes(long, lat, group=group),
                fill="white", color="black", size=0.3) +
@@ -831,13 +759,10 @@ P1 <- ggplot(data = DF1_dtr, aes(x=lon, y=lat)) +
   theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
         legend.title = element_text(size = 15), legend.text = element_text(size = 14))
 
-
-#frs
+# frs
 DF2_frs <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], selected_coeff = (coeff_frs!=0))
 DF2_frs$selected_coeff <- as.factor(DF2_frs$selected_coeff)
 
-
-#Plot sign of coeff
 P2 <- ggplot(data = DF2_frs, aes(x=lon, y=lat)) +
   geom_polygon(data = world, aes(long, lat, group=group),
                fill="white", color="black", size=0.3) +
@@ -858,12 +783,10 @@ P2 <- ggplot(data = DF2_frs, aes(x=lon, y=lat)) +
   theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
         legend.title = element_text(size = 15), legend.text = element_text(size = 14))
 
-#rx5
+# rx5
 DF3_rx5 <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], selected_coeff = (coeff_rx5!=0))
 DF3_rx5$selected_coeff <- as.factor(DF3_rx5$selected_coeff)
 
-
-#Plot sign of coeff
 P3 <- ggplot(data = DF3_rx5, aes(x=lon, y=lat)) +
   geom_polygon(data = world, aes(long, lat, group=group),
                fill="white", color="black", size=0.3) +
@@ -884,14 +807,10 @@ P3 <- ggplot(data = DF3_rx5, aes(x=lon, y=lat)) +
   theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
         legend.title = element_text(size = 15), legend.text = element_text(size = 14))
 
-
-
-#tx90p
+# tx90p
 DF4_tx90p <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], selected_coeff = (coeff_tx90p!=0))
 DF4_tx90p$selected_coeff <- as.factor(DF4_tx90p$selected_coeff)
 
-
-#Plot sign of coeff
 P4 <- ggplot(data = DF4_tx90p, aes(x=lon, y=lat)) +
   geom_polygon(data = world, aes(long, lat, group=group),
                fill="white", color="black", size=0.3) +
@@ -912,7 +831,7 @@ P4 <- ggplot(data = DF4_tx90p, aes(x=lon, y=lat)) +
   theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
         legend.title = element_text(size = 15), legend.text = element_text(size = 14))
 
-
+# Combine 4 subplots to one plot
 L1 <- get_legend(P1+ theme(legend.title = element_text(size=12),
                            legend.text = element_text(size=12),
                            legend.key.size = unit(0.6,"line")))
@@ -925,7 +844,6 @@ L3 <- get_legend(P3+ theme(legend.title = element_text(size=12),
 L4 <- get_legend(P4+ theme(legend.title = element_text(size=12),
                            legend.text = element_text(size=12),
                            legend.key.size = unit(0.6,"line")))
-
 
 ggarrange(P1 + theme(legend.position = "none",
                      axis.title.x=element_blank(),axis.title.y=element_blank(),
@@ -956,22 +874,16 @@ ggarrange(P1 + theme(legend.position = "none",
 
 
 
+# GIFs: Grid points with inclusion of monthly predictors ####
+#############################################################
 
-
-
-
-
-# GIFs ####
-###########
-
-##### Plot of 1 variable (in the 10 most present variables) #####
+message("run Fig. 5 for this section first")
 allvariables <- colnames(Model_data)[-1]
-allvariables_adj <- allvariables
+allvariables_adj <- allvariables # Adjust names
 allvariables_adj <- gsub(x=allvariables_adj, pattern="vpd", replacement = "VPD")
 allvariables_adj <- gsub(x=allvariables_adj, pattern="tmax", replacement = "Tmax")
 allvariables_adj <- gsub(x=allvariables_adj, pattern="pr", replacement = "Pr")
 allvariables_adj <- gsub(x=allvariables_adj, pattern="APr", replacement = "Apr") # recorrect April
-varia_names_extr <- c("dtr","frs","TXx","TNn","Rx5day","TX90p","TN10p")
 
 for (varia in 1:length(allvariables)) {
   varia_name <- allvariables[varia]
@@ -1000,12 +912,9 @@ for (varia in 1:length(allvariables)) {
     coord_fixed(xlim = c(-120, 135),
                 ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
                 ratio = 1.3)+
-    # labs(fill="",title = varia_name)+
     labs(fill="Selection",title = varia_name)+
     theme(plot.title = element_text(size = 20, hjust = 0.5), plot.subtitle = element_text(size = 15),
           legend.text = element_text(size = 14)) +
     X11(width = 20, height = 6)
-  ggsave(filename=paste0("D:/user/vogelj/Group_project/Output/Plots/All_variables/",varia_name,".jpg"))
+  # ggsave(filename=paste0(varia_name,".jpg"))
 }
-
-
