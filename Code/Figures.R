@@ -38,8 +38,8 @@ message("Delete at the end")
 # path_to_NH_files <- "D:/user/vogelj/Data/Group project Como"
 # nh_files <- list.files(path=path_to_NH_files,pattern="*NH.nc") # all files from northern hemisphere
 # nh_data <- lapply(1:length(nh_files),function(x){nc_open(paste0(path_to_NH_files,"/",nh_files[x]))})
+# coord_all <- read.csv2("./Code/Workspaces/coord_all.csv")
 # continents <- readOGR("D:/user/vogelj/Data/continent_shapefile/continent.shp") # from https://www.arcgis.com/home/item.html?id=5cf4f223c4a642eb9aa7ae1216a04372
-
 
 ##### Load data ####
 ####################
@@ -71,7 +71,7 @@ load(paste0(path,"/Lasso_lambda1se_month_xtrm_LASSO_threshbadyield005_seed",seed
 
 message("here we don't show the sources")
 # Load matrix with all coordinates required for Fig. 8
-coord_all <- read.csv2("./Code/Workspaces/coord_all.csv")
+coord_all <- read.csv2("coord_all.csv")
 # Shapefile of borders of the continents
 continents <- readOGR("continent.shp") # from https://www.arcgis.com/home/item.html?id=5cf4f223c4a642eb9aa7ae1216a04372
 
