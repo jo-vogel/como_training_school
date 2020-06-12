@@ -110,8 +110,8 @@ Raw_mean_yield <- cbind(raw_mean_yield, lon_kept, lat_kept)
 Raw_sd_yield <- cbind(raw_sd_yield, lon_kept, lat_kept)
 colnames(Raw_mean_yield) <- c("mean_yield","longitudes", "latitudes")
 colnames(Raw_sd_yield) <- c("sd_yield","longitudes", "latitudes")
-save(Raw_mean_yield, file = paste0(path_to_NH_files,"/RawMeanYield_995GP.Rdata"))
-save(Raw_sd_yield, file = paste0(path_to_NH_files,"/RawSdYield_995GP.Rdata"))
+save(Raw_mean_yield, file = paste0(path_to_NH_files,"/RawMeanYield_995pix.Rdata"))
+save(Raw_sd_yield, file = paste0(path_to_NH_files,"/RawSdYield_995pix.Rdata"))
 
 
 perc10_yields <- quantile(raw_mean_yield, probs=0.1)
@@ -313,6 +313,6 @@ final_pixels_coord <- data.frame(longitude=lon_kept[final_pix_kept],
                                  latitude=lat_kept[final_pix_kept],
                                  ref_in_995 = final_pix_kept)
 
-save(final_pixels_coord, file = paste0(path_to_NH_files,"/final_889pixels_coords.Rdata"))
+save(final_pixels_coord, file = paste0(path_to_NH_files,"/final_889pix_coords.Rdata"))
 save(pix_5th_perc_yield_gt_0_coord, file = paste0(path_to_NH_files,"/969pixels_5th_perc_yield_gt_0_coords.Rdata"))
 save(pix_yield_above_10thperc_coord, file = paste0(path_to_NH_files,"/895pixels_yield_above_10thperc_coords.Rdata"))

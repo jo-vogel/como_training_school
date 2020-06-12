@@ -44,120 +44,57 @@ message("Delete at the end")
 ##### Load data ####
 ####################
 
-library(ncdf4);library(glmnet);library(InformationValue);library(ROCR);library(ggpubr);library(abind)
-library(stringr);library(tictoc);library(ggplot2);library(viridis);library(raster);library(rgdal)
+library(glmnet);library(InformationValue);library(ROCR);library(ggpubr);library(abind)
+library(stringr);library(ggplot2);library(viridis);library(raster);library(rgdal);library(pbapply)
 
-path <- message("insert working directory here")
+path_data <- message("insert data directory here")
+path_model <- message("insert model directory here")
 seed=1994 # random seed
 train_size <- 70 # Percentage of data assigned to the training data set
 
-# The folllowing datasets are computed from “Data_processing_wo_extreme_indices.R”
-message("Do we state where they come from since we don't show the processing file?")
 # Load the preprocessed standardized climate variables and crop yield for all 995 grid points in the northern hemisphere
-load(paste0(path,"/extremeindices_and_monthlymeteovar_rescaled_995pix.Rdata")) 
+load(paste0(path_data,"/extremeindices_and_monthlymeteovar_rescaled_995pix.Rdata")) 
 # Final selection of grid points
-load(paste0(path,"/final_889pixels_coords.Rdata"))
+load(paste0(path_data,"/final_889pix_coords.Rdata"))
 # Mean yield and yield standard deviation for all 995 grid points
-load(paste0(path,"/RawMeanYield_995GP.Rdata"))
-load(paste0(path,"/RawSdYield_995GP.Rdata"))
+load(paste0(path_data,"/RawMeanYield_995pix.Rdata"))
+load(paste0(path_data,"/RawSdYield_995pix.Rdata"))
+# Load matrix with all coordinates required for Fig. 8
+coord_all <- read.csv2(paste0(path_data,"coord_all.csv"))
+# Shapefile of borders of the continents
+continents <- readOGR(paste0(path_data,"continent.shp")) # from https://www.arcgis.com/home/item.html?id=5cf4f223c4a642eb9aa7ae1216a04372
+
+# The statistical model is calculated using  Lasso_regression.R
+load(paste0(path_model,"/Lasso_lambda1se_month_xtrm_LASSO_threshbadyield005_seed",seed, "_train", train_size,"_995pix.Rdata"))
 
 source("./Code/get_first_coeff_function.R")
 message("describe what this function does")
 
-message("Which one is the current file for lasso calculation?")
-# The folllowing datasets are computed from “Lasso_glmnet_global_xtrm_995pixels.R”
-# Load the statistical model calculated using Lasso_glmnet_monthly_extreme_indices.R
-load(paste0(path,"/Lasso_lambda1se_month_xtrm_LASSO_threshbadyield005_seed",seed, "_train", train_size,"_995pixels.Rdata"))
+source("./Code/Data_processing.R")
 
-message("here we don't show the sources")
-# Load matrix with all coordinates required for Fig. 8
-coord_all <- read.csv2("coord_all.csv")
-# Shapefile of borders of the continents
-continents <- readOGR("continent.shp") # from https://www.arcgis.com/home/item.html?id=5cf4f223c4a642eb9aa7ae1216a04372
+##### Adjust cutoff level #####
 
+source("./Code/Simple_Lasso_Ridge_ElasticNet/cutoff_adj_glmnet_lambda1se.R")
+y1_train_list_simple_lasso <- y1_train_list
+x1_train_list_simple_lasso <- x1_train_list
+Model_chosen_889 <- list()
+y1_train_list_simple_lasso <- list()
+x1_train_list_simple_lasso <- list()
+work_pix_tmp <- numeric()
+for (pixel in 1:final_pix_num) {
+ pix_in_995 <- final_pixels_coord$ref_in_995[pixel]
+ y1_train_list_simple_lasso[[pixel]] <- y1_train_list[[pix_in_995]]
+ x1_train_list_simple_lasso[[pixel]] <- x1_train_list[[pix_in_995]]
+ Model_chosen_889[[pixel]] <- Model_chosen[[pix_in_995]]
+ if(is.character(Model_chosen[[pix_in_995]])){work_pix_tmp[pixel]<-0} else {work_pix_tmp[pixel]<-1}
+}#end for pixel
+cost_fp_simple_lasso <- 100 # Misses: this should be associated with a higher cost, as it is more detrimental
+cost_fn_simple_lasso <- 100 # False alarms
+work_pix <- which(work_pix_tmp==1)
 
-##### Process data ####
-#######################
-
-total_nb_pix <- length(Data_xtrm_standardized$longitudes) # Number of all wheat growing pixels in the northern hemisphere
-# An additional dimension is added to be able to combine the 2-dimensional variables (grid points and years) with the 3-dimensional variables (grid points, months and years)
-yield_3dim <- array(Data_xtrm_standardized$yield,dim=c(total_nb_pix,1,1600))
-dtr_3dim <- array(Data_xtrm_standardized$dtr,dim=c(total_nb_pix,1,1600))
-frs_3dim <- array(Data_xtrm_standardized$frs,dim=c(total_nb_pix,1,1600))
-txx_3dim <- array(Data_xtrm_standardized$txx,dim=c(total_nb_pix,1,1600))
-tnn_3dim <- array(Data_xtrm_standardized$tnn,dim=c(total_nb_pix,1,1600))
-rx5_3dim <- array(Data_xtrm_standardized$rx5,dim=c(total_nb_pix,1,1600))
-tx90p_3dim <- array(Data_xtrm_standardized$tx90p,dim=c(total_nb_pix,1,1600))
-tn10p_3dim <- array(Data_xtrm_standardized$tn10p,dim=c(total_nb_pix,1,1600))
-
-# Combine all variables in one dataset: crop yield, climate extreme indicators, monthly mean meteorological variables
-Model_data <- abind(yield_3dim,dtr_3dim,frs_3dim,txx_3dim,tnn_3dim,rx5_3dim,tx90p_3dim,tn10p_3dim
-                    ,Data_xtrm_standardized$tasmax,Data_xtrm_standardized$vpd,Data_xtrm_standardized$pr,along=2)
-colnames(Model_data) <- c("Yield", "dtr", "frs", "txx", "tnn", "rx5", "tx90p", "tn10p",
-                          "tmax_Aug_Y1","tmax_Sep_Y1","tmax_Oct_Y1","tmax_Nov_Y1","tmax_Dec_Y1","tmax_Jan_Y2",
-                          "tmax_Feb_Y2","tmax_Mar_Y2","tmax_Apr_Y2","tmax_May_Y2","tmax_Jun_Y2","tmax_Jul_Y2",
-                          "tmax_Aug_Y2","tmax_Sep_Y2","tmax_Oct_Y2","tmax_Nov_Y2","tmax_Dec_Y2",
-                          "vpd_Aug_Y1","vpd_Sep_Y1","vpd_Oct_Y1","vpd_Nov_Y1","vpd_Dec_Y1","vpd_Jan_Y2",
-                          "vpd_Feb_Y2","vpd_Mar_Y2","vpd_Apr_Y2","vpd_May_Y2","vpd_Jun_Y2","vpd_Jul_Y2",
-                          "vpd_Aug_Y2","vpd_Sep_Y2","vpd_Oct_Y2","vpd_Nov_Y2","vpd_Dec_Y2",
-                          "pr_Aug_Y1","pr_Sep_Y1","pr_Oct_Y1","pr_Nov_Y1","pr_Dec_Y1","pr_Jan_Y2",
-                          "pr_Feb_Y2","pr_Mar_Y2","pr_Apr_Y2","pr_May_Y2","pr_Jun_Y2","pr_Jul_Y2",
-                          "pr_Aug_Y2","pr_Sep_Y2","pr_Oct_Y2","pr_Nov_Y2","pr_Dec_Y2")
-
-
-Yield <- Data_xtrm_standardized$yield
-threshold <- 0.05 # threshold for bad yields
-low_yield <- apply(Yield, MARGIN = 1, FUN=quantile, probs=threshold, na.rm=T)
-cy <- t(sapply(1:total_nb_pix,function(x){ifelse(Yield[x,]<low_yield[x],0,1)})) # assign crop yield to the two class bad and normal yield years
-cy_reshaped <- array(data=cy,dim=c(dim(cy)[1],1,1600))
-Model_data[,1,] <- cy_reshaped # Replace continuous crop yield with binary categories (bad and normal yield)
-
-
-# Exclude NA variable columns (columns are NA if the respective months are outside of the maximum growing season of the corresponding grid point)
-na_col <- matrix(data=NA,nrow=total_nb_pix,ncol=dim(Model_data)[2])
-for (j in 1:total_nb_pix){
-  for (i in 1:dim(Model_data)[2]){
-    na_col[j,i] <- all(is.na(Model_data[j,i,])) # TRUE if entire column is NA
-  }
-}
-non_na_col <- !na_col # columns without NAs
-non_na_col[,1] <- FALSE # exclude yield (it is no predictor and should therefore be ignored)
-
-# Exclude years with NAs (years are NA if the growing season exceeds 365 days)
-na_time <- vector("list",length=total_nb_pix) # for each grid point, the positions of NAs over time
-for (j in 1:total_nb_pix){
-  na_time[[j]] <- which(is.na(Model_data[j,1,])) # locations of years with NA values
-}
-
-years_with_na <- vector("logical",length=total_nb_pix)
-for (i in 1:total_nb_pix){
-  years_with_na[i] <- ifelse(length(na_time[[i]]) == 0,F,T)
-}
-
-##### Split data into training and testing data set #####
-vec <- 1:1600
-training_indices <- vector("list",length=total_nb_pix)
-testing_indices <- vector("list",length=total_nb_pix)
-set.seed(seed)
-for (x in 1:total_nb_pix) {
-  if (years_with_na[x]) {
-    training_indices[[x]] <- sort(sample(x=vec[-na_time[[x]]], size = floor((1600-length(na_time[[x]]))*(train_size/100)))) # Assign percentage of years according to train_size after neglecting years with NAs
-    testing_indices[[x]] <- vec[-c(na_time[[x]], training_indices[[x]])] # All other years without NAs are assigned to the testing indices
-  } else { # Simplified assignment in case there is no need to account for years with NAs
-    training_indices[[x]] <- sort(sample(1:1600, size = floor(1600*(train_size/100))))
-    testing_indices[[x]] <- (1:1600)[-training_indices[[x]]]    
-  }
-}
-
-Training_Data <- lapply(1:total_nb_pix,function(x){Model_data[x,,training_indices[[x]]]})
-Testing_Data <- lapply(1:total_nb_pix,function(x){Model_data[x,,testing_indices[[x]]]})
-
-# Split in training and testing predictors and predictands
-pix_in <- 1:total_nb_pix
-x1_train_list <- lapply(seq_along(pix_in), function(x){ as.data.frame(t(Training_Data[[x]][non_na_col[x,],]))}) # predictors
-y1_train_list <- lapply(seq_along(pix_in), function(x){ Training_Data[[x]][1,]}) # predictand
-x1_test_list <- lapply(seq_along(pix_in), function(x){ as.data.frame(t(Testing_Data[[x]][non_na_col[x,],]))}) # predictors
-y1_test_list <- lapply(seq_along(pix_in), function(x){Testing_Data[[x]][1,]}) # predictand
+# return the mean value, over all pixels, of the adjusted cutoff named segregation threshold
+segreg_th <- adjust_cutoff(model_vector = Model_chosen_889,x1_train_list = x1_train_list_simple_lasso, y1_train_list = y1_train_list_simple_lasso,
+                                    work_pix = work_pix, cost_fp = cost_fp_simple_lasso, cost_fn= cost_fn_simple_lasso)
 
 
 # General figure variables 
@@ -165,8 +102,6 @@ world <- map_data("world")
 coord_subset <- cbind(final_pixels_coord$longitude, final_pixels_coord$latitude)
 final_pix_num <- length(final_pixels_coord$latitude) # see section 2.2 of the article
 Model_chosen <- lasso_model_lambda1se # Lasso regression using lambda 1 standard error
-segreg_th <- 0.6582418
-message("This threshold needs to be explained.")
 
 
 
@@ -281,6 +216,7 @@ ggarrange(p1, p2, nrow = 1,ncol=2,labels = c("(a)", "(b)" ), font.label = list(s
 # Figure 7: Maps illustrating the selected predictors by the Lasso logistical regression ####
 #############################################################################################
 
+message("run Fig. 5 for this section first")
 # Plot number of selected variables and climatic extreme indicators (Fig 7a and b) ####
 extreme_in_coeff <- function(coeff_list){ #function to check how many extreme indeices are selected as predictors
   extreme_indices <- c("dtr", "frs", "txx", "tnn", "rx5", "tx90p", "tn10p")
