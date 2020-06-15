@@ -31,9 +31,6 @@ AccuracyCutoffInfo <- function( train, test, predict, actual ){
   accuracy <- lapply( cutoff, function(c)
   {
     # use the confusionMatrix from the caret package
-    
-    # cm_train <- onfusionMatrix( as.numeric( train[[predict]] > c ), train[[actual]] ) # seems not to work
-    # cm_test  <- confusionMatrix( as.numeric( test[[predict]]  > c ), test[[actual]]  )
     cm_train <- confusionMatrix( as.factor(as.numeric( train[[predict]] > c )), as.factor(train[[actual]]) )
     cm_test  <- confusionMatrix( as.factor(as.numeric( test[[predict]]  > c )), as.factor(test[[actual]])  )
     
@@ -65,7 +62,7 @@ AccuracyCutoffInfo <- function( train, test, predict, actual ){
 # @predict : predicted score's column name
 # @actual  : actual results' column name
 # @cutoff  : cutoff value for the prediction score 
-# return   : 1. data : a data.table consisting of three column
+# return   : 1. data : a data.table consisting of three columns
 #            		   the first two stores the original value of the prediction and actual outcome from
 #			 		   the passed in data frame, the third indicates the type, which is after choosing the 
 #			 		   cutoff value, will this row be a true/false positive/ negative 
@@ -170,8 +167,6 @@ ROCInfo <- function( data, predict, actual, cost.fp, cost.fn ){
     geom_vline( xintercept = best_cutoff, alpha = 0.8, linetype = "dashed", color = "steelblue4" )	
   
   # the main title for the two arranged plot
-  # sub_title <- sprintf( "Cutoff at %.2f - Total Cost = %d, AUC = %.3f", 
-  # best_cutoff, best_cost, auc )
   sub_title <- sprintf( "Cutoff at %.2f - Total Cost = %.f, AUC = %.3f", best_cutoff, best_cost, auc )
   
   # arranged into a side by side plot
@@ -196,8 +191,8 @@ adjust_cutoff <- function(model_vector, x1_train_list, y1_train_list, work_pix, 
   #######################################
   
   
-  y1_train_list_red <- as.list(lapply(work_pix, function(work_pix){y1_train_list[[work_pix]]}))
-  mypred_train <- lapply(work_pix, function(x){predict(model_vector[[x]],as.matrix(x1_train_list[[x]]), type = "response")}) 
+  # y1_train_list_red <- as.list(lapply(work_pix, function(work_pix){y1_train_list[[work_pix]]}))
+  # mypred_train <- lapply(work_pix, function(x){predict(model_vector[[x]],as.matrix(x1_train_list[[x]]), type = "response")}) 
   
   # Data set with actuals and predictions
   data_train_all <- pblapply(1:length(work_pix),
