@@ -79,60 +79,57 @@ save(model_cv_fitting, file = paste0(path_model, "cv_month_xtrm_LASSO_threshbady
 
 
 # Run the model with lambda1se and lambda min just obtained #####
-
 load(file = paste0(path_model, "cv_month_xtrm_LASSO_threshbadyield005_seed",
                    seed, "_train", train_size, "_995pixels.RData"))
 
 
-if (model_name == "Lasso"){
-  lasso_model_lambdamin <- list()
-  lasso_model_lambda1se <- list()
-  
-  for (pixel in 1:pix_num) {
-    if(is.character(model_cv_fitting[[pixel]])){ #If the cross validation could not be run
-      lasso_model_lambdamin[[pixel]] <- model_cv_fitting[[pixel]]
-      lasso_model_lambda1se[[pixel]] <- model_cv_fitting[[pixel]]
-    } else {
-      var_pix <- as.matrix(x1_train_list[[pixel]])
-      yield_pix <- as.matrix(y1_train_list[[pixel]])
-      which_na_xtrm <- which(is.na(var_pix[,1]))
-      nbyears_final_training_data[pixel] <- (dim(var_pix)[1]-length(which_na_xtrm))
-      
-      training_years_wo_na <- which(!is.na(x1_train_list[[pixel]]$dtr))
-      
-      if(length(which_na_xtrm)>0){
-        
-        lasso_model_lambdamin[[pixel]] <- glmnet(x = var_pix[-which_na_xtrm,],
-                                                 y = yield_pix[-which_na_xtrm,],
-                                                 family = "binomial",
-                                                 alpha = 1,
-                                                 lambda = model_cv_fitting[[pixel]]$lambda.min)
-        
-        lasso_model_lambda1se[[pixel]] <- glmnet(x = var_pix[-which_na_xtrm,],
-                                                 y = yield_pix[-which_na_xtrm,],
-                                                 family = "binomial",
-                                                 alpha = 1,
-                                                 lambda = model_cv_fitting[[pixel]]$lambda.1se)
-      } else {
-        
-        lasso_model_lambdamin[[pixel]] <- glmnet(x = var_pix, y = yield_pix,
-                                                 family = "binomial",
-                                                 alpha = 1,
-                                                 lambda = model_cv_fitting[[pixel]]$lambda.min)
-        
-        lasso_model_lambda1se[[pixel]] <- glmnet(x = var_pix, y = yield_pix,
-                                                 family = "binomial",
-                                                 alpha = 1,
-                                                 lambda = model_cv_fitting[[pixel]]$lambda.1se)
-      }#end if else there exists na in extremes
-      
-    } #end ifelse the cross validation could not be run
-    print(paste(pixel, "out of", pix_num))
+lasso_model_lambdamin <- list()
+lasso_model_lambda1se <- list()
+
+for (pixel in 1:pix_num) {
+  if(is.character(model_cv_fitting[[pixel]])){ #If the cross validation could not be run
+    lasso_model_lambdamin[[pixel]] <- model_cv_fitting[[pixel]]
+    lasso_model_lambda1se[[pixel]] <- model_cv_fitting[[pixel]]
+  } else {
+    var_pix <- as.matrix(x1_train_list[[pixel]])
+    yield_pix <- as.matrix(y1_train_list[[pixel]])
+    which_na_xtrm <- which(is.na(var_pix[,1]))
+    nbyears_final_training_data[pixel] <- (dim(var_pix)[1]-length(which_na_xtrm))
     
-  }#end for pixel
+    training_years_wo_na <- which(!is.na(x1_train_list[[pixel]]$dtr))
+    
+    if(length(which_na_xtrm)>0){
+      
+      lasso_model_lambdamin[[pixel]] <- glmnet(x = var_pix[-which_na_xtrm,],
+                                               y = yield_pix[-which_na_xtrm,],
+                                               family = "binomial",
+                                               alpha = 1,
+                                               lambda = model_cv_fitting[[pixel]]$lambda.min)
+      
+      lasso_model_lambda1se[[pixel]] <- glmnet(x = var_pix[-which_na_xtrm,],
+                                               y = yield_pix[-which_na_xtrm,],
+                                               family = "binomial",
+                                               alpha = 1,
+                                               lambda = model_cv_fitting[[pixel]]$lambda.1se)
+    } else {
+      
+      lasso_model_lambdamin[[pixel]] <- glmnet(x = var_pix, y = yield_pix,
+                                               family = "binomial",
+                                               alpha = 1,
+                                               lambda = model_cv_fitting[[pixel]]$lambda.min)
+      
+      lasso_model_lambda1se[[pixel]] <- glmnet(x = var_pix, y = yield_pix,
+                                               family = "binomial",
+                                               alpha = 1,
+                                               lambda = model_cv_fitting[[pixel]]$lambda.1se)
+    }#end if else there exists na in extremes
+    
+  } #end ifelse the cross validation could not be run
+  print(paste(pixel, "out of", pix_num))
   
-  save(lasso_model_lambdamin, file = paste0(path_model, "Lasso_lambdamin_month_xtrm_LASSO_threshbadyield005_seed",
-                                            seed, "_train", train_size,"_995pix.RData"))
-  save(lasso_model_lambda1se, file = paste0(path_model, "Lasso_lambda1se_month_xtrm_LASSO_threshbadyield005_seed",
-                                            seed, "_train", train_size,"_995pix.RData"))
-}
+}#end for pixel
+
+save(lasso_model_lambdamin, file = paste0(path_model, "Lasso_lambdamin_month_xtrm_LASSO_threshbadyield005_seed",
+                                          seed, "_train", train_size,"_995pix.RData"))
+save(lasso_model_lambda1se, file = paste0(path_model, "Lasso_lambda1se_month_xtrm_LASSO_threshbadyield005_seed",
+                                          seed, "_train", train_size,"_995pix.RData"))
