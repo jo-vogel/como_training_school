@@ -67,7 +67,7 @@ continents <- readOGR(paste0(path_data,"continent.shp")) # from https://www.arcg
 # The statistical model is calculated using  Lasso_regression.R
 load(paste0(path_model,"/Lasso_lambda1se_month_xtrm_LASSO_threshbadyield005_seed",seed, "_train", train_size,"_995pix.Rdata"))
 
-source("./Code/useful_functions.R")
+  source("./Code/additional_functions.R")
 
 source("./Code/Data_processing.R")
 
