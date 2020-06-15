@@ -65,8 +65,8 @@ train_size <- 70
 set.seed(seed)
 for (x in 1:pix_num) {
   if (years_with_na[x]) {
-    training_indices[[x]] <- sort(sample(x=nb_years[-na_time[[x]]], size = floor((nb_years-length(na_time[[x]]))*(train_size/100)))) # Assign percentage of years according to train_size after neglecting years with NAs
-    testing_indices[[x]] <- nb_years[-c(na_time[[x]], training_indices[[x]])] # All other years without NAs are assigned to the testing indices
+    training_indices[[x]] <- sort(sample(x=(1:nb_years)[-na_time[[x]]], size = floor((nb_years-length(na_time[[x]]))*(train_size/100)))) # Assign percentage of years according to train_size after neglecting years with NAs
+    testing_indices[[x]] <- (1:nb_years)[-c(na_time[[x]], training_indices[[x]])] # All other years without NAs are assigned to the testing indices
   } else { # Simplified assignment in case there is no need to account for years with NAs
     training_indices[[x]] <- sort(sample(1:nb_years, size = floor(nb_years*(train_size/100))))
     testing_indices[[x]] <- (1:nb_years)[-training_indices[[x]]]    

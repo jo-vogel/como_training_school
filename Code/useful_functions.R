@@ -191,8 +191,8 @@ adjust_cutoff <- function(model_vector, x1_train_list, y1_train_list, work_pix, 
   #######################################
   
   
-  # y1_train_list_red <- as.list(lapply(work_pix, function(work_pix){y1_train_list[[work_pix]]}))
-  # mypred_train <- lapply(work_pix, function(x){predict(model_vector[[x]],as.matrix(x1_train_list[[x]]), type = "response")}) 
+  y1_train_list_red <- as.list(lapply(work_pix, function(work_pix){y1_train_list[[work_pix]]}))
+  mypred_train <- lapply(work_pix, function(x){predict(model_vector[[x]],as.matrix(x1_train_list[[x]]), type = "response")})
   
   # Data set with actuals and predictions
   data_train_all <- pblapply(1:length(work_pix),

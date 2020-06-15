@@ -17,11 +17,11 @@
 message("Delete at the end")
 # in the drive folder Data/Global_Data/Final_Data
 # Pauline
-# path <- "C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/Data/Global"
+# path_data <- "C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/Data/Global"
 # # Johannes
-# path <- "D:/user/vogelj/Group_project/Data"
+# path_data <- "D:/user/vogelj/Group_project/Data"
 # # Cristina
-# path <- "C:/Users/39349/Documents/DAMOCLES/Final Workspace LASSO/Final_Data"
+# path_data <- "C:/Users/39349/Documents/DAMOCLES/Final Workspace LASSO/Final_Data"
 
 # On the Drive you can find my data in:
 # Models/LASSO-Ridge regression/Lasso_glmnet_final_results/Lasso_lambda1se_month_xtrm_LASSO_threshbadyield005_seed1994_train70_995pixels.RData
@@ -79,6 +79,8 @@ Model_chosen_889 <- list()
 y1_train_list_simple_lasso <- list()
 x1_train_list_simple_lasso <- list()
 work_pix_tmp <- numeric()
+final_pix_num <- length(final_pixels_coord$latitude) # see section 2.2 of the article
+Model_chosen <- lasso_model_lambda1se # Lasso regression using lambda 1 standard error
 for (pixel in 1:final_pix_num) {
  pix_in_995 <- final_pixels_coord$ref_in_995[pixel]
  y1_train_list_simple_lasso[[pixel]] <- y1_train_list[[pix_in_995]]
@@ -98,8 +100,6 @@ segreg_th <- adjust_cutoff(model_vector = Model_chosen_889,x1_train_list = x1_tr
 # General figure variables 
 world <- map_data("world")
 coord_subset <- cbind(final_pixels_coord$longitude, final_pixels_coord$latitude)
-final_pix_num <- length(final_pixels_coord$latitude) # see section 2.2 of the article
-Model_chosen <- lasso_model_lambda1se # Lasso regression using lambda 1 standard error
 
 
 
