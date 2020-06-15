@@ -108,7 +108,7 @@ coord_subset <- cbind(final_pixels_coord$longitude, final_pixels_coord$latitude)
 
 DF_meanY <- data.frame(lon=Raw_mean_yield[,"longitudes"], lat = Raw_mean_yield[,"latitudes"],
                        meany = Raw_mean_yield[,"mean_yield"]/1000) # data frame containing mean annual yield (transferred from kg to tonnes) and associated coordinates
-pixels_excluded <- as.logical(1-(1:total_nb_pix %in% final_pixels_coord$ref_in_995)) # Excluded grid points according to section 2.2 of the article
+pixels_excluded <- as.logical(1-(1:pix_num %in% final_pixels_coord$ref_in_995)) # Excluded grid points according to section 2.2 of the article
 DF_excluded_pix <- data.frame(lon = Raw_mean_yield[pixels_excluded,"longitudes"],
                               lat = Raw_mean_yield[pixels_excluded,"latitudes"])
 
@@ -473,8 +473,8 @@ loc_asia_pixels_num <- c(loc_asia_pixels_num,3, 294, 563)
 
 # Get data into right format for the plot
 var_num <- apply(non_na_col,1,sum) # Number of predictor variables for each grid point
-numLevels_list <- sapply(1:total_nb_pix, function(x){ rep(1,times=var_num[x])})
-for (i in 1:total_nb_pix){
+numLevels_list <- sapply(1:pix_num, function(x){ rep(1,times=var_num[x])})
+for (i in 1:pix_num){
   names(numLevels_list[[i]]) <-  colnames(x1_test_list[[i]])
 }
 
