@@ -14,14 +14,13 @@
 library(glmnet);library(InformationValue);library(abind);library(stringr);library(ggplot2)
 
 # Load standardized Data #####
-path_data <- message("insert data directory here")
-path_model <- message("insert model directory here")
-# path_data <- "C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/Data/Global/"
-# path_model <- "C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/"
+path_data <- message("insert data directory here") # Insert path of the input data here
+path_model <- message("insert model directory here") # where to store the output model
+path_code <- message("insert code directory here") # Insert path of the code here
 
 load(paste0(path_data,"extremeindices_and_monthlymeteovar_rescaled_995pix.RData"))
 
-source("./Code/Data_processing.R")
+source(paste0(path_code,"/Data_processing.R"))
 
 var_num <- apply(non_na_col, 1, sum)
 numLevels_list <- sapply(1:pix_num, function(x){ rep(1, times = var_num[x])})

@@ -22,8 +22,8 @@
 library(glmnet);library(InformationValue);library(ROCR);library(ggpubr);library(abind);library(maps)
 library(stringr);library(ggplot2);library(viridis);library(raster);library(rgdal);library(pbapply)
 
-path_data <- message("insert data directory here")
-path_code <- message("insert code directory here")
+path_data <- message("insert data directory here") # Insert path of the input data here
+path_code <- message("insert code directory here") # Insert path of the code here
 seed=1994 # random seed
 train_size <- 70 # Percentage of data assigned to the training data set
 
