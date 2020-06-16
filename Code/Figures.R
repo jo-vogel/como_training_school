@@ -29,15 +29,11 @@ message("Delete at the end")
 # load(file = paste0("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/Lasso_lambda1se_month_xtrm_LASSO_threshbadyield005_seed",
 #                    seed, "_train", train_size,"_995pixels.Rdata"))
 # # Johannes
-# load(paste0("D:/user/vogelj/Group_project/Code/Workspaces/Lasso_lambda1se_month_xtrm_LASSO_threshbadyield005_seed",
-#             seed, "_train", train_size,"_995pixels.Rdata"))
+# load(paste0("D:/user/vogelj/Group_project/Code/Workspaces/Lasso_lambda1se_month_xtrm_LASSO_threshbadyield005_seed", seed, "_train", train_size,"_995pixels.Rdata"))
 # #Cristina
 # load(paste0("C:/Users/39349/Documents/DAMOCLES/Final Workspace LASSO/Lasso_glmnet_final_results/Lasso_lambda1se_month_xtrm_LASSO_threshbadyield005_seed",
 #             seed, "_train", train_size,"_995pixels.Rdata"))
 
-# path_to_NH_files <- "D:/user/vogelj/Data/Group project Como"
-# nh_files <- list.files(path=path_to_NH_files,pattern="*NH.nc") # all files from northern hemisphere
-# nh_data <- lapply(1:length(nh_files),function(x){nc_open(paste0(path_to_NH_files,"/",nh_files[x]))})
 # coord_all <- read.csv2("./Code/Workspaces/coord_all.csv")
 # continents <- readOGR("D:/user/vogelj/Data/continent_shapefile/continent.shp") # from https://www.arcgis.com/home/item.html?id=5cf4f223c4a642eb9aa7ae1216a04372
 
@@ -60,14 +56,14 @@ load(paste0(path_data,"/final_889pix_coords.Rdata"))
 load(paste0(path_data,"/RawMeanYield_995pix.Rdata"))
 load(paste0(path_data,"/RawSdYield_995pix.Rdata"))
 # Load matrix with all coordinates required for Fig. 8
-coord_all <- read.csv2(paste0(path_data,"coord_all.csv"))
+coord_all <- read.csv2(paste0(path_data,"/coord_all.csv"))
 # Shapefile of borders of the continents
-continents <- readOGR(paste0(path_data,"continent.shp")) # from https://www.arcgis.com/home/item.html?id=5cf4f223c4a642eb9aa7ae1216a04372
+continents <- readOGR(paste0(path_data,"/continent.shp")) # from https://www.arcgis.com/home/item.html?id=5cf4f223c4a642eb9aa7ae1216a04372
 
 # The statistical model is calculated using  Lasso_regression.R
 load(paste0(path_model,"/Lasso_lambda1se_month_xtrm_LASSO_threshbadyield005_seed",seed, "_train", train_size,"_995pix.Rdata"))
 
-  source("./Code/additional_functions.R")
+source("./Code/additional_functions.R")
 
 source("./Code/Data_processing.R")
 
@@ -123,18 +119,17 @@ ggplot(data = DF_meanY, aes(x=lon, y=lat)) +
         axis.text = element_text(size = 12), axis.title = element_text(size = 12),
         axis.text.x = element_text(size = 12),
         axis.text.y = element_text(size = 12))+
-  ylab("Lat (°N)") +
-  xlab("Lon (°E)") +
+  ylab(expression("Lat " ( degree*N))) +
+  xlab(expression("Lon " ( degree*E))) +
   coord_fixed(xlim = c(-115, 130),
               ylim = c(min(DF_meanY$lat), max(DF_meanY$lat)),
-              ratio = 1.3)+
+              ratio = 1)+
   labs(fill="Mean yield\n(t/ha)"  )+
   theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
         legend.title = element_text(size = 15), legend.text = element_text(size = 14))+
   geom_point(data = DF_excluded_pix, aes(x = DF_excluded_pix$lon, y = DF_excluded_pix$lat),
-             color = "black", size = 0.89, pch=4) +
-  X11(width = 20, height = 5.7)
-
+             color = "black", size = 0.89, pch=4)
+  ggsave(filename = "Raw_mean_yield.png", width = 20, height = 5.7)
 
 
 # Figure 5: Critical success index (CSI) ####
@@ -169,19 +164,19 @@ ggplot(data = DF_csi, aes(x=lon, y=lat)) +
   theme(panel.ontop = F, panel.grid = element_blank(),
         panel.border = element_rect(colour = "black", fill = NA),
         axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
-  ylab("Lat (°N)") +
-  xlab("Lon (°E)") +
+  ylab(expression("Lat " ( degree*N))) +
+  xlab(expression("Lon " ( degree*E))) +
   coord_fixed(xlim = c(-120, 135),
               ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
-              ratio = 1.3)+
+              ratio = 1)+
   labs(fill="CSI"
   )+
   theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
         legend.title = element_text(size = 15), legend.text = element_text(size = 14),
         axis.title.x=element_blank(),axis.title.y=element_blank(),
         axis.text.x = element_text(size = 12),
-        axis.text.y = element_text(size = 12)) +
-  X11(width = 20, height = 4.9)
+        axis.text.y = element_text(size = 12))
+  ggsave(filename = "CSImap_Lasso_lambda1se_adjcutoff_seed1994_training70_889GP.png", width = 20, height = 4.9)
 
 
 
@@ -300,11 +295,11 @@ P1 <- ggplot(data = DF_numbcoeff, aes(x=lon, y=lat)) +
   theme(panel.ontop = F, panel.grid = element_blank(),
         panel.border = element_rect(colour = "black", fill = NA),
         axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
-  ylab("Lat (°N)") +
-  xlab("Lon (°E)") +
+  ylab(expression("Lat " ( degree*N))) +
+  xlab(expression("Lon " ( degree*E))) +
   coord_fixed(xlim = c(-120, 135),
               ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
-              ratio = 1.3)+
+              ratio = 1)+
   labs(fill="Nb of var."
   )+
   theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
@@ -325,11 +320,11 @@ P2 <- ggplot(data = DF_numbextr, aes(x=lon, y=lat)) +
   theme(panel.ontop = F, panel.grid = element_blank(),
         panel.border = element_rect(colour = "black", fill = NA),
         axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
-  ylab("Lat (°N)") +
-  xlab("Lon (°E)") +
+  ylab(expression("Lat " ( degree*N))) +
+  xlab(expression("Lon " ( degree*E))) +
   coord_fixed(xlim = c(-120, 135),
               ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
-              ratio = 1.3)+
+              ratio = 1)+
   labs(fill="Nb extr.\n ind."
   )+
   theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
@@ -350,11 +345,11 @@ P3 <- ggplot(data = DF_meteo_type, aes(x=lon, y=lat)) +
   theme(panel.ontop = F, panel.grid = element_blank(),
         panel.border = element_rect(colour = "black", fill = NA),
         axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
-  ylab("Lat (°N)") +
-  xlab("Lon (°E)") +
+  ylab(expression("Lat " ( degree*N))) +
+  xlab(expression("Lon " ( degree*E))) +
   coord_fixed(xlim = c(-120, 135),
               ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
-              ratio = 1.3)+
+              ratio = 1)+
   labs(fill="Combination\nof met.\nvariables"
   )+
   theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
@@ -375,11 +370,11 @@ P4 <- ggplot(data = DF_nbseason, aes(x=lon, y=lat)) +
   theme(panel.ontop = F, panel.grid = element_blank(),
         panel.border = element_rect(colour = "black", fill = NA),
         axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
-  ylab("Lat (°N)") +
-  xlab("Lon (°E)") +
+  ylab(expression("Lat " ( degree*N))) +
+  xlab(expression("Lon " ( degree*E))) +
   coord_fixed(xlim = c(-120, 135),
               ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
-              ratio = 1.3)+
+              ratio = 1)+
   labs(fill="Nb of seas."
   )+
   theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
@@ -423,8 +418,8 @@ ggarrange(P1 + theme(legend.position = "none",
                                       "(c)", "", "(d)", ""),
           label.x = -0.015
           ,widths=c(8,1.5), heights=c(1,1,1), font.label = list(size = 14, face = "plain", color ="black")
-)+
-  X11(width = 30, height = 25)
+)
+  ggsave(filename = "4maps_nbvar_nbextr_combin-meteovar_nbseas_Lasso_lambda1se_adjcutoff_seed1994_training70_889GP.png", width = 30, height = 25)
 
 
 
@@ -546,7 +541,7 @@ line2user <- function(line, side) { # from https://stackoverflow.com/questions/1
          stop("side must be 1, 2, 3, or 4", call.=FALSE))
 }
 
-x11(width=16,height=12)
+pdf(file="barplot_variables_lambda1se_separate_continents.pdf", width=16,height=12)
 par(mfrow=c(1,4),mar=c(c(5, 4, 1, 0.5)),oma=c(0,7.5,2,0))
 barplot(t(coefs_all_cont_mat),horiz=T,las=1,col=c("brown3","DarkOrange2","goldenrod3","burlywood1"),
         xlab="",cex.names=1.8,font=1,cex=1.7,
@@ -567,6 +562,7 @@ barplot(coefs_all_cont$Freq_Asia,horiz=T,las=1,col="LightCyan3",main="",
         xlab="",cex.names=0.6,font=1,cex=1.7)
 mtext("Asia",side=3,font=2,line=-1.4, cex=1.4)
 mtext("(d)",side=3,font=1,line=0.6, adj=0.01,cex=1.6)
+dev.off()
 
 
 
@@ -594,19 +590,19 @@ ggplot(data = DF_GSmonth, aes(x=DF_GSmonth$lon, y=DF_GSmonth$lat)) +
   theme(panel.ontop = F, panel.grid = element_blank(),
         panel.border = element_rect(colour = "black", fill = NA),
         axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
-  ylab("Lat (°N)") +
-  xlab("Lon (°E)") +
+  ylab(expression("Lat " ( degree*N))) +
+  xlab(expression("Lon " ( degree*E))) +
   coord_fixed(xlim = c(-120, 135),
               ylim = c(min(DF_GSmonth$lat)-1, max(DF_GSmonth$lat+1)),
-              ratio = 1.3)+
+              ratio = 1)+
   labs(fill="Growing season\nlength (months)"
   )+
   theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
         legend.title = element_text(size = 15), legend.text = element_text(size = 14),
         axis.title.x=element_blank(),axis.title.y=element_blank(),
         axis.text.x = element_text(size = 12),
-        axis.text.y = element_text(size = 12)) +
-  X11(width = 20, height = 4.8)
+        axis.text.y = element_text(size = 12))
+  ggsave(filename = "nb_months_studied_3classes.png", width = 20, height = 4.8)
 
 
 
@@ -642,11 +638,11 @@ P1 <- ggplot(data = DF1_dtr, aes(x=lon, y=lat)) +
   theme(panel.ontop = F, panel.grid = element_blank(),
         panel.border = element_rect(colour = "black", fill = NA),
         axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
-  ylab("Lat (°N)") +
-  xlab("Lon (°E)") +
+  ylab(expression("Lat " ( degree*N))) +
+  xlab(expression("Lon " ( degree*E))) +
   coord_fixed(xlim = c(-120, 135),
               ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
-              ratio = 1.3)+
+              ratio = 1)+
   labs(fill="Selection of\ndtr coeff."
   )+
   theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
@@ -666,11 +662,11 @@ P2 <- ggplot(data = DF2_frs, aes(x=lon, y=lat)) +
   theme(panel.ontop = F, panel.grid = element_blank(),
         panel.border = element_rect(colour = "black", fill = NA),
         axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
-  ylab("Lat (°N)") +
-  xlab("Lon (°E)") +
+  ylab(expression("Lat " ( degree*N))) +
+  xlab(expression("Lon " ( degree*E))) +
   coord_fixed(xlim = c(-120, 135),
               ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
-              ratio = 1.3)+
+              ratio = 1)+
   labs(fill="Selection of\nfrs coeff."
   )+
   theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
@@ -690,11 +686,11 @@ P3 <- ggplot(data = DF3_rx5, aes(x=lon, y=lat)) +
   theme(panel.ontop = F, panel.grid = element_blank(),
         panel.border = element_rect(colour = "black", fill = NA),
         axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
-  ylab("Lat (°N)") +
-  xlab("Lon (°E)") +
+  ylab(expression("Lat " ( degree*N))) +
+  xlab(expression("Lon " ( degree*E))) +
   coord_fixed(xlim = c(-120, 135),
               ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
-              ratio = 1.3)+
+              ratio = 1)+
   labs(fill="Selection of\nRx5day coeff."
   )+
   theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
@@ -714,11 +710,11 @@ P4 <- ggplot(data = DF4_tx90p, aes(x=lon, y=lat)) +
   theme(panel.ontop = F, panel.grid = element_blank(),
         panel.border = element_rect(colour = "black", fill = NA),
         axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
-  ylab("Lat (°N)") +
-  xlab("Lon (°E)") +
+  ylab(expression("Lat " ( degree*N))) +
+  xlab(expression("Lon " ( degree*E))) +
   coord_fixed(xlim = c(-120, 135),
               ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
-              ratio = 1.3)+
+              ratio = 1)+
   labs(fill="Selection of\nTX90p coeff."
   )+
   theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
@@ -762,8 +758,8 @@ ggarrange(P1 + theme(legend.position = "none",
                                       "(c)", "", "(d)", ""),
           label.x = -0.015
           ,widths=c(8,1.5), heights=c(1,1,1), font.label = list(size = 14, face = "plain", color ="black")
-)+
-  X11(width = 30, height = 25)
+)
+  ggsave(filename = "selection_of_coeff-dtr-frs-rx5-tx90.png", width = 30, height = 25)
 
 
 
@@ -800,14 +796,13 @@ for (varia in 1:length(allvariables)) {
     theme(panel.ontop = F, panel.grid = element_blank(),
           panel.border = element_rect(colour = "black", fill = NA),
           axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
-    ylab("Lat (°N)") +
-    xlab("Lon (°E)") +
+    ylab(expression("Lat " ( degree*N))) +
+    xlab(expression("Lon " ( degree*E))) +
     coord_fixed(xlim = c(-120, 135),
                 ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
-                ratio = 1.3)+
+                ratio = 1)+
     labs(fill="Selection",title = varia_name)+
     theme(plot.title = element_text(size = 20, hjust = 0.5), plot.subtitle = element_text(size = 15),
-          legend.text = element_text(size = 14)) +
-    X11(width = 20, height = 6)
-  # ggsave(filename=paste0(varia_name,".jpg"))
+          legend.text = element_text(size = 14))
+  ggsave(filename=paste0(varia_name,".jpg"), width = 20, height = 6)
 }
