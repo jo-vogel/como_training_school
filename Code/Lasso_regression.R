@@ -75,7 +75,7 @@ for (pixel in 1:pix_num) {
 }#end for pixel
 
 
-save(model_cv_fitting, file = paste0(path_model, "cv_month_xtrm_LASSO_threshbadyield005_seed",
+save(model_cv_fitting, file = paste0(path_model, "/cv_month_xtrm_LASSO_threshbadyield005_seed",
                                      seed, "_train", train_size,"_995pixels.RData"))
 
 
@@ -130,7 +130,7 @@ for (pixel in 1:pix_num) {
   
 }#end for pixel
 
-save(lasso_model_lambdamin, file = paste0(path_model, "Lasso_lambdamin_month_xtrm_LASSO_threshbadyield005_seed",
+save(lasso_model_lambdamin, file = paste0(path_model, "/Lasso_lambdamin_month_xtrm_LASSO_threshbadyield005_seed",
                                           seed, "_train", train_size,"_995pix.RData"))
-save(lasso_model_lambda1se, file = paste0(path_model, "Lasso_lambda1se_month_xtrm_LASSO_threshbadyield005_seed",
+save(lasso_model_lambda1se, file = paste0(path_model, "/Lasso_lambda1se_month_xtrm_LASSO_threshbadyield005_seed",
                                           seed, "_train", train_size,"_995pix.RData"))
