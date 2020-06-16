@@ -105,13 +105,8 @@ coord_subset <- cbind(final_pixels_coord$longitude, final_pixels_coord$latitude)
 ##################################
 ewbrks <- seq(-100,100,50)
 nsbrks <- seq(10,50,10)
-<<<<<<< HEAD
 ewlbls <- unlist(lapply(ewbrks, function(x) ifelse(x < 0, paste(abs(x), "°W"), ifelse(x > 0, paste(x, "°E"),x))))
 nslbls <- unlist(lapply(nsbrks, function(x) ifelse(x < 0, paste(abs(x), "°S"), ifelse(x > 0, paste(x, "°N"),x))))
-=======
-ewlbls <- unlist(lapply(ewbrks, function(x) ifelse(x < 0, paste(x, "°W"), ifelse(x > 0, paste(x, "°E"),x))))
-nslbls <- unlist(lapply(nsbrks, function(x) ifelse(x < 0, paste(x, "°S"), ifelse(x > 0, paste(x, "°N"),x))))
->>>>>>> 66e58f3259f391b2225e0e3563c047ba1207ae24
 
 DF_meanY <- data.frame(lon=Raw_mean_yield[,"longitudes"], lat = Raw_mean_yield[,"latitudes"],
                        meany = Raw_mean_yield[,"mean_yield"]/1000) # data frame containing mean annual yield (transferred from kg to tonnes) and associated coordinates
