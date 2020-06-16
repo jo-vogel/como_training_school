@@ -16,29 +16,6 @@
 #' j) Create GIFs
 
 
-message("Delete at the end")
-# in the drive folder Data/Global_Data/Final_Data
-# Pauline
-# path_data <- "C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/Data/Global"
-# # Johannes
-# path_data <- "D:/user/vogelj/Group_project/Data"
-# # Cristina
-# path_data <- "C:/Users/39349/Documents/DAMOCLES/Final Workspace LASSO/Final_Data"
-
-# On the Drive you can find my data in:
-# Models/LASSO-Ridge regression/Lasso_glmnet_final_results/Lasso_lambda1se_month_xtrm_LASSO_threshbadyield005_seed1994_train70_995pixels.RData
-# Pauline
-# load(file = paste0("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/RidgeRegression/Global_results/Lasso_lambda1se_month_xtrm_LASSO_threshbadyield005_seed",
-#                    seed, "_train", train_size,"_995pixels.Rdata"))
-# # Johannes
-# load(paste0("D:/user/vogelj/Group_project/Code/Workspaces/Lasso_lambda1se_month_xtrm_LASSO_threshbadyield005_seed", seed, "_train", train_size,"_995pixels.Rdata"))
-# #Cristina
-# load(paste0("C:/Users/39349/Documents/DAMOCLES/Final Workspace LASSO/Lasso_glmnet_final_results/Lasso_lambda1se_month_xtrm_LASSO_threshbadyield005_seed",
-#             seed, "_train", train_size,"_995pixels.Rdata"))
-
-# coord_all <- read.csv2("./Code/Workspaces/coord_all.csv")
-# continents <- readOGR("D:/user/vogelj/Data/continent_shapefile/continent.shp") # from https://www.arcgis.com/home/item.html?id=5cf4f223c4a642eb9aa7ae1216a04372
-
 ##### Load data ####
 ####################
 
@@ -46,7 +23,7 @@ library(glmnet);library(InformationValue);library(ROCR);library(ggpubr);library(
 library(stringr);library(ggplot2);library(viridis);library(raster);library(rgdal);library(pbapply)
 
 path_data <- message("insert data directory here")
-path_model <- message("insert model directory here")
+path_code <- message("insert code directory here")
 seed=1994 # random seed
 train_size <- 70 # Percentage of data assigned to the training data set
 
@@ -63,11 +40,13 @@ coord_all <- read.csv2(paste0(path_data,"/coord_all.csv"))
 continents <- readOGR(paste0(path_data,"/continent.shp")) # from https://www.arcgis.com/home/item.html?id=5cf4f223c4a642eb9aa7ae1216a04372
 
 # The statistical model is calculated using  Lasso_regression.R
-load(paste0(path_model,"/Lasso_lambda1se_month_xtrm_LASSO_threshbadyield005_seed",seed, "_train", train_size,"_995pix.Rdata"))
+load(paste0(path_data,"/Lasso_lambda1se_month_xtrm_LASSO_threshbadyield005_seed",seed, "_train", train_size,"_995pix.Rdata"))
 
-source("./Code/additional_functions.R")
+# Load additional reqruied functions
+source(paste0(path_code,"/additional_functions.R"))
+# Preprocess the data
+source(paste0(path_code,"/Data_processing.R"))
 
-source("./Code/Data_processing.R")
 
 ##### Adjust cutoff level #####
 
