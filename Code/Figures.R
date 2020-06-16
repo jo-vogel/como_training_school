@@ -103,6 +103,10 @@ coord_subset <- cbind(final_pixels_coord$longitude, final_pixels_coord$latitude)
 
 # Figure 1: Mean annual yield ####
 ##################################
+ewbrks <- seq(-100,100,50)
+nsbrks <- seq(10,50,10)
+ewlbls <- unlist(lapply(ewbrks, function(x) ifelse(x < 0, paste(x, "°E"), ifelse(x > 0, paste(x, "°W"),x))))
+nslbls <- unlist(lapply(nsbrks, function(x) ifelse(x < 0, paste(x, "°S"), ifelse(x > 0, paste(x, "°N"),x))))
 
 DF_meanY <- data.frame(lon=Raw_mean_yield[,"longitudes"], lat = Raw_mean_yield[,"latitudes"],
                        meany = Raw_mean_yield[,"mean_yield"]/1000) # data frame containing mean annual yield (transferred from kg to tonnes) and associated coordinates
@@ -121,8 +125,10 @@ ggplot(data = DF_meanY, aes(x=lon, y=lat)) +
         axis.text = element_text(size = 12), axis.title = element_text(size = 12),
         axis.text.x = element_text(size = 12),
         axis.text.y = element_text(size = 12))+
-  ylab(expression("Lat " ( degree*N))) +
-  xlab(expression("Lon " ( degree*E))) +
+  # ylab(expression("Lat " ( degree*N))) +
+  # xlab(expression("Lon " ( degree*E))) +
+  scale_x_continuous(breaks = ewbrks, labels = ewlbls, expand = c(0, 0)) +
+  scale_y_continuous(breaks = nsbrks, labels = nslbls, expand = c(0, 0)) +
   coord_fixed(xlim = c(-115, 130),
               ylim = c(min(DF_meanY$lat), max(DF_meanY$lat)),
               ratio = 1)+
@@ -166,8 +172,10 @@ ggplot(data = DF_csi, aes(x=lon, y=lat)) +
   theme(panel.ontop = F, panel.grid = element_blank(),
         panel.border = element_rect(colour = "black", fill = NA),
         axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
-  ylab(expression("Lat " ( degree*N))) +
-  xlab(expression("Lon " ( degree*E))) +
+  # ylab(expression("Lat " ( degree*N))) +
+  # xlab(expression("Lon " ( degree*E))) +
+  scale_x_continuous(breaks = ewbrks, labels = ewlbls, expand = c(0, 0)) +
+  scale_y_continuous(breaks = nsbrks, labels = nslbls, expand = c(0, 0)) +
   coord_fixed(xlim = c(-120, 135),
               ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
               ratio = 1)+
@@ -297,8 +305,10 @@ P1 <- ggplot(data = DF_numbcoeff, aes(x=lon, y=lat)) +
   theme(panel.ontop = F, panel.grid = element_blank(),
         panel.border = element_rect(colour = "black", fill = NA),
         axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
-  ylab(expression("Lat " ( degree*N))) +
-  xlab(expression("Lon " ( degree*E))) +
+  # ylab(expression("Lat " ( degree*N))) +
+  # xlab(expression("Lon " ( degree*E))) +
+  scale_x_continuous(breaks = ewbrks, labels = ewlbls, expand = c(0, 0)) +
+  scale_y_continuous(breaks = nsbrks, labels = nslbls, expand = c(0, 0)) +
   coord_fixed(xlim = c(-120, 135),
               ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
               ratio = 1)+
@@ -322,8 +332,10 @@ P2 <- ggplot(data = DF_numbextr, aes(x=lon, y=lat)) +
   theme(panel.ontop = F, panel.grid = element_blank(),
         panel.border = element_rect(colour = "black", fill = NA),
         axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
-  ylab(expression("Lat " ( degree*N))) +
-  xlab(expression("Lon " ( degree*E))) +
+  # ylab(expression("Lat " ( degree*N))) +
+  # xlab(expression("Lon " ( degree*E))) +
+  scale_x_continuous(breaks = ewbrks, labels = ewlbls, expand = c(0, 0)) +
+  scale_y_continuous(breaks = nsbrks, labels = nslbls, expand = c(0, 0)) +
   coord_fixed(xlim = c(-120, 135),
               ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
               ratio = 1)+
@@ -347,8 +359,10 @@ P3 <- ggplot(data = DF_meteo_type, aes(x=lon, y=lat)) +
   theme(panel.ontop = F, panel.grid = element_blank(),
         panel.border = element_rect(colour = "black", fill = NA),
         axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
-  ylab(expression("Lat " ( degree*N))) +
-  xlab(expression("Lon " ( degree*E))) +
+  # ylab(expression("Lat " ( degree*N))) +
+  # xlab(expression("Lon " ( degree*E))) +
+  scale_x_continuous(breaks = ewbrks, labels = ewlbls, expand = c(0, 0)) +
+  scale_y_continuous(breaks = nsbrks, labels = nslbls, expand = c(0, 0)) +
   coord_fixed(xlim = c(-120, 135),
               ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
               ratio = 1)+
@@ -372,8 +386,10 @@ P4 <- ggplot(data = DF_nbseason, aes(x=lon, y=lat)) +
   theme(panel.ontop = F, panel.grid = element_blank(),
         panel.border = element_rect(colour = "black", fill = NA),
         axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
-  ylab(expression("Lat " ( degree*N))) +
-  xlab(expression("Lon " ( degree*E))) +
+  # ylab(expression("Lat " ( degree*N))) +
+  # xlab(expression("Lon " ( degree*E))) +
+  scale_x_continuous(breaks = ewbrks, labels = ewlbls, expand = c(0, 0)) +
+  scale_y_continuous(breaks = nsbrks, labels = nslbls, expand = c(0, 0)) +
   coord_fixed(xlim = c(-120, 135),
               ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
               ratio = 1)+
@@ -592,8 +608,10 @@ ggplot(data = DF_GSmonth, aes(x=DF_GSmonth$lon, y=DF_GSmonth$lat)) +
   theme(panel.ontop = F, panel.grid = element_blank(),
         panel.border = element_rect(colour = "black", fill = NA),
         axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
-  ylab(expression("Lat " ( degree*N))) +
-  xlab(expression("Lon " ( degree*E))) +
+  # ylab(expression("Lat " ( degree*N))) +
+  # xlab(expression("Lon " ( degree*E))) +
+  scale_x_continuous(breaks = ewbrks, labels = ewlbls, expand = c(0, 0)) +
+  scale_y_continuous(breaks = nsbrks, labels = nslbls, expand = c(0, 0)) +
   coord_fixed(xlim = c(-120, 135),
               ylim = c(min(DF_GSmonth$lat)-1, max(DF_GSmonth$lat+1)),
               ratio = 1)+
@@ -640,8 +658,10 @@ P1 <- ggplot(data = DF1_dtr, aes(x=lon, y=lat)) +
   theme(panel.ontop = F, panel.grid = element_blank(),
         panel.border = element_rect(colour = "black", fill = NA),
         axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
-  ylab(expression("Lat " ( degree*N))) +
-  xlab(expression("Lon " ( degree*E))) +
+  # ylab(expression("Lat " ( degree*N))) +
+  # xlab(expression("Lon " ( degree*E))) +
+  scale_x_continuous(breaks = ewbrks, labels = ewlbls, expand = c(0, 0)) +
+  scale_y_continuous(breaks = nsbrks, labels = nslbls, expand = c(0, 0)) +
   coord_fixed(xlim = c(-120, 135),
               ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
               ratio = 1)+
@@ -664,8 +684,10 @@ P2 <- ggplot(data = DF2_frs, aes(x=lon, y=lat)) +
   theme(panel.ontop = F, panel.grid = element_blank(),
         panel.border = element_rect(colour = "black", fill = NA),
         axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
-  ylab(expression("Lat " ( degree*N))) +
-  xlab(expression("Lon " ( degree*E))) +
+  # ylab(expression("Lat " ( degree*N))) +
+  # xlab(expression("Lon " ( degree*E))) +
+  scale_x_continuous(breaks = ewbrks, labels = ewlbls, expand = c(0, 0)) +
+  scale_y_continuous(breaks = nsbrks, labels = nslbls, expand = c(0, 0)) +
   coord_fixed(xlim = c(-120, 135),
               ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
               ratio = 1)+
@@ -688,8 +710,10 @@ P3 <- ggplot(data = DF3_rx5, aes(x=lon, y=lat)) +
   theme(panel.ontop = F, panel.grid = element_blank(),
         panel.border = element_rect(colour = "black", fill = NA),
         axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
-  ylab(expression("Lat " ( degree*N))) +
-  xlab(expression("Lon " ( degree*E))) +
+  # ylab(expression("Lat " ( degree*N))) +
+  # xlab(expression("Lon " ( degree*E))) +
+  scale_x_continuous(breaks = ewbrks, labels = ewlbls, expand = c(0, 0)) +
+  scale_y_continuous(breaks = nsbrks, labels = nslbls, expand = c(0, 0)) +
   coord_fixed(xlim = c(-120, 135),
               ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
               ratio = 1)+
@@ -712,8 +736,10 @@ P4 <- ggplot(data = DF4_tx90p, aes(x=lon, y=lat)) +
   theme(panel.ontop = F, panel.grid = element_blank(),
         panel.border = element_rect(colour = "black", fill = NA),
         axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
-  ylab(expression("Lat " ( degree*N))) +
-  xlab(expression("Lon " ( degree*E))) +
+  # ylab(expression("Lat " ( degree*N))) +
+  # xlab(expression("Lon " ( degree*E))) +
+  scale_x_continuous(breaks = ewbrks, labels = ewlbls, expand = c(0, 0)) +
+  scale_y_continuous(breaks = nsbrks, labels = nslbls, expand = c(0, 0)) +
   coord_fixed(xlim = c(-120, 135),
               ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
               ratio = 1)+
@@ -798,8 +824,10 @@ for (varia in 1:length(allvariables)) {
     theme(panel.ontop = F, panel.grid = element_blank(),
           panel.border = element_rect(colour = "black", fill = NA),
           axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
-    ylab(expression("Lat " ( degree*N))) +
-    xlab(expression("Lon " ( degree*E))) +
+    # ylab(expression("Lat " ( degree*N))) +
+    # xlab(expression("Lon " ( degree*E))) +
+    scale_x_continuous(breaks = ewbrks, labels = ewlbls, expand = c(0, 0)) +
+    scale_y_continuous(breaks = nsbrks, labels = nslbls, expand = c(0, 0)) +
     coord_fixed(xlim = c(-120, 135),
                 ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
                 ratio = 1)+
