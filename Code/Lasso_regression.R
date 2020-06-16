@@ -1,5 +1,7 @@
 # Fitting of the Lasso model
-# Authors: Pauline Rivore, Johannes Vogel, Cristina Deidda
+# Authors: Pauline Rivoire, Johannes Vogel, Cristina Deidda
+
+# This code was run under version 3.6 of R
 
 # Structure of the code
 # a) Load the standardized data (meteorological variables and extremal indicators)

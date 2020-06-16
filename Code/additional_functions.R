@@ -1,10 +1,15 @@
 # This file contains functions required to run "Figures.R"
-# Authors: Pauline Rivore, Johannes Vogel
+# Authors: Pauline Rivoire, Johannes Vogel
+
+# This code was run under version 3.6 of R
 
 # Structure of the code
 # a) Functions for the cut off level
 # b) Function to get the name of coefficients sorted by decresing absolute value
 # c) Additional functions, useful to plot Fig 7.
+
+
+
 
 # Functions for the cut off level ####
 
@@ -163,7 +168,7 @@ ROCInfo <- function( data, predict, actual, cost.fp, cost.fn ){
     geom_line( color = "blue", alpha = 0.5 ) +
     geom_point( color = col_by_cost, size = 4, alpha = 0.5 ) +
     ggtitle( "Cost" ) +
-    scale_y_continuous( labels = comma ) +
+    # scale_y_continuous( labels = comma ) +
     geom_vline( xintercept = best_cutoff, alpha = 0.8, linetype = "dashed", color = "steelblue4" )	
   
   # the main title for the two arranged plot
