@@ -168,7 +168,7 @@ ROCInfo <- function( data, predict, actual, cost.fp, cost.fn ){
     geom_line( color = "blue", alpha = 0.5 ) +
     geom_point( color = col_by_cost, size = 4, alpha = 0.5 ) +
     ggtitle( "Cost" ) +
-    scale_y_continuous( labels = comma ) +
+    # scale_y_continuous( labels = comma ) +
     geom_vline( xintercept = best_cutoff, alpha = 0.8, linetype = "dashed", color = "steelblue4" )	
   
   # the main title for the two arranged plot
