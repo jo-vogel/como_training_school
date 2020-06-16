@@ -35,7 +35,7 @@ load(paste0(path_data,"/final_889pix_coords.Rdata"))
 load(paste0(path_data,"/RawMeanYield_995pix.Rdata"))
 load(paste0(path_data,"/RawSdYield_995pix.Rdata"))
 # Load matrix with all coordinates required for Fig. 8
-coord_all <- read.csv2(paste0(path_data,"/coord_all.csv"))
+coord_all <- read.csv2(paste0(path_data,"/coord_all.csv"), row.names=1)
 # Shapefile of borders of the continents
 continents <- readOGR(paste0(path_data,"/continent.shp")) # from https://www.arcgis.com/home/item.html?id=5cf4f223c4a642eb9aa7ae1216a04372
 
@@ -439,14 +439,16 @@ no_am <- subset(continents,subset=continents@data[["CONTINENT"]]=="North America
 asia <- subset(continents,subset=continents@data[["CONTINENT"]]=="Asia")
 
 # Connect final grid points to their coordinates
-coord_assigned <- cbind(coord_all,rep(NA,320*76))
+num_lon <- 320 # number of longitudes
+num_lat <- 76 # number of latitudes
+coord_assigned <- cbind(coord_all,rep(NA,num_lon*num_lat))
 for (i in seq_along(1:final_pix_num)){
   coord_assigned[loc_pix[i],3] <- i
 }
 
 # Extract grid points by continent
-loc_mat <- matrix(as.numeric(coord_assigned[,3]),nrow=320,ncol=76)
-loc_ras <- raster(t(loc_mat[,76:1]), xmn=min(lon_all), xmx=max(lon_all), ymn=min(lat_all), ymx=max(lat_all), crs=CRS(projection(continents)))
+loc_mat <- matrix(as.numeric(coord_assigned[,3]),nrow=num_lon,ncol=num_lat)
+loc_ras <- raster(t(loc_mat[,num_lat:1]), xmn=min(coord_all$long_all), xmx=max(coord_all$long_all), ymn=min(coord_all$lati_all), ymx=max(coord_all$lati_all), crs=CRS(projection(continents)))
 loc_afr_pixels <- extract(loc_ras,africa)
 loc_eur_pixels <- extract(loc_ras,europe)
 loc_no_am_pixels <- extract(loc_ras,no_am)

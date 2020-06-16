@@ -4,6 +4,7 @@ message('Run Final_Plots.r')
 
 library(raster)
 library(rgdal)
+library(ncdf4)
 
 # Create matrix with all coordinates
 path_to_NH_files <- "D:/user/vogelj/Data/Group project Como"
@@ -14,7 +15,7 @@ lon_all <- ncvar_get(nh_data[[1]],"lon")
 lati_all <- rep(lat_all,each=length(lon_all))
 long_all <- rep(lon_all,length(lat_all)) # coordinates rearranged
 coord_all <- cbind(long_all,lati_all)
-write.csv2(coord_all,file="./Code/Workspaces/coord_all.csv")
+# write.csv2(coord_all,file="./Code/Workspaces/coord_all.csv")
 lapply(1:length(nh_files),function(x){nc_close(nh_data[[x]])})
 
 # Connect variables to spatial locations
