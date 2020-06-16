@@ -105,8 +105,8 @@ coord_subset <- cbind(final_pixels_coord$longitude, final_pixels_coord$latitude)
 ##################################
 ewbrks <- seq(-100,100,50)
 nsbrks <- seq(10,50,10)
-ewlbls <- unlist(lapply(ewbrks, function(x) ifelse(x < 0, paste(x, "°E"), ifelse(x > 0, paste(x, "°W"),x))))
-nslbls <- unlist(lapply(nsbrks, function(x) ifelse(x < 0, paste(x, "°S"), ifelse(x > 0, paste(x, "°N"),x))))
+ewlbls <- unlist(lapply(ewbrks, function(x) ifelse(x < 0, paste(abs(x), "°W"), ifelse(x > 0, paste(x, "°E"),x))))
+nslbls <- unlist(lapply(nsbrks, function(x) ifelse(x < 0, paste(abs(x), "°S"), ifelse(x > 0, paste(x, "°N"),x))))
 
 DF_meanY <- data.frame(lon=Raw_mean_yield[,"longitudes"], lat = Raw_mean_yield[,"latitudes"],
                        meany = Raw_mean_yield[,"mean_yield"]/1000) # data frame containing mean annual yield (transferred from kg to tonnes) and associated coordinates
@@ -122,22 +122,21 @@ ggplot(data = DF_meanY, aes(x=lon, y=lat)) +
                        low = "#f7fcb9", mid = "#addd8e", high = "#31a354") +
   theme(panel.ontop = F, panel.grid = element_blank(),
         panel.border = element_rect(colour = "black", fill = NA),
-        axis.text = element_text(size = 12), axis.title = element_text(size = 12),
-        axis.text.x = element_text(size = 12),
-        axis.text.y = element_text(size = 12))+
+        axis.text.x = element_text(size = 15),
+        axis.text.y = element_text(size = 15))+
   # ylab(expression("Lat " ( degree*N))) +
   # xlab(expression("Lon " ( degree*E))) +
   scale_x_continuous(breaks = ewbrks, labels = ewlbls, expand = c(0, 0)) +
   scale_y_continuous(breaks = nsbrks, labels = nslbls, expand = c(0, 0)) +
-  coord_fixed(xlim = c(-115, 130),
+  coord_fixed(xlim = c(min(coord_subset[,1])-1, max(coord_subset[,1]+1)),
               ylim = c(min(DF_meanY$lat), max(DF_meanY$lat)),
               ratio = 1)+
   labs(fill=expression(paste("Mean yield [t ", ha^{-1},"]")))+
-  theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
-        legend.title = element_text(size = 15), legend.text = element_text(size = 14))+
+  theme(legend.title = element_text(size = 15), legend.text = element_text(size = 14),
+        axis.title.x=element_blank(),axis.title.y=element_blank())+
   geom_point(data = DF_excluded_pix, aes(x = DF_excluded_pix$lon, y = DF_excluded_pix$lat),
              color = "black", size = 0.89, pch=4)
-  ggsave(filename = "Raw_mean_yield.png", width = 20, height = 5.7)
+ggsave(filename = "Raw_mean_yield.png", width = 20, height = 4)
 
 
 # Figure 5: Critical success index (CSI) ####
@@ -171,12 +170,13 @@ ggplot(data = DF_csi, aes(x=lon, y=lat)) +
                        low = "black", mid = "red3", high = "yellow") +
   theme(panel.ontop = F, panel.grid = element_blank(),
         panel.border = element_rect(colour = "black", fill = NA),
-        axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
+        axis.text.x = element_text(size = 15),
+        axis.text.y = element_text(size = 15))+
   # ylab(expression("Lat " ( degree*N))) +
   # xlab(expression("Lon " ( degree*E))) +
   scale_x_continuous(breaks = ewbrks, labels = ewlbls, expand = c(0, 0)) +
   scale_y_continuous(breaks = nsbrks, labels = nslbls, expand = c(0, 0)) +
-  coord_fixed(xlim = c(-120, 135),
+  coord_fixed(xlim = c(min(coord_subset[,1])-1, max(coord_subset[,1]+1)),
               ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
               ratio = 1)+
   labs(fill="CSI"
@@ -186,7 +186,7 @@ ggplot(data = DF_csi, aes(x=lon, y=lat)) +
         axis.title.x=element_blank(),axis.title.y=element_blank(),
         axis.text.x = element_text(size = 12),
         axis.text.y = element_text(size = 12))
-  ggsave(filename = "CSImap_Lasso_lambda1se_adjcutoff_seed1994_training70_889GP.png", width = 20, height = 4.9)
+ggsave(filename = "CSImap_Lasso_lambda1se_adjcutoff_seed1994_training70_889GP.png", width = 20, height = 3.5)
 
 
 
@@ -235,8 +235,8 @@ levels_nb_var <- gsub(","," - ",levels_nb_var,fixed=TRUE)
 
 
 # Combination of met. variables (Fig. 7c) ####
-meteo_type <- as.character(met_type) # Names of all possible combinations of the 3 monthly mean predictors VPD, Tmax and Pr
 met_type <- numeric(length=length(coeff)) # Associated numbers of all possible combinations of the 3 monthly mean predictors VPD, Tmax and Pr
+meteo_type <- as.character(met_type) # Names of all possible combinations of the 3 monthly mean predictors VPD, Tmax and Pr
 met_strings <- vector("list",length=length(coeff)) # Character string of predictor names
 met_vpd <- numeric(length=length(coeff)) # Assign all cases of VPD selection as predictor
 met_pr <- numeric(length=length(coeff)) # Assign all cases of Pr selection as predictor
@@ -304,12 +304,13 @@ P1 <- ggplot(data = DF_numbcoeff, aes(x=lon, y=lat)) +
                     label=c("0 - 4", "5 - 9", "10 - 14", "15 - 10", "20 - 24", "25 - 29"))+
   theme(panel.ontop = F, panel.grid = element_blank(),
         panel.border = element_rect(colour = "black", fill = NA),
-        axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
+        axis.text.x = element_text(size = 15),
+        axis.text.y = element_text(size = 15))+
   # ylab(expression("Lat " ( degree*N))) +
   # xlab(expression("Lon " ( degree*E))) +
   scale_x_continuous(breaks = ewbrks, labels = ewlbls, expand = c(0, 0)) +
   scale_y_continuous(breaks = nsbrks, labels = nslbls, expand = c(0, 0)) +
-  coord_fixed(xlim = c(-120, 135),
+  coord_fixed(xlim = c(min(coord_subset[,1])-1, max(coord_subset[,1]+1)),
               ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
               ratio = 1)+
   labs(fill="Nb of var."
@@ -331,12 +332,13 @@ P2 <- ggplot(data = DF_numbextr, aes(x=lon, y=lat)) +
   scale_fill_manual(values = mycolors, ) +
   theme(panel.ontop = F, panel.grid = element_blank(),
         panel.border = element_rect(colour = "black", fill = NA),
-        axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
+        axis.text.x = element_text(size = 15),
+        axis.text.y = element_text(size = 15))+
   # ylab(expression("Lat " ( degree*N))) +
   # xlab(expression("Lon " ( degree*E))) +
   scale_x_continuous(breaks = ewbrks, labels = ewlbls, expand = c(0, 0)) +
   scale_y_continuous(breaks = nsbrks, labels = nslbls, expand = c(0, 0)) +
-  coord_fixed(xlim = c(-120, 135),
+  coord_fixed(xlim = c(min(coord_subset[,1])-1, max(coord_subset[,1]+1)),
               ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
               ratio = 1)+
   labs(fill="Nb extr.\n ind."
@@ -358,12 +360,13 @@ P3 <- ggplot(data = DF_meteo_type, aes(x=lon, y=lat)) +
   scale_fill_manual(values = cols,breaks=c("VPD","Pr","Tmax","VPD & Pr","VPD & Tmax","Pr & Tmax", "All","None")) +
   theme(panel.ontop = F, panel.grid = element_blank(),
         panel.border = element_rect(colour = "black", fill = NA),
-        axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
+        axis.text.x = element_text(size = 15),
+        axis.text.y = element_text(size = 15))+
   # ylab(expression("Lat " ( degree*N))) +
   # xlab(expression("Lon " ( degree*E))) +
   scale_x_continuous(breaks = ewbrks, labels = ewlbls, expand = c(0, 0)) +
   scale_y_continuous(breaks = nsbrks, labels = nslbls, expand = c(0, 0)) +
-  coord_fixed(xlim = c(-120, 135),
+  coord_fixed(xlim = c(min(coord_subset[,1])-1, max(coord_subset[,1]+1)),
               ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
               ratio = 1)+
   labs(fill="Combination\nof met.\nvariables"
@@ -385,12 +388,13 @@ P4 <- ggplot(data = DF_nbseason, aes(x=lon, y=lat)) +
                                "3"=viridis(6)[5], "4"=viridis(6)[6], "No met. var"="pink")) +
   theme(panel.ontop = F, panel.grid = element_blank(),
         panel.border = element_rect(colour = "black", fill = NA),
-        axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
+        axis.text.x = element_text(size = 15),
+        axis.text.y = element_text(size = 15))+
   # ylab(expression("Lat " ( degree*N))) +
   # xlab(expression("Lon " ( degree*E))) +
   scale_x_continuous(breaks = ewbrks, labels = ewlbls, expand = c(0, 0)) +
   scale_y_continuous(breaks = nsbrks, labels = nslbls, expand = c(0, 0)) +
-  coord_fixed(xlim = c(-120, 135),
+  coord_fixed(xlim = c(min(coord_subset[,1])-1, max(coord_subset[,1]+1)),
               ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
               ratio = 1)+
   labs(fill="Nb of seas."
@@ -399,45 +403,45 @@ P4 <- ggplot(data = DF_nbseason, aes(x=lon, y=lat)) +
         legend.title = element_text(size = 15), legend.text = element_text(size = 14))
 
 # Combine 4 subplots to one plot
-L1 <- get_legend(P1+ theme(legend.title = element_text(size=11),
-                           legend.text = element_text(size=10),
-                           legend.key.size = unit(0.6,"line")))
-L2 <- get_legend(P2+ theme(legend.title = element_text(size=11),
-                           legend.text = element_text(size=10),
-                           legend.key.size = unit(0.6,"line")))
-L3 <- get_legend(P3+ theme(legend.title = element_text(size=11),
-                           legend.text = element_text(size=10),
-                           legend.key.size = unit(0.6,"line")))
-L4 <- get_legend(P4+ theme(legend.title = element_text(size=11),
-                           legend.text = element_text(size=10),
-                           legend.key.size = unit(0.6,"line")))
+L1 <- get_legend(P1+ theme(legend.title = element_text(size=25),
+                           legend.text = element_text(size=25),
+                           legend.key.size = unit(1.8,"line")))
+L2 <- get_legend(P2+ theme(legend.title = element_text(size=25),
+                           legend.text = element_text(size=25),
+                           legend.key.size = unit(1.8,"line")))
+L3 <- get_legend(P3+ theme(legend.title = element_text(size=25),
+                           legend.text = element_text(size=25),
+                           legend.key.size = unit(1.8,"line")))
+L4 <- get_legend(P4+ theme(legend.title = element_text(size=25),
+                           legend.text = element_text(size=25),
+                           legend.key.size = unit(1.8,"line")))
 
 ggarrange(P1 + theme(legend.position = "none",
                      axis.title.x=element_blank(),axis.title.y=element_blank(),
-                     axis.text.x = element_text(size = 8),
-                     axis.text.y = element_text(size = 8)),
+                     axis.text.x = element_text(size = 20),
+                     axis.text.y = element_text(size = 20)),
           L1,
           P2 + theme(legend.position = "none",
                      axis.title.x=element_blank(),axis.title.y=element_blank(),
-                     axis.text.x = element_text(size = 8),
-                     axis.text.y = element_text(size = 8)),
+                     axis.text.x = element_text(size = 20),
+                     axis.text.y = element_text(size = 20)),
           L2,
           P3 + theme(legend.position = "none",
                      axis.title.x=element_blank(),axis.title.y=element_blank(),
-                     axis.text.x = element_text(size = 8),
-                     axis.text.y = element_text(size = 8)),
+                     axis.text.x = element_text(size = 20),
+                     axis.text.y = element_text(size = 20)),
           L3,
           P4 + theme(legend.position = "none",
                      axis.title.x=element_blank(),axis.title.y=element_blank(),
-                     axis.text.x = element_text(size = 8),
-                     axis.text.y = element_text(size = 8)),
+                     axis.text.x = element_text(size = 20),
+                     axis.text.y = element_text(size = 20)),
           L4,
           nrow = 4, ncol=2,labels = c("(a)", "", "(b)", "",
                                       "(c)", "", "(d)", ""),
           label.x = -0.015
-          ,widths=c(8,1.5), heights=c(1,1,1), font.label = list(size = 14, face = "plain", color ="black")
+          ,widths=c(8,1), heights=c(1,1,1), font.label = list(size = 14, face = "plain", color ="black")
 )
-  ggsave(filename = "4maps_nbvar_nbextr_combin-meteovar_nbseas_Lasso_lambda1se_adjcutoff_seed1994_training70_889GP.png", width = 30, height = 25)
+ggsave(filename = "4maps_nbvar_nbextr_combin-meteovar_nbseas_Lasso_lambda1se_adjcutoff_seed1994_training70_889GP.png", width = 30, height = 20)
 
 
 
@@ -607,12 +611,13 @@ ggplot(data = DF_GSmonth, aes(x=DF_GSmonth$lon, y=DF_GSmonth$lat)) +
                     label=c("5 - 8"="5 - 7", "8 - 11"="8 - 10", "11 - 14"="11 - 13")) +
   theme(panel.ontop = F, panel.grid = element_blank(),
         panel.border = element_rect(colour = "black", fill = NA),
-        axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
+        axis.text.x = element_text(size = 15),
+        axis.text.y = element_text(size = 15))+
   # ylab(expression("Lat " ( degree*N))) +
   # xlab(expression("Lon " ( degree*E))) +
   scale_x_continuous(breaks = ewbrks, labels = ewlbls, expand = c(0, 0)) +
   scale_y_continuous(breaks = nsbrks, labels = nslbls, expand = c(0, 0)) +
-  coord_fixed(xlim = c(-120, 135),
+  coord_fixed(xlim = c(min(coord_subset[,1])-1, max(coord_subset[,1]+1)),
               ylim = c(min(DF_GSmonth$lat)-1, max(DF_GSmonth$lat+1)),
               ratio = 1)+
   labs(fill="Growing season\nlength (months)"
@@ -622,7 +627,7 @@ ggplot(data = DF_GSmonth, aes(x=DF_GSmonth$lon, y=DF_GSmonth$lat)) +
         axis.title.x=element_blank(),axis.title.y=element_blank(),
         axis.text.x = element_text(size = 12),
         axis.text.y = element_text(size = 12))
-  ggsave(filename = "nb_months_studied_3classes.png", width = 20, height = 4.8)
+ggsave(filename = "nb_months_studied_3classes.png", width = 20, height = 3.5)
 
 
 
@@ -657,12 +662,13 @@ P1 <- ggplot(data = DF1_dtr, aes(x=lon, y=lat)) +
                     breaks=c("TRUE", "FALSE")) +
   theme(panel.ontop = F, panel.grid = element_blank(),
         panel.border = element_rect(colour = "black", fill = NA),
-        axis.text = element_text(size = 15), axis.title = element_text(size = 15))+
+        axis.text.x = element_text(size = 15),
+        axis.text.y = element_text(size = 15))+
   # ylab(expression("Lat " ( degree*N))) +
   # xlab(expression("Lon " ( degree*E))) +
   scale_x_continuous(breaks = ewbrks, labels = ewlbls, expand = c(0, 0)) +
   scale_y_continuous(breaks = nsbrks, labels = nslbls, expand = c(0, 0)) +
-  coord_fixed(xlim = c(-120, 135),
+  coord_fixed(xlim = c(min(coord_subset[,1])-1, max(coord_subset[,1]+1)),
               ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
               ratio = 1)+
   labs(fill="Selection of\ndtr coeff."
@@ -688,7 +694,7 @@ P2 <- ggplot(data = DF2_frs, aes(x=lon, y=lat)) +
   # xlab(expression("Lon " ( degree*E))) +
   scale_x_continuous(breaks = ewbrks, labels = ewlbls, expand = c(0, 0)) +
   scale_y_continuous(breaks = nsbrks, labels = nslbls, expand = c(0, 0)) +
-  coord_fixed(xlim = c(-120, 135),
+  coord_fixed(xlim = c(min(coord_subset[,1])-1, max(coord_subset[,1]+1)),
               ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
               ratio = 1)+
   labs(fill="Selection of\nfrs coeff."
@@ -714,7 +720,7 @@ P3 <- ggplot(data = DF3_rx5, aes(x=lon, y=lat)) +
   # xlab(expression("Lon " ( degree*E))) +
   scale_x_continuous(breaks = ewbrks, labels = ewlbls, expand = c(0, 0)) +
   scale_y_continuous(breaks = nsbrks, labels = nslbls, expand = c(0, 0)) +
-  coord_fixed(xlim = c(-120, 135),
+  coord_fixed(xlim = c(min(coord_subset[,1])-1, max(coord_subset[,1]+1)),
               ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
               ratio = 1)+
   labs(fill="Selection of\nRx5day coeff."
@@ -740,7 +746,7 @@ P4 <- ggplot(data = DF4_tx90p, aes(x=lon, y=lat)) +
   # xlab(expression("Lon " ( degree*E))) +
   scale_x_continuous(breaks = ewbrks, labels = ewlbls, expand = c(0, 0)) +
   scale_y_continuous(breaks = nsbrks, labels = nslbls, expand = c(0, 0)) +
-  coord_fixed(xlim = c(-120, 135),
+  coord_fixed(xlim = c(min(coord_subset[,1])-1, max(coord_subset[,1]+1)),
               ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
               ratio = 1)+
   labs(fill="Selection of\nTX90p coeff."
@@ -749,45 +755,46 @@ P4 <- ggplot(data = DF4_tx90p, aes(x=lon, y=lat)) +
         legend.title = element_text(size = 15), legend.text = element_text(size = 14))
 
 # Combine 4 subplots to one plot
-L1 <- get_legend(P1+ theme(legend.title = element_text(size=12),
-                           legend.text = element_text(size=12),
-                           legend.key.size = unit(0.6,"line")))
-L2 <- get_legend(P2+ theme(legend.title = element_text(size=12),
-                           legend.text = element_text(size=12),
-                           legend.key.size = unit(0.6,"line")))
-L3 <- get_legend(P3+ theme(legend.title = element_text(size=12),
-                           legend.text = element_text(size=12),
-                           legend.key.size = unit(0.6,"line")))
-L4 <- get_legend(P4+ theme(legend.title = element_text(size=12),
-                           legend.text = element_text(size=12),
-                           legend.key.size = unit(0.6,"line")))
+L1 <- get_legend(P1+ theme(legend.title = element_text(size=25),
+                           legend.text = element_text(size=25),
+                           legend.key.size = unit(1.8,"line")))
+L2 <- get_legend(P2+ theme(legend.title = element_text(size=25),
+                           legend.text = element_text(size=25),
+                           legend.key.size = unit(1.8,"line")))
+L3 <- get_legend(P3+ theme(legend.title = element_text(size=25),
+                           legend.text = element_text(size=25),
+                           legend.key.size = unit(1.8,"line")))
+L4 <- get_legend(P4+ theme(legend.title = element_text(size=25),
+                           legend.text = element_text(size=25),
+                           legend.key.size = unit(1.8,"line")))
 
 ggarrange(P1 + theme(legend.position = "none",
                      axis.title.x=element_blank(),axis.title.y=element_blank(),
-                     axis.text.x = element_text(size = 8),
-                     axis.text.y = element_text(size = 8)),
+                     axis.text.x = element_text(size = 20),
+                     axis.text.y = element_text(size = 20)),
           L1,
           P2 + theme(legend.position = "none",
                      axis.title.x=element_blank(),axis.title.y=element_blank(),
-                     axis.text.x = element_text(size = 8),
-                     axis.text.y = element_text(size = 8)),
+                     axis.text.x = element_text(size = 20),
+                     axis.text.y = element_text(size = 20)),
           L2,
           P3 + theme(legend.position = "none",
                      axis.title.x=element_blank(),axis.title.y=element_blank(),
-                     axis.text.x = element_text(size = 8),
-                     axis.text.y = element_text(size = 8)),
+                     axis.text.x = element_text(size = 20),
+                     axis.text.y = element_text(size = 20)),
           L3,
           P4 + theme(legend.position = "none",
                      axis.title.x=element_blank(),axis.title.y=element_blank(),
-                     axis.text.x = element_text(size = 8),
-                     axis.text.y = element_text(size = 8)),
+                     axis.text.x = element_text(size = 20),
+                     axis.text.y = element_text(size = 20)),
           L4,
           nrow = 4, ncol=2,labels = c("(a)", "", "(b)", "",
                                       "(c)", "", "(d)", ""),
           label.x = -0.015
-          ,widths=c(8,1.5), heights=c(1,1,1), font.label = list(size = 14, face = "plain", color ="black")
+          ,widths=c(8,1), heights=c(1,1,1), font.label = list(size = 14, face = "plain", color ="black")
 )
-  ggsave(filename = "selection_of_coeff-dtr-frs-rx5-tx90.png", width = 30, height = 25)
+
+ggsave(filename = "selection_of_coeff-dtr-frs-rx5-tx90.png", width = 30, height = 20)
 
 
 
@@ -828,7 +835,7 @@ for (varia in 1:length(allvariables)) {
     # xlab(expression("Lon " ( degree*E))) +
     scale_x_continuous(breaks = ewbrks, labels = ewlbls, expand = c(0, 0)) +
     scale_y_continuous(breaks = nsbrks, labels = nslbls, expand = c(0, 0)) +
-    coord_fixed(xlim = c(-120, 135),
+    coord_fixed(xlim = c(min(coord_subset[,1])-1, max(coord_subset[,1]+1)),
                 ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
                 ratio = 1)+
     labs(fill="Selection",title = varia_name)+
