@@ -1,5 +1,7 @@
 # Creation of the Figures 1, 5, 6, 7, 8, A3, A4 and the supplementary gifs of the article
-# Authors: Pauline Rivore, Johannes Vogel, Cristina Deidda
+# Authors: Pauline Rivoire, Johannes Vogel, Cristina Deidda
+
+# This code was run under version 3.6 of R
 
 #' Structure of the code
 #' a) Load data
@@ -40,7 +42,7 @@ message("Delete at the end")
 ##### Load data ####
 ####################
 
-library(glmnet);library(InformationValue);library(ROCR);library(ggpubr);library(abind)
+library(glmnet);library(InformationValue);library(ROCR);library(ggpubr);library(abind);library(maps)
 library(stringr);library(ggplot2);library(viridis);library(raster);library(rgdal);library(pbapply)
 
 path_data <- message("insert data directory here")

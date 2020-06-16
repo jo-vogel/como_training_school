@@ -1,5 +1,7 @@
-##### Process data ####
-#######################
+# This file contains the data processing, used in the Lasso regression and when plotting the figures 
+# Authors: Johannes Vogel, Pauline Rivoire
+
+# This code was run under version 3.6 of R
 
 pix_num <- length(Data_xtrm_standardized$longitudes) # Number of all wheat growing pixels in the northern hemisphere
 nb_years <- dim(Data_xtrm_standardized$yield)[2]

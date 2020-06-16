@@ -1,10 +1,15 @@
 # This file contains functions required to run "Figures.R"
-# Authors: Pauline Rivore, Johannes Vogel
+# Authors: Pauline Rivoire, Johannes Vogel
+
+# This code was run under version 3.6 of R
 
 # Structure of the code
 # a) Functions for the cut off level
 # b) Function to get the name of coefficients sorted by decresing absolute value
 # c) Additional functions, useful to plot Fig 7.
+
+
+
 
 # Functions for the cut off level ####
 
