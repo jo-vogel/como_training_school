@@ -7,13 +7,14 @@
 #' a) Load data
 #' b) Process data
 #' c) Create Fig. 1
-#' d) Create Fig. 5
-#' e) Create Fig. 6
-#' f) Create Fig. 7
-#' g) Create Fig. 8
-#' h) Create Fig. A3
-#' i) Create Fig. A4
-#' j) Create GIFs
+#' d) Create Fig. 3
+#' e) Create Fig. 5
+#' f) Create Fig. 6
+#' g) Create Fig. 7
+#' h) Create Fig. 8
+#' i) Create Fig. A3
+#' j) Create Fig. A4
+#' k) Create GIFs
 
 
 ##### Load data ####
