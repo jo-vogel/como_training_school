@@ -285,7 +285,7 @@ for (pix in 1:final_pix_num) {
   pixel <- final_pixels_coord$ref_in_995[pix]
   nb_month_GS[pix] <- sum(substr(colnames(x1_train_list[[pixel]]), start = 1, stop = 3)=="pr_")
 }
-
+# save(nb_month_GS, file = "C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/Data/ToShare/nb_months_GS_vector.Rdata")
 levels_nb_month <- cut(nb_month_GS, breaks = c(5,8,11,14), right = F)
 levels_nb_month <- gsub(","," - ",levels_nb_month,fixed=TRUE)
 DF_GSmonth <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], levels_nb_month = levels_nb_month)
@@ -404,7 +404,7 @@ for (pixel in 1:final_pix_num) {
   
 }#end pixel
 pixel_with_pb <- which(is.na(csi))
-
+#save(csi, file = "C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/Data/ToShare/csi_vector.Rdata")
 
 # plot(sort((1600 - (nb_training_years + nb_testing_years))[which(nb_training_years + nb_testing_years != 1600)]),
 #      ylab="number of years with GS too long",
