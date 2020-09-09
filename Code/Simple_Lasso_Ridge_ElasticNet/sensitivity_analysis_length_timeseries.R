@@ -358,9 +358,16 @@ for (GP in 1:3) {
 
 save(SIMU, file = "C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/Data/Global/FR_US_CH_simulation_CSI.Rdata")
 
+
 boxplot(SIMU[[1]]$matrix_csi, main = "CSI for 100 subsamples\ngridpoint in FR",
         xlab="nb on years availabale\n(relative size compared to 1600 years)", ylim=c(0,1))
+abline(h=RESULTS[[1]]$results_GP_1$csi, col="chartreuse4", lwd=2)
+text(x=4.6, y=RESULTS[[1]]$results_GP_1$csi+0.03, "1600 years", col="chartreuse4")
 boxplot(SIMU[[2]]$matrix_csi, main = "CSI for 100 subsamples\ngridpoint in US", ylim=c(0,1),
         xlab="nb on years availabale\n(relative size compared to 1600 years)")
+abline(h=RESULTS[[2]]$results_GP_1$csi, col="chartreuse4", lwd=2)
+text(x=4.6, y=RESULTS[[2]]$results_GP_1$csi+0.03, "1600 years", col="chartreuse4")
 boxplot(SIMU[[3]]$matrix_csi, main = "CSI for 100 subsamples\ngridpoint in CH",
         xlab="nb on years availabale\n(relative size compared to 1600 years)", ylim=c(0,1))
+abline(h=RESULTS[[3]]$results_GP_1$csi, col="chartreuse4", lwd=2)
+text(x=4.6, y=RESULTS[[3]]$results_GP_1$csi+0.03, "1600 years", col="chartreuse4")
