@@ -174,8 +174,8 @@ for (GP in 1:3) { #GP <- 1
   
   for (ratio in 1:length(ratio_to_test)) { #ratio <- 2
     set.seed(1994)
-    ind_sub_train <- sample(1:1120, size = floor(1120*ratio_to_test[ratio]), replace = T)
-    ind_sub_test <- sample(1:420, size = floor(420*ratio_to_test[ratio]), replace = T)
+    ind_sub_train <- sample(1:1120, size = floor(1120*ratio_to_test[ratio]), replace = F)
+    ind_sub_test <- sample(1:420, size = floor(420*ratio_to_test[ratio]), replace = F)
     
     meteovar_train_sub <- meteovar_train_complete[ind_sub_train,] ; meteovar_test_sub <- meteovar_test_complete[ind_sub_test,]
     yield_train_sub <- yield_train_complete[ind_sub_train] ; yield_test_sub <- yield_test_complete[ind_sub_test]
@@ -290,8 +290,8 @@ for (GP in 1:3) {
     yield_train_complete <- y1_train_list[[pixel_number]] ; yield_test_complete <- y1_test_list[[pixel_number]]
     
     for (ratio in 1:length(ratio_to_test_2)) { #ratio <- 2
-      ind_sub_train <- sample(1:1120, size = floor(1120*ratio_to_test_2[ratio]), replace = T)
-      ind_sub_test <- sample(1:420, size = floor(420*ratio_to_test_2[ratio]), replace = T)
+      ind_sub_train <- sample(1:1120, size = floor(1120*ratio_to_test_2[ratio]), replace = F)
+      ind_sub_test <- sample(1:420, size = floor(420*ratio_to_test_2[ratio]), replace = F)
       
       meteovar_train_sub <- meteovar_train_complete[ind_sub_train,] ; meteovar_test_sub <- meteovar_test_complete[ind_sub_test,]
       yield_train_sub <- yield_train_complete[ind_sub_train] ; yield_test_sub <- yield_test_complete[ind_sub_test]
@@ -358,9 +358,9 @@ for (GP in 1:3) {
 
 save(SIMU, file = "C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/Data/Global/FR_US_CH_simulation_CSI.Rdata")
 
-boxplot(SIMU[[1]]$matrix_csi, main = "CSI for 100 simulations\ngridpoint in FR",
+boxplot(SIMU[[1]]$matrix_csi, main = "CSI for 100 subsamples\ngridpoint in FR",
+        xlab="nb on years availabale\n(relative size compared to 1600 years)", ylim=c(0,1))
+boxplot(SIMU[[2]]$matrix_csi, main = "CSI for 100 subsamples\ngridpoint in US", ylim=c(0,1),
         xlab="nb on years availabale\n(relative size compared to 1600 years)")
-boxplot(SIMU[[2]]$matrix_csi, main = "CSI for 100 simulations\ngridpoint in US",
-        xlab="nb on years availabale\n(relative size compared to 1600 years)")
-boxplot(SIMU[[3]]$matrix_csi, main = "CSI for 100 simulations\ngridpoint in CH",
-        xlab="nb on years availabale\n(relative size compared to 1600 years)")
+boxplot(SIMU[[3]]$matrix_csi, main = "CSI for 100 subsamples\ngridpoint in CH",
+        xlab="nb on years availabale\n(relative size compared to 1600 years)", ylim=c(0,1))
