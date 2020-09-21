@@ -207,51 +207,51 @@ for (GP in 1:3) { #GP <- 1
     segreg_th <- 0.6582418
     
     
-      coeff <- coefficients(lasso_model_lambda1se)
-      
-      mypred <- predict(lasso_model_lambda1se, as.matrix(meteovar_test_sub),type="response")
-      
-      fitted_bad_yield <- ifelse(mypred > segreg_th,1,0)
-      
-      speci <- InformationValue::specificity(actuals = as.matrix(yield_test_sub),
-                                             predictedScores = fitted_bad_yield, threshold = segreg_th)
-      sensi <- InformationValue::sensitivity(actuals = as.matrix(yield_test_sub),
-                                             predictedScores = fitted_bad_yield, threshold = segreg_th)
-      
-      con_tab <- InformationValue::confusionMatrix(actuals = as.matrix(yield_test_sub),
-                                                   predictedScores = fitted_bad_yield, threshold = segreg_th)
-      csi <- con_tab["0","0"]/(con_tab["0","0"] + con_tab["1","0"] + con_tab["0","1"])
-      if(is.na(con_tab["0","0"])){
-        csi <- 0
-      }
-      
-      nb_training_years <- length(ind_sub_train)
-      nb_testing_years <- length(ind_sub_test)
-      
-      nb_bad_years_train <- sum(abs(yield_train_sub-1))
-      nb_bad_years_test <- sum(abs(yield_test_sub-1))
-      
-      results_GP <- list(coeff=coeff, speci=speci, sensi=sensi, csi=csi,
-                         nb_bad_years_train=nb_bad_years_train, nb_bad_years_test=nb_bad_years_test)
-      
-      if(ratio==1){
-        results_GP_1 <- results_GP
-      }
-      if(ratio==2){
-        results_GP_34 <- results_GP
-      }
-      if(ratio==3){
-        results_GP_23 <- results_GP
-      }
-      if(ratio==4){
-        results_GP_2 <- results_GP
-      }
-      if(ratio==5){
-        results_GP_3 <- results_GP
-      }
-      if(ratio==6){
-        results_GP_4 <- results_GP
-      }
+    coeff <- coefficients(lasso_model_lambda1se)
+    
+    mypred <- predict(lasso_model_lambda1se, as.matrix(meteovar_test_sub),type="response")
+    
+    fitted_bad_yield <- ifelse(mypred > segreg_th,1,0)
+    
+    speci <- InformationValue::specificity(actuals = as.matrix(yield_test_sub),
+                                           predictedScores = fitted_bad_yield, threshold = segreg_th)
+    sensi <- InformationValue::sensitivity(actuals = as.matrix(yield_test_sub),
+                                           predictedScores = fitted_bad_yield, threshold = segreg_th)
+    
+    con_tab <- InformationValue::confusionMatrix(actuals = as.matrix(yield_test_sub),
+                                                 predictedScores = fitted_bad_yield, threshold = segreg_th)
+    csi <- con_tab["0","0"]/(con_tab["0","0"] + con_tab["1","0"] + con_tab["0","1"])
+    if(is.na(con_tab["0","0"])){
+      csi <- 0
+    }
+    
+    nb_training_years <- length(ind_sub_train)
+    nb_testing_years <- length(ind_sub_test)
+    
+    nb_bad_years_train <- sum(abs(yield_train_sub-1))
+    nb_bad_years_test <- sum(abs(yield_test_sub-1))
+    
+    results_GP <- list(coeff=coeff, speci=speci, sensi=sensi, csi=csi,
+                       nb_bad_years_train=nb_bad_years_train, nb_bad_years_test=nb_bad_years_test)
+    
+    if(ratio==1){
+      results_GP_1 <- results_GP
+    }
+    if(ratio==2){
+      results_GP_34 <- results_GP
+    }
+    if(ratio==3){
+      results_GP_23 <- results_GP
+    }
+    if(ratio==4){
+      results_GP_2 <- results_GP
+    }
+    if(ratio==5){
+      results_GP_3 <- results_GP
+    }
+    if(ratio==6){
+      results_GP_4 <- results_GP
+    }
     
   }#end for ratio
   
