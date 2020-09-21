@@ -24,6 +24,7 @@ model_name <- "Lasso" ; no_model <- 1
 lambda_VALS <- c("lambda.min", "lambda.1se")
 
 #threshold for bad yields
+Thresholds_to_test <- c(0.03,0.05,0.1,0.15)
 threshold <- 0.05
 
 ##### Initialisation, librairies, data #####
@@ -139,7 +140,7 @@ for (i in 1:pix_num){
   names(numLevels_list[[i]]) <-  colnames(x1_test_list[[i]])
 }
 
-# extract several the grippoints
+# extract several the grippoints ####
 load("C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/Data/Global/final_889pixels_coords.Rdata")
 
 
@@ -371,3 +372,31 @@ boxplot(SIMU[[3]]$matrix_csi, main = "CSI for 100 subsamples\ngridpoint in CH",
         xlab="nb on years availabale\n(relative size compared to 1600 years)", ylim=c(0,1))
 abline(h=RESULTS[[3]]$results_GP_1$csi, col="chartreuse4", lwd=2)
 text(x=4.6, y=RESULTS[[3]]$results_GP_1$csi+0.03, "1600 years", col="chartreuse4")
+
+
+
+load(file = "C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/Data/Global/FR_US_CH_simulation_CSI.Rdata")
+
+
+#plot csi as a function of nbof bad years in the testing data
+pix_name <- c("FR", "US", "CH")
+ratio_name <- c("3/4","2/3","1/2","1/3","1/4")
+ratios <- c(3/4, 2/3, 1/2, 1/3, 1/4)
+for (pixel in 1:3) {
+  
+  plot(c(SIMU[[pixel]][[2]]), c(SIMU[[pixel]]$matrix_csi),
+       xlab="Nb bad years in testing data",
+       ylab="CSI", main=paste(pix_name[pixel])
+  )
+  
+  print(paste("Correlation test between CSI and nb years in testing data in", pix_name[pixel]))
+  print(cor.test(c(SIMU[[pixel]][[2]]), c(SIMU[[pixel]]$matrix_csi))$p.value)
+  # 
+  # for (ratio in 1:5) {
+  #   plot(SIMU[[pixel]][[2]][,ratio], SIMU[[pixel]]$matrix_csi[,ratio],
+  #        xlab="Nb bad years in testing data",
+  #        ylab="CSI", main=paste(pix_name[pixel], "\nSubsample size", floor(ratios[ratio]*1600))
+  #        )
+  # }#end for ratio
+}# end for pixel
+
