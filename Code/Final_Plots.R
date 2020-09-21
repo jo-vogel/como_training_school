@@ -84,6 +84,8 @@ colnames(Model_data) <- c("Yield", "dtr", "frs", "txx", "tnn", "rx5", "tx90p", "
 
 Yield <- Data_xtrm_standardized$yield
 low_yield <- apply(Yield, MARGIN = 1, FUN=quantile, probs=threshold, na.rm=T)
+Yield_nonstandardized <- Data_xtrm_non_standardized$yield
+fifth_perc <- apply(Yield_nonstandardized, MARGIN = 1, FUN=quantile, probs=threshold, na.rm=T)
 cy <- t(sapply(1:total_nb_pix,function(x){ifelse(Yield[x,]<low_yield[x],0,1)})) # identical for standardised and non-standardised yield
 
 cy_reshaped <- array(data=cy,dim=c(dim(cy)[1],1,1600))
@@ -199,6 +201,9 @@ load(paste0(path,"/final_889pixels_coords.Rdata"))
 load(paste0(path,"/RawMeanYield_995GP.Rdata"))
 load(paste0(path,"/RawSdYield_995GP.Rdata"))
 
+Raw_fifth_perc <- cbind(fifth_perc, Raw_mean_yield[,"longitudes"], Raw_mean_yield[,"latitudes"])
+colnames(Raw_fifth_perc) <- c("fifth_perc", "longitudes", "latitudes")
+save(Raw_fifth_perc, file = "C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/Data/Global/Raw_perc5th_yield_NH.Rdata")
 
 world <- map_data("world")
 
@@ -209,11 +214,11 @@ pixels_excluded <- as.logical(1-(1:total_nb_pix %in% final_pixels_coord$ref_in_9
 DF_excluded_pix <- data.frame(lon = Raw_mean_yield[pixels_excluded,"longitudes"],
                               lat = Raw_mean_yield[pixels_excluded,"latitudes"])
 
-ggplot(data = DF_meanY, aes(x=lon, y=lat)) +
+P1 <- ggplot(data = DF_meanY, aes(x=lon, y=lat)) +
   geom_polygon(data = world, aes(long, lat, group=group),
                fill="white", color="black", size=0.3)+  geom_tile(aes(fill=DF_meanY$meany)) +
   scale_fill_gradient2(midpoint = max(DF_meanY$meany, na.rm = T)/2,
-                       limits=c(0,max(DF_meanY$meany)),
+                       limits=c(0,10),
                        low = "#f7fcb9", mid = "#addd8e", high = "#31a354") +
   theme(panel.ontop = F, panel.grid = element_blank(),
         panel.border = element_rect(colour = "black", fill = NA),
@@ -229,10 +234,68 @@ ggplot(data = DF_meanY, aes(x=lon, y=lat)) +
   theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
         legend.title = element_text(size = 15), legend.text = element_text(size = 14))+
   geom_point(data = DF_excluded_pix, aes(x = DF_excluded_pix$lon, y = DF_excluded_pix$lat),
-             color = "black", size = 0.89, pch=4) +
-  X11(width = 20, height = 5.7)
+             color = "black", size = 0.89, pch=4)
+#+
+#  X11(width = 20, height = 5.7)
 
 
+DF_5thperc <- data.frame(lon=Raw_fifth_perc[,"longitudes"], lat = Raw_fifth_perc[,"latitudes"],
+                         fithperc = Raw_fifth_perc[,"fifth_perc"]/1000)
+
+pixels_excluded <- as.logical(1-(1:total_nb_pix %in% final_pixels_coord$ref_in_995))
+DF_excluded_pix <- data.frame(lon = Raw_mean_yield[pixels_excluded,"longitudes"],
+                              lat = Raw_mean_yield[pixels_excluded,"latitudes"])
+
+P2 <- ggplot(data = DF_5thperc, aes(x=lon, y=lat)) +
+  geom_polygon(data = world, aes(long, lat, group=group),
+               fill="white", color="black", size=0.3)+  geom_tile(aes(fill=DF_5thperc$fithperc)) +
+  scale_fill_gradient2(midpoint = max(DF_5thperc$fithperc, na.rm = T)/2,
+                       limits=c(0,10),
+                       
+                       low = "#f7fcb9", mid = "#addd8e", high = "#31a354"
+                       #low = "#fff7bc", mid = "#fec44f", high = "#d95f0e"
+                       ) +
+  theme(panel.ontop = F, panel.grid = element_blank(),
+        panel.border = element_rect(colour = "black", fill = NA),
+        axis.text = element_text(size = 12), axis.title = element_text(size = 12),
+        axis.text.x = element_text(size = 12),
+        axis.text.y = element_text(size = 12))+
+  ylab("Lat (°N)") +
+  xlab("Lon (°E)") +
+  coord_fixed(xlim = c(-115, 130),
+              ylim = c(min(DF_5thperc$lat), max(DF_5thperc$lat)),
+              ratio = 1.3)+
+  labs(fill=expression(paste(5^{th}," perc. (t ", ha^{-1},")"))  )+
+  theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
+        legend.title = element_text(size = 15), legend.text = element_text(size = 14))+
+  geom_point(data = DF_excluded_pix, aes(x = DF_excluded_pix$lon, y = DF_excluded_pix$lat),
+             color = "black", size = 0.89, pch=4)
+#+
+#  X11(width = 20, height = 5.7)
+
+L1 <- get_legend(P1+ theme(legend.title = element_text(size=15),
+                           legend.text = element_text(size=12),
+                           legend.key.size = unit(1,"line")))
+L2 <- get_legend(P2+ theme(legend.title = element_text(size=15),
+                           legend.text = element_text(size=12),
+                           legend.key.size = unit(1,"line")))
+
+ggarrange(P1 + theme(legend.position = "none",
+                     axis.title.x=element_blank(),axis.title.y=element_blank(),
+                     axis.text.x = element_text(size = 10),
+                     axis.text.y = element_text(size = 10)),
+          L1,
+          P2 + theme(legend.position = "none",
+                     axis.title.x=element_blank(),axis.title.y=element_blank(),
+                     axis.text.x = element_text(size = 10),
+                     axis.text.y = element_text(size = 10)),
+          L2,
+          nrow = 2, ncol=2,labels = c("(a)", "", "(b)", ""),
+          label.x = -0.01
+          ,widths=c(8,1.5), heights=c(1,1)
+          #, font.label = list(size = 14, face = "plain", color ="black")
+)+
+  X11(width = 20, height = 10)
 
 # ##### Map mean growing season length #####
 # # load mean growing season, in the drive folder Data/Global Data
