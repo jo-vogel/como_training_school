@@ -238,23 +238,37 @@ P1 <- ggplot(data = DF_meanY, aes(x=lon, y=lat)) +
 #+
 #  X11(width = 20, height = 5.7)
 
+# levels_5thperc <- cut(100*(Raw_fifth_perc[,"fifth_perc"]-Raw_mean_yield[,"mean_yield"])/Raw_mean_yield[,"mean_yield"],
+#                       breaks = c(-100,-80,-60,-40,-20,0), right = F)
+levels_5thperc <- cut(100*(Raw_fifth_perc[,"fifth_perc"]-Raw_mean_yield[,"mean_yield"])/Raw_mean_yield[,"mean_yield"],
+                      breaks = c(-100, -90, -80, -70, -60, -50,
+                                 -40, -30, -20, -10, 0), right = F)
 
 DF_5thperc <- data.frame(lon=Raw_fifth_perc[,"longitudes"], lat = Raw_fifth_perc[,"latitudes"],
-                         fithperc = Raw_fifth_perc[,"fifth_perc"]/1000)
+                         fithperc = levels_5thperc)
+# DF_5thperc <- data.frame(lon=Raw_fifth_perc[,"longitudes"], lat = Raw_fifth_perc[,"latitudes"],
+#                          fithperc = (Raw_fifth_perc[,"fifth_perc"])/Raw_mean_yield[,"mean_yield"])
 
 pixels_excluded <- as.logical(1-(1:total_nb_pix %in% final_pixels_coord$ref_in_995))
+DF_5thperc$fithperc[pixels_excluded] <- rep(NA, sum(pixels_excluded))
 DF_excluded_pix <- data.frame(lon = Raw_mean_yield[pixels_excluded,"longitudes"],
                               lat = Raw_mean_yield[pixels_excluded,"latitudes"])
 
 P2 <- ggplot(data = DF_5thperc, aes(x=lon, y=lat)) +
   geom_polygon(data = world, aes(long, lat, group=group),
                fill="white", color="black", size=0.3)+  geom_tile(aes(fill=DF_5thperc$fithperc)) +
-  scale_fill_gradient2(midpoint = max(DF_5thperc$fithperc, na.rm = T)/2,
-                       limits=c(0,10),
-                       
-                       low = "#f7fcb9", mid = "#addd8e", high = "#31a354"
-                       #low = "#fff7bc", mid = "#fec44f", high = "#d95f0e"
-                       ) +
+  # scale_fill_manual(values=c("[-100,-80)" = "#800026", "[-80,-60)" = "#fc4e2a",
+  #                            "[-60,-40)" = "#fd8d3c", "[-40,-20)" = "#fed976", "[-20,0)" = "#ffffcc"),
+  #                   breaks=c("[-20,0)", "[-40,-20)", "[-60,-40)", "[-80,-60)", "[-100,-80)")) +
+  scale_fill_manual(values=c("[-100,-90)" = "black","[-90,-80)" = "#800026", "[-80,-70)" = "#bd0026",
+                             "[-70,-60)" = "#e31a1c", "[-60,-50)" = "#fc4e2a", "[-50,-40)" = "#fd8d3c",
+                             "[-40,-30)" = "#feb24c", "[-30,-20)" = "#fed976", "[-20,-10)" = rgb(1,237/255,160/255), "[-10,0)" = "#ffffcc"),
+                    breaks=c("[-10,0)","[-20,-10)", "[-30,-20)", "[-40,-30)", "[-50,-40)", "[-60,-50)",
+                             "[-70,-60)","[-80,-70)", "[-90,-80)", "[-100,-90)")) +
+#  scale_fill_gradient2(midpoint = -50,
+#                       low = "#800026", mid = "#fd8d3c", high = "#ffffcc") +
+  # scale_fill_gradient2(midpoint = 0.5,
+  #                      low = "red", mid = "yellow", high = "green") +
   theme(panel.ontop = F, panel.grid = element_blank(),
         panel.border = element_rect(colour = "black", fill = NA),
         axis.text = element_text(size = 12), axis.title = element_text(size = 12),
@@ -265,7 +279,8 @@ P2 <- ggplot(data = DF_5thperc, aes(x=lon, y=lat)) +
   coord_fixed(xlim = c(-115, 130),
               ylim = c(min(DF_5thperc$lat), max(DF_5thperc$lat)),
               ratio = 1.3)+
-  labs(fill=expression(paste(5^{th}," perc. (t ", ha^{-1},")"))  )+
+  labs(fill="Relative difference\n between\n 5th percentile\n and mean yield (%)"  )+
+  # labs(fill="ratio \n5th percentile\n / mean yield"  )+
   theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
         legend.title = element_text(size = 15), legend.text = element_text(size = 14))+
   geom_point(data = DF_excluded_pix, aes(x = DF_excluded_pix$lon, y = DF_excluded_pix$lat),
@@ -438,6 +453,7 @@ mypred <- vector("list", final_pix_num)
 fitted_bad_yield <- vector("list", final_pix_num)
 nb_training_years <- rep(NA, final_pix_num)
 nb_testing_years <- rep(NA, final_pix_num)
+fifth_perc_GPkept <- rep(NA, final_pix_num)
 
 for (pixel in 1:final_pix_num) {
   pix <- final_pixels_coord$ref_in_995[pixel]
@@ -464,6 +480,8 @@ for (pixel in 1:final_pix_num) {
   
   nb_training_years[pixel] <- length(training_indices[[pix]])
   nb_testing_years[pixel] <- length(testing_indices[[pix]])
+  
+  fifth_perc_GPkept[pixel] <- (100*(Raw_fifth_perc[,"fifth_perc"]-Raw_mean_yield[,"mean_yield"])/Raw_mean_yield[,"mean_yield"])[pix]
   
 }#end pixel
 pixel_with_pb <- which(is.na(csi))
