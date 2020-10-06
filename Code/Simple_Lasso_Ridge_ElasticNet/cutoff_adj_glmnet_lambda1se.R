@@ -26,6 +26,6 @@ adjust_cutoff <- function(model_vector, x1_train_list, y1_train_list, work_pix, 
   # note: the cutoff from cm_info_all has no role here
   cutoff_avg <- pbsapply(1:length(work_pix),
                          function(x){roc_info_all[[x]]$cutoff}) # find the cutoff value
-  return(mean(cutoff_avg)) # calculate the average cutoff value
+  return(mean(unlist(cutoff_avg), na.rm=T)) # calculate the average cutoff value
 
 }
