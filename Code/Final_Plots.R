@@ -198,8 +198,8 @@ lambda_name <- lambda_NAMES[2]
 #Pixels kept
 load(paste0(path,"/final_889pixels_coords.Rdata"))
 #Raw mean yield
-load(paste0(path,"/RawMeanYield_995GP.Rdata"))
-load(paste0(path,"/RawSdYield_995GP.Rdata"))
+load(paste0(path,"/RawMeanYield_995pix.Rdata"))
+load(paste0(path,"/RawSdYield_995pix.Rdata"))
 
 Raw_fifth_perc <- cbind(fifth_perc, Raw_mean_yield[,"longitudes"], Raw_mean_yield[,"latitudes"])
 colnames(Raw_fifth_perc) <- c("fifth_perc", "longitudes", "latitudes")
