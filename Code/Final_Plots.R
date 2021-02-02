@@ -205,6 +205,18 @@ Raw_fifth_perc <- cbind(fifth_perc, Raw_mean_yield[,"longitudes"], Raw_mean_yiel
 colnames(Raw_fifth_perc) <- c("fifth_perc", "longitudes", "latitudes")
 save(Raw_fifth_perc, file = "C:/Users/admin/Documents/Damocles_training_school_Como/GroupProject1/Data/Global/Raw_perc5th_yield_NH.Rdata")
 
+load(paste0(path,"/Required_variables.RData"))
+Require_variables <- list(france_meteovar_correlations=france_meteovar_correlations,
+                          france_xtrm_correlations=france_xtrm_correlations,
+                          global_meteovar_correlations=global_meteovar_correlations,
+                          global_xtrm_correlations=global_xtrm_correlations,
+                          numLevels_list=numLevels_list,
+                          Raw_fifth_perc=Raw_fifth_perc)
+
+save(france_meteovar_correlations,france_xtrm_correlations,global_meteovar_correlations,
+     global_xtrm_correlations, numLevels_list, Raw_fifth_perc,
+     file = paste0(path,"/Required_Variables.RData")) #new version
+
 world <- map_data("world")
 
 DF_meanY <- data.frame(lon=Raw_mean_yield[,"longitudes"], lat = Raw_mean_yield[,"latitudes"],
@@ -229,7 +241,7 @@ P1 <- ggplot(data = DF_meanY, aes(x=lon, y=lat)) +
   xlab("Lon (°E)") +
   coord_fixed(xlim = c(-115, 130),
               ylim = c(min(DF_meanY$lat), max(DF_meanY$lat)),
-              ratio = 1.3)+
+              ratio = 1)+
   labs(fill=expression(paste("Mean yield (t ", ha^{-1},")"))  )+
   theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
         legend.title = element_text(size = 15), legend.text = element_text(size = 14))+
@@ -278,7 +290,7 @@ P2 <- ggplot(data = DF_5thperc, aes(x=lon, y=lat)) +
   xlab("Lon (°E)") +
   coord_fixed(xlim = c(-115, 130),
               ylim = c(min(DF_5thperc$lat), max(DF_5thperc$lat)),
-              ratio = 1.3)+
+              ratio = 1)+
   labs(fill="Relative difference\n between\n 5th percentile\n and mean yield (%)"  )+
   # labs(fill="ratio \n5th percentile\n / mean yield"  )+
   theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
@@ -310,7 +322,7 @@ ggarrange(P1 + theme(legend.position = "none",
           ,widths=c(8,1.5), heights=c(1,1)
           #, font.label = list(size = 14, face = "plain", color ="black")
 )+
-  X11(width = 20, height = 10)
+  X11(width = 20, height = 9)
 
 # ##### Map mean growing season length #####
 # # load mean growing season, in the drive folder Data/Global Data
@@ -342,7 +354,7 @@ ggarrange(P1 + theme(legend.position = "none",
 #   xlab("Lon (°E)") +
 #   coord_fixed(xlim = c(-120, 135),
 #               ylim = c(min(DF_GSl$lat)-1, max(DF_GSl$lat+1)),
-#               ratio = 1.3)+
+#               ratio = 1)+
 #   labs(fill="Mean growing\nseason length\n(days)"
 #        #,title = paste("CSI, simple",model_name,"regression, "),
 #        #subtitle = paste("Monthly meteo var + extreme indices, cutoff level=", round(segreg_th,3),", ",lambda_val, sep = "")
@@ -391,7 +403,7 @@ ggplot(data = DF_GSmonth, aes(x=DF_GSmonth$lon, y=DF_GSmonth$lat)) +
   xlab("Lon (°E)") +
   coord_fixed(xlim = c(-120, 135),
               ylim = c(min(DF_GSmonth$lat)-1, max(DF_GSmonth$lat+1)),
-              ratio = 1.3)+
+              ratio = 1)+
   labs(fill="Growing season\nlength (months)"
        #,title = paste("CSI, simple",model_name,"regression, "),
        #subtitle = paste("Monthly meteo var + extreme indices, cutoff level=", round(segreg_th,3),", ",lambda_val, sep = "")
@@ -560,7 +572,7 @@ ggplot(data = DF_csi, aes(x=lon, y=lat)) +
   xlab("Lon (°E)") +
   coord_fixed(xlim = c(-120, 135),
               ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
-              ratio = 1.3)+
+              ratio = 1)+
   labs(fill="CSI"
        #,title = paste("CSI, simple",model_name,"regression, "),
        #subtitle = paste("Monthly meteo var + extreme indices, cutoff level=", round(segreg_th,3),", ",lambda_val, sep = "")
@@ -749,7 +761,7 @@ P1 <- ggplot(data = DF_numbcoeff, aes(x=lon, y=lat)) +
   xlab("Lon (°E)") +
   coord_fixed(xlim = c(-120, 135),
               ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
-              ratio = 1.3)+
+              ratio = 1)+
   labs(fill="Nb of var."
        #,title = paste("Number of variables kept, simple",model_name,"regression, "),
        #subtitle = paste("Monthly meteo var + extreme indices, ",lambda_val, sep = "")
@@ -779,7 +791,7 @@ P2 <- ggplot(data = DF_numbextr, aes(x=lon, y=lat)) +
   xlab("Lon (°E)") +
   coord_fixed(xlim = c(-120, 135),
               ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
-              ratio = 1.3)+
+              ratio = 1)+
   labs(fill="Nb extr.\n ind."
        #,title = paste("Number of exteme indices kept, simple",model_name,"regression,"),
        #subtitle = paste("Monthly meteo var + extreme indices, ",lambda_val, sep = "")
@@ -809,7 +821,7 @@ P3 <- ggplot(data = DF_meteo_type, aes(x=lon, y=lat)) +
   xlab("Lon (°E)") +
   coord_fixed(xlim = c(-120, 135),
               ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
-              ratio = 1.3)+
+              ratio = 1)+
   labs(fill="Combination\nof met.\nvariables"
   )+
   theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
@@ -837,7 +849,7 @@ P4 <- ggplot(data = DF_nbseason, aes(x=lon, y=lat)) +
   xlab("Lon (°E)") +
   coord_fixed(xlim = c(-120, 135),
               ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
-              ratio = 1.3)+
+              ratio = 1)+
   labs(fill="Nb of seas."
        #,title = paste("Number of different seasons, simple",model_name,"regression"),
        #subtitle = paste("monthly meteo var + extreme indices, ",lambda_val, sep = "")
@@ -883,9 +895,9 @@ ggarrange(P1 + theme(legend.position = "none",
           nrow = 4, ncol=2,labels = c("(a)", "", "(b)", "",
                                       "(c)", "", "(d)", ""),
           label.x = -0.015
-          ,widths=c(8,1.5), heights=c(1,1,1), font.label = list(size = 14, face = "plain", color ="black")
+          ,widths=c(8,1.3), heights=c(1,1,1), font.label = list(size = 14, face = "plain", color ="black")
           )+
-  X11(width = 30, height = 25)
+  X11(width = 37, height = 25)
 
 
 # Three most kept variables: coefficient sign for vpd_May_Y2, vpd_Jun_Y2 and pr_Apr_Y2 (compute also extreme indices) ####
@@ -968,7 +980,7 @@ P1 <- ggplot(data = DF1_vpd_may_Y2, aes(x=lon, y=lat)) +
   xlab("Lon (°E)") +
   coord_fixed(xlim = c(-120, 135),
               ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
-              ratio = 1.3)+
+              ratio = 1)+
   labs(fill="Sign of\nVPD_May_Y2 coeff."
        #,title = paste("Number of different seasons, simple",model_name,"regression"),
        #subtitle = paste("monthly meteo var + extreme indices, ",lambda_val, sep = "")
@@ -1000,7 +1012,7 @@ P2 <- ggplot(data = DF2_vpdJun, aes(x=lon, y=lat)) +
   xlab("Lon (°E)") +
   coord_fixed(xlim = c(-120, 135),
               ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
-              ratio = 1.3)+
+              ratio = 1)+
   labs(fill="Sign of\nVPD_Jun_Y2 coeff."
        #,title = paste("Number of different seasons, simple",model_name,"regression"),
        #subtitle = paste("monthly meteo var + extreme indices, ",lambda_val, sep = "")
@@ -1031,7 +1043,7 @@ P3 <- ggplot(data = DF3_prApr, aes(x=lon, y=lat)) +
   xlab("Lon (°E)") +
   coord_fixed(xlim = c(-120, 135),
               ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
-              ratio = 1.3)+
+              ratio = 1)+
   labs(fill="Sign of\nPr_Apr_Y2 coeff."
        #,title = paste("Number of different seasons, simple",model_name,"regression"),
        #subtitle = paste("monthly meteo var + extreme indices, ",lambda_val, sep = "")
@@ -1105,7 +1117,7 @@ P1 <- ggplot(data = DF1_dtr, aes(x=lon, y=lat)) +
   xlab("Lon (°E)") +
   coord_fixed(xlim = c(-120, 135),
               ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
-              ratio = 1.3)+
+              ratio = 1)+
   labs(fill="Sign of\ndtr coeff."
        #,title = paste("Number of different seasons, simple",model_name,"regression"),
        #subtitle = paste("monthly meteo var + extreme indices, ",lambda_val, sep = "")
@@ -1134,7 +1146,7 @@ P2 <- ggplot(data = DF2_frs, aes(x=lon, y=lat)) +
   xlab("Lon (°E)") +
   coord_fixed(xlim = c(-120, 135),
               ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
-              ratio = 1.3)+
+              ratio = 1)+
   labs(fill="Sign of\nfrs coeff."
        #,title = paste("Number of different seasons, simple",model_name,"regression"),
        #subtitle = paste("monthly meteo var + extreme indices, ",lambda_val, sep = "")
@@ -1162,7 +1174,7 @@ P3 <- ggplot(data = DF3_rx5, aes(x=lon, y=lat)) +
   xlab("Lon (°E)") +
   coord_fixed(xlim = c(-120, 135),
               ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
-              ratio = 1.3)+
+              ratio = 1)+
   labs(fill="Sign of\nRx5day coeff."
        #,title = paste("Number of different seasons, simple",model_name,"regression"),
        #subtitle = paste("monthly meteo var + extreme indices, ",lambda_val, sep = "")
@@ -1192,7 +1204,7 @@ P4 <- ggplot(data = DF4_tx90p, aes(x=lon, y=lat)) +
   xlab("Lon (°E)") +
   coord_fixed(xlim = c(-120, 135),
               ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
-              ratio = 1.3)+
+              ratio = 1)+
   labs(fill="Sign of\nTX90p coeff."
        #,title = paste("Number of different seasons, simple",model_name,"regression"),
        #subtitle = paste("monthly meteo var + extreme indices, ",lambda_val, sep = "")
@@ -1265,7 +1277,7 @@ P1 <- ggplot(data = DF1_dtr, aes(x=lon, y=lat)) +
   xlab("Lon (°E)") +
   coord_fixed(xlim = c(-120, 135),
               ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
-              ratio = 1.3)+
+              ratio = 1)+
   labs(fill="Selection of\ndtr coeff."
        #,title = paste("Number of different seasons, simple",model_name,"regression"),
        #subtitle = paste("monthly meteo var + extreme indices, ",lambda_val, sep = "")
@@ -1294,7 +1306,7 @@ P2 <- ggplot(data = DF2_frs, aes(x=lon, y=lat)) +
   xlab("Lon (°E)") +
   coord_fixed(xlim = c(-120, 135),
               ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
-              ratio = 1.3)+
+              ratio = 1)+
   labs(fill="Selection of\nfrs coeff."
        #,title = paste("Number of different seasons, simple",model_name,"regression"),
        #subtitle = paste("monthly meteo var + extreme indices, ",lambda_val, sep = "")
@@ -1322,7 +1334,7 @@ P3 <- ggplot(data = DF3_rx5, aes(x=lon, y=lat)) +
   xlab("Lon (°E)") +
   coord_fixed(xlim = c(-120, 135),
               ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
-              ratio = 1.3)+
+              ratio = 1)+
   labs(fill="Selection of\nRx5day coeff."
        #,title = paste("Number of different seasons, simple",model_name,"regression"),
        #subtitle = paste("monthly meteo var + extreme indices, ",lambda_val, sep = "")
@@ -1352,7 +1364,7 @@ P4 <- ggplot(data = DF4_tx90p, aes(x=lon, y=lat)) +
   xlab("Lon (°E)") +
   coord_fixed(xlim = c(-120, 135),
               ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
-              ratio = 1.3)+
+              ratio = 1)+
   labs(fill="Selection of\nTX90p coeff."
        #,title = paste("Number of different seasons, simple",model_name,"regression"),
        #subtitle = paste("monthly meteo var + extreme indices, ",lambda_val, sep = "")
@@ -1398,9 +1410,9 @@ ggarrange(P1 + theme(legend.position = "none",
           nrow = 4, ncol=2,labels = c("(a)", "", "(b)", "",
                                       "(c)", "", "(d)", ""),
           label.x = -0.015
-          ,widths=c(8,1.5), heights=c(1,1,1), font.label = list(size = 14, face = "plain", color ="black")
+          ,widths=c(8,1.3), heights=c(1,1,1), font.label = list(size = 14, face = "plain", color ="black")
 )+
-  X11(width = 30, height = 25)
+  X11(width = 36, height = 25)
 
 
 
@@ -1455,7 +1467,7 @@ hist(nb_coeff_kept, main = paste0("Nb of variables kept, ",lambda_val), xlab = "
 #   xlab("Lon (°E)") +
 #   coord_fixed(xlim = c(-120, 135),
 #               ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
-#               ratio = 1.3)+
+#               ratio = 1)+
 #   labs(fill="Diff in nb var",
 #        title = "Difference number of variable kept with xtrm - w/o xtrm",
 #        subtitle = paste("Adjusted cut-off", sep = ""))+
@@ -1498,7 +1510,7 @@ hist(nb_coeff_kept, main = paste0("Nb of variables kept, ",lambda_val), xlab = "
 #   xlab("Lon (°E)") +
 #   coord_fixed(xlim = c(-120, 135),
 #               ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
-#               ratio = 1.3)+
+#               ratio = 1)+
 #   labs(fill="Diff in CSI",
 #        title = "Difference CSI with xtrm - w/o xtrm",
 #        subtitle = paste("Adjusted cut-off", sep = ""))+
@@ -1568,7 +1580,7 @@ for (varia in 1:length(allvariables)) {
       xlab("Lon (°E)") +
       coord_fixed(xlim = c(-120, 135),
                   ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
-                  ratio = 1.3)+
+                  ratio = 1)+
       labs(fill="",title = varia_name)+
       theme(plot.title = element_text(size = 20, hjust = 0.5), plot.subtitle = element_text(size = 15),
             legend.text = element_text(size = 14)) +
@@ -1601,7 +1613,7 @@ ggplot(data = DF_meteo_cat, aes(x=lon, y=lat)) +
   xlab("Lon (°E)") +
   coord_fixed(xlim = c(-120, 135),
               ylim = c(min(coord_subset[,2])-1, max(coord_subset[,2]+1)),
-              ratio = 1.3)+
+              ratio = 1)+
   labs(fill="Occurrence of variable"
   )+
   theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
