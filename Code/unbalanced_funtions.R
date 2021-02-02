@@ -128,7 +128,7 @@ ROCInfo <- function( data, predict, actual, cost.fp, cost.fn )
   roc_dt <- data.frame( fpr = perf@x.values[[1]], tpr = perf@y.values[[1]] )
   
   # cost with the specified false positive and false negative cost 
-  # false postive rate * number of negative instances * false positive cost + 
+  # false positive rate * number of negative instances * false positive cost + 
   # false negative rate * number of positive instances * false negative cost
   cost <- perf@x.values[[1]] * cost.fp * sum( data[[actual]] == 0 ) + 
     ( 1 - perf@y.values[[1]] ) * cost.fn * sum( data[[actual]] == 1 )
