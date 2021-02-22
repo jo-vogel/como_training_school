@@ -11,7 +11,7 @@ Group project of working group 1 from the DAMOCLES training school at Lake Como,
 	- Identify_crop_yield_drivers-master.zip and Code\Final\Identify_crop_yield_drivers
 - Data for submission:
 	- https://drive.google.com/drive/folders/1dVlsKwll1wtBGHcxjMzwgCl7u-oidw__
-	- Data/Data_for_submission-20200827T105406Z-001.zip
+	- D:\user\vogelj\Group_project\Data\Data_for_submission-20200827T105406Z-001
 - Final supplementary:
 	- esd-2020-47-supplement-version2.zip
 - Group folder online:
