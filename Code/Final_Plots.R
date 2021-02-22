@@ -55,7 +55,8 @@ path <- "C:/Users/39349/Documents/DAMOCLES/Final Workspace LASSO/Final_Data"
 
 load(paste0(path,"/extremeindices_and_monthlymeteovar_rescaled_995pix.Rdata"))
 load(paste0(path,"/extremeindices_and_monthlymeteovar_995pix.Rdata"))
-
+load("C:/Users/vogel/boxup/Promotion/Damocles COST Action/Training school/Group_project/Data/Data_for_submission-20200827T105406Z-001/Data_for_submission/extremeindices_and_monthlymeteovar_995pix.Rdata")
+readRDS("C:/Users/vogel/boxup/Promotion/Damocles COST Action/Training school/Group_project/Data/Data_for_submission-20200827T105406Z-001/Data_for_submission/extremeindices_and_monthlymeteovar_995pix.Rdata")
 
 ##### Process data #####
 total_nb_pix <- length(Data_xtrm_non_standardized$longitudes)
